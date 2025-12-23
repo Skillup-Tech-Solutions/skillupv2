@@ -47,6 +47,8 @@ import CustomSnackBar from "../../Custom/CustomSnackBar";
 import { primaryButtonStyle, outlinedButtonStyle, dangerButtonStyle } from "../../assets/Styles/ButtonStyles";
 import { useUploadPaymentProof, useGetPaymentSettings } from "../../Hooks/payment";
 
+import { downloadFileAsBlob } from "../../utils/normalizeUrl";
+
 const projectTypeOptions = [
     { value: "website", label: "Website Development" },
     { value: "mobile-app", label: "Mobile App" },
@@ -238,13 +240,9 @@ const MyProjects = () => {
     });
 
     const handleDownload = (path: string, filename: string) => {
-        const link = document.createElement("a");
-        link.href = path.startsWith("http") ? path : `${import.meta.env.VITE_APP_BASE_URL}/${path}`;
-        link.setAttribute("download", filename);
-        link.target = "_blank";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadFileAsBlob(path, filename).catch(() =>
+            CustomSnackBar.errorSnackbar("Download failed")
+        );
     };
 
     if (isLoading) {
