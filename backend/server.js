@@ -39,6 +39,10 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy - required for Render, Heroku, etc. that use reverse proxies
+// This enables correct IP detection for rate limiting
+app.set('trust proxy', 1);
+
 // Security & Performance Middleware
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
