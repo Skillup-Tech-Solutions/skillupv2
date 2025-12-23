@@ -49,6 +49,7 @@ import iso from "../../assets/Images/isonew.png";
 import iaf from "../../assets/Images/iaf.png";
 import sign from "../../assets/Images/dummysign.png";
 import { useGenerateInvoice } from "../../Hooks/payment";
+import { normalizeDownloadUrl } from "../../utils/normalizeUrl";
 
 const CourseSubmissionsList = () => {
     const token = Cookies.get("skToken");
@@ -111,7 +112,7 @@ const CourseSubmissionsList = () => {
     const handleGenerateInvoice = async (item: any) => {
         // Check if invoice already exists
         if (item.invoice?.url) {
-            window.open(item.invoice.url, "_blank");
+            window.open(normalizeDownloadUrl(item.invoice.url), "_blank");
             return;
         }
         // Generate new invoice via API
@@ -119,7 +120,7 @@ const CourseSubmissionsList = () => {
             onSuccess: (data: any) => {
                 CustomSnackBar.successSnackbar("Invoice generated!");
                 if (data.invoice?.url) {
-                    window.open(data.invoice.url, "_blank");
+                    window.open(normalizeDownloadUrl(data.invoice.url), "_blank");
                 }
             },
             onError: (err: any) => {

@@ -29,6 +29,7 @@ import { MdVisibility, MdCheck, MdRefresh, MdReceipt, MdDownload } from "react-i
 import { useGetPendingPayments, useMarkPaymentPaid, useGenerateInvoice } from "../../Hooks/payment";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import { submitButtonStyle } from "../../assets/Styles/ButtonStyles";
+import { normalizeDownloadUrl } from "../../utils/normalizeUrl";
 
 interface Payment {
     _id: string;
@@ -83,11 +84,11 @@ const PaymentManagement = () => {
     };
 
     const handleDownloadInvoice = (url: string) => {
-        window.open(url, "_blank");
+        window.open(normalizeDownloadUrl(url), "_blank");
     };
 
     const handleViewProof = (proofUrl: string) => {
-        setSelectedProof(proofUrl);
+        setSelectedProof(normalizeDownloadUrl(proofUrl));
         setProofModal(true);
     };
 

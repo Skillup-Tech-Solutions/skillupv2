@@ -5,20 +5,21 @@ import {
     CardContent,
     Button,
     Chip,
-    CircularProgress,
-    IconButton
+    CircularProgress
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { MdDownload } from "react-icons/md";
 import { useGetMyPayslips } from "../../Hooks/employee"; // Correct path
 import CustomSnackBar from "../../Custom/CustomSnackBar"; // Verify path
+import { normalizeDownloadUrl } from "../../utils/normalizeUrl";
 
 const EmployeePortal = () => {
     const { data: payslips, isLoading, error } = useGetMyPayslips();
 
     const handleDownload = (url: string) => {
         if (url) {
-            window.open(url, "_blank");
+            const normalizedUrl = normalizeDownloadUrl(url);
+            window.open(normalizedUrl, "_blank");
         } else {
             CustomSnackBar.errorSnackbar("Payslip file not available");
         }
@@ -31,13 +32,13 @@ const EmployeePortal = () => {
             field: "totalEarnings",
             headerName: "Total Earnings",
             width: 150,
-            valueGetter: (value, row) => row.calculations?.totalEarnings || 0
+            valueGetter: (_value, row) => row.calculations?.totalEarnings || 0
         },
         {
             field: "totalDeductions",
             headerName: "Total Deductions",
             width: 150,
-            valueGetter: (value, row) => row.calculations?.totalDeductions || 0
+            valueGetter: (_value, row) => row.calculations?.totalDeductions || 0
         },
         {
             field: "netPay",
