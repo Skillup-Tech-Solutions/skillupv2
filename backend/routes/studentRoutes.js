@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const { studentOnly } = require("../middleware/roleAuth");
 const submissionController = require("../controllers/submissionController");
 const upload = require("../config/multer");
+const StudentAssignment = require("../models/StudentAssignment");
 
 // Import new controllers
 const studentAuthController = require("../controllers/studentAuthController");
