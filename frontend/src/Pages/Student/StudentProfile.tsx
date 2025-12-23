@@ -30,6 +30,7 @@ const StudentProfile = () => {
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ name: "", mobile: "" });
+    const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
     const { data, isLoading, error } = useQuery<UserProfile>({
         queryKey: ["student-profile"],
@@ -74,6 +75,26 @@ const StudentProfile = () => {
         },
     });
 
+    const passwordMutation = useMutation({
+        mutationFn: async (pwdData: any) => {
+            const response = await axios.post(
+                `${import.meta.env.VITE_APP_BASE_URL}user/change-password`,
+                pwdData,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            );
+            return response.data;
+        },
+        onSuccess: () => {
+            CustomSnackBar.successSnackbar("Password updated successfully!");
+            setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        },
+        onError: (error: any) => {
+            CustomSnackBar.errorSnackbar(error.response?.data?.message || "Failed to update password");
+        },
+    });
+
     const handleSave = () => {
         if (!formData.name || formData.name.length < 3) {
             CustomSnackBar.errorSnackbar("Name must be at least 3 characters");
@@ -84,6 +105,27 @@ const StudentProfile = () => {
             return;
         }
         updateMutation.mutate(formData);
+    };
+
+    const handleChangePassword = () => {
+        if (!passwordData.currentPassword || !passwordData.newPassword) {
+            CustomSnackBar.errorSnackbar("Please fill all fields");
+            return;
+        }
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            CustomSnackBar.errorSnackbar("Passwords do not match");
+            return;
+        }
+        if (passwordData.newPassword.length < 6) {
+            CustomSnackBar.errorSnackbar("Password must be at least 6 characters");
+            return;
+        }
+
+        passwordMutation.mutate({
+            email: data?.email,
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword
+        });
     };
 
     return (
@@ -99,131 +141,187 @@ const StudentProfile = () => {
             ) : error ? (
                 <Alert severity="error">Failed to load profile.</Alert>
             ) : (
-                <Card
-                    sx={{
-                        maxWidth: 600,
-                        borderRadius: 3,
-                        border: "1px solid #e5e7eb",
-                    }}
-                >
-                    <CardContent sx={{ p: 4 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-                            <Avatar
-                                sx={{
-                                    width: 80,
-                                    height: 80,
-                                    fontSize: 32,
-                                    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                                }}
-                            >
-                                {data?.name?.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box sx={{ ml: 3 }}>
-                                <Typography variant="h5" fontWeight="600">
-                                    {data?.name}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {data?.email}
-                                </Typography>
-                                <Typography
-                                    variant="caption"
+                <>
+                    <Card
+                        sx={{
+                            maxWidth: 600,
+                            borderRadius: 3,
+                            border: "1px solid #e5e7eb",
+                        }}
+                    >
+                        <CardContent sx={{ p: 4 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
+                                <Avatar
                                     sx={{
-                                        px: 1.5,
-                                        py: 0.5,
-                                        mt: 1,
-                                        display: "inline-block",
-                                        borderRadius: 2,
-                                        backgroundColor: data?.status === "Active" || data?.status === "Self-Signed" ? "#dcfce7" : "#fef3c7",
-                                        color: data?.status === "Active" || data?.status === "Self-Signed" ? "#166534" : "#92400e",
+                                        width: 80,
+                                        height: 80,
+                                        fontSize: 32,
+                                        background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
                                     }}
                                 >
-                                    {data?.status}
-                                </Typography>
+                                    {data?.name?.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Box sx={{ ml: 3 }}>
+                                    <Typography variant="h5" fontWeight="600">
+                                        {data?.name}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {data?.email}
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            px: 1.5,
+                                            py: 0.5,
+                                            mt: 1,
+                                            display: "inline-block",
+                                            borderRadius: 2,
+                                            backgroundColor: data?.status === "Active" || data?.status === "Self-Signed" ? "#dcfce7" : "#fef3c7",
+                                            color: data?.status === "Active" || data?.status === "Self-Signed" ? "#166534" : "#92400e",
+                                        }}
+                                    >
+                                        {data?.status}
+                                    </Typography>
+                                </Box>
                             </Box>
-                        </Box>
 
-                        {isEditing ? (
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                <TextField
-                                    label="Full Name"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    fullWidth
-                                    size="small"
-                                />
-                                <TextField
-                                    label="Mobile Number"
-                                    value={formData.mobile}
-                                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                    fullWidth
-                                    size="small"
-                                />
-                                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                            {isEditing ? (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                    <TextField
+                                        label="Full Name"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        fullWidth
+                                        size="small"
+                                    />
+                                    <TextField
+                                        label="Mobile Number"
+                                        value={formData.mobile}
+                                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                                        fullWidth
+                                        size="small"
+                                    />
+                                    <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleSave}
+                                            disabled={updateMutation.isPending}
+                                            sx={{ ...submitButtonStyle, borderRadius: 2 }}
+                                        >
+                                            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => {
+                                                setIsEditing(false);
+                                                setFormData({ name: data?.name || "", mobile: data?.mobile || "" });
+                                            }}
+                                            sx={{ ...cancelButtonStyle, borderRadius: 2 }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Full Name
+                                        </Typography>
+                                        <Typography variant="body1">{data?.name}</Typography>
+                                    </Box>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Email Address
+                                        </Typography>
+                                        <Typography variant="body1">{data?.email}</Typography>
+                                    </Box>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Mobile Number
+                                        </Typography>
+                                        <Typography variant="body1">{data?.mobile}</Typography>
+                                    </Box>
+                                    <Box sx={{ mb: 3 }}>
+                                        <Typography variant="caption" color="text.secondary">
+                                            Member Since
+                                        </Typography>
+                                        <Typography variant="body1">
+                                            {data?.createdAt
+                                                ? new Date(data.createdAt).toLocaleDateString("en-US", {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                })
+                                                : "N/A"}
+                                        </Typography>
+                                    </Box>
                                     <Button
                                         variant="contained"
-                                        onClick={handleSave}
-                                        disabled={updateMutation.isPending}
+                                        onClick={() => setIsEditing(true)}
                                         sx={{ ...submitButtonStyle, borderRadius: 2 }}
                                     >
-                                        {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                                        Edit Profile
                                     </Button>
+                                </Box>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card
+                        sx={{
+                            maxWidth: 600,
+                            borderRadius: 3,
+                            border: "1px solid #e5e7eb",
+                            mt: 4
+                        }}
+                    >
+                        <CardContent sx={{ p: 4 }}>
+                            <Typography variant="h6" fontWeight="bold" sx={{ mb: 3, display: "flex", alignItems: "center", gap: 1 }}>
+                                🔒 Security Settings
+                            </Typography>
+
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                                <TextField
+                                    label="Current Password"
+                                    type="password"
+                                    value={passwordData.currentPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                                    fullWidth
+                                    size="small"
+                                />
+                                <TextField
+                                    label="New Password"
+                                    type="password"
+                                    value={passwordData.newPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                    fullWidth
+                                    size="small"
+                                    helperText="Minimum 6 characters"
+                                />
+                                <TextField
+                                    label="Confirm New Password"
+                                    type="password"
+                                    value={passwordData.confirmPassword}
+                                    onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                    fullWidth
+                                    size="small"
+                                />
+                                <Box sx={{ mt: 1 }}>
                                     <Button
-                                        variant="outlined"
-                                        onClick={() => {
-                                            setIsEditing(false);
-                                            setFormData({ name: data?.name || "", mobile: data?.mobile || "" });
-                                        }}
-                                        sx={{ ...cancelButtonStyle, borderRadius: 2 }}
+                                        variant="contained"
+                                        onClick={handleChangePassword}
+                                        disabled={passwordMutation.isPending}
+                                        color="error"
+                                        sx={{ borderRadius: 2, textTransform: "none", px: 4 }}
                                     >
-                                        Cancel
+                                        {passwordMutation.isPending ? "Updating..." : "Update Password"}
                                     </Button>
                                 </Box>
                             </Box>
-                        ) : (
-                            <Box>
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Full Name
-                                    </Typography>
-                                    <Typography variant="body1">{data?.name}</Typography>
-                                </Box>
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Email Address
-                                    </Typography>
-                                    <Typography variant="body1">{data?.email}</Typography>
-                                </Box>
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Mobile Number
-                                    </Typography>
-                                    <Typography variant="body1">{data?.mobile}</Typography>
-                                </Box>
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Member Since
-                                    </Typography>
-                                    <Typography variant="body1">
-                                        {data?.createdAt
-                                            ? new Date(data.createdAt).toLocaleDateString("en-US", {
-                                                year: "numeric",
-                                                month: "long",
-                                                day: "numeric",
-                                            })
-                                            : "N/A"}
-                                    </Typography>
-                                </Box>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => setIsEditing(true)}
-                                    sx={{ ...submitButtonStyle, borderRadius: 2 }}
-                                >
-                                    Edit Profile
-                                </Button>
-                            </Box>
-                        )}
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </>
             )}
         </Box>
     );
