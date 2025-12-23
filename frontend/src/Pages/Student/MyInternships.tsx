@@ -16,6 +16,9 @@ import {
     IconButton,
     Divider,
     Stack,
+    Stepper,
+    Step,
+    StepLabel,
 } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -36,7 +39,8 @@ import {
 } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
-import { primaryButtonStyle, outlinedButtonStyle, dangerButtonStyle } from "../../assets/Styles/ButtonStyles";
+import { outlinedButtonStyle, dangerButtonStyle } from "../../assets/Styles/ButtonStyles";
+import { downloadFileAsBlob } from "../../utils/normalizeUrl";
 
 const MyInternships = () => {
     const token = Cookies.get("skToken");
@@ -66,18 +70,26 @@ const MyInternships = () => {
     });
 
     const handleDownload = (path: string, filename: string) => {
-        const link = document.createElement("a");
-        if (path.startsWith("http")) {
-            link.href = path;
-        } else {
-            link.href = `${import.meta.env.VITE_APP_BASE_URL}/${path}`;
-        }
-        link.setAttribute("download", filename);
-        link.target = "_blank";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadFileAsBlob(path, filename).catch(() =>
+            CustomSnackBar.errorSnackbar("Download failed")
+        );
     };
+
+    // Get current step for progress stepper
+    const getActiveStep = (assignment: any) => {
+        const status = assignment.status;
+        const paymentStatus = assignment.payment?.status;
+        const paymentRequired = assignment.payment?.required;
+
+        if (status === "completed") return 4;
+        if (status === "in-progress" || status === "assigned" && !paymentRequired) return 2;
+        if (paymentStatus === "paid") return 2;
+        if (paymentStatus === "pending") return 1;
+        return 0;
+    };
+
+    // Progress steps with labels
+    const progressSteps = ["Enrolled", "Payment", "Working", "Completed"];
 
     // Get status badge
     const getStatusBadge = (assignment: any) => {
@@ -242,6 +254,23 @@ const MyInternships = () => {
                                         </Typography>
                                     )}
                                 </CardContent>
+
+                                <Divider />
+
+                                {/* Progress Stepper */}
+                                <Box sx={{ p: 2, bgcolor: "#f8fafc" }}>
+                                    <Stepper activeStep={getActiveStep(assignment)} alternativeLabel sx={{
+                                        "& .MuiStepIcon-root.Mui-active": { color: "var(--webprimary)" },
+                                        "& .MuiStepIcon-root.Mui-completed": { color: "#22c55e" },
+                                        "& .MuiStepLabel-label": { fontFamily: "Regular_W", fontSize: "11px" }
+                                    }}>
+                                        {progressSteps.map((label) => (
+                                            <Step key={label}>
+                                                <StepLabel>{label}</StepLabel>
+                                            </Step>
+                                        ))}
+                                    </Stepper>
+                                </Box>
 
                                 <Divider />
 
