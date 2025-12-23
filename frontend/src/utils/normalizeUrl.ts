@@ -1,14 +1,44 @@
 import config from "../Config/Config";
 
 /**
+ * Checks if a string looks like a raw file path (not a full URL)
+ */
+const isFilePath = (str: string): boolean => {
+    // Raw file paths don't start with http/https and typically have a format like:
+    // "deliveries/filename.pdf" or "courses/image.png"
+    return !str.startsWith('http://') &&
+        !str.startsWith('https://') &&
+        !str.startsWith('/api/') &&
+        (str.includes('/') || str.match(/\.[a-z0-9]+$/i) !== null);
+};
+
+/**
+ * Constructs a download URL from a raw file path
+ * @param filePath - The file path like "deliveries/filename.pdf"
+ * @returns The full download URL
+ */
+export const buildDownloadUrl = (filePath: string): string => {
+    const cleanPath = filePath.startsWith('/') ? filePath.slice(1) : filePath;
+    return `${config.BASE_URL_MAIN}/api/files/download?file=${encodeURIComponent(cleanPath)}`;
+};
+
+/**
  * Normalizes file URLs to use the correct backend URL.
- * Handles legacy URLs that may contain localhost or different domains.
+ * Handles:
+ * - Legacy URLs with localhost or different domains
+ * - Raw file paths like "deliveries/filename.pdf"
+ * - Already correct URLs
  * 
- * @param url - The URL to normalize (can be full URL or relative path)
+ * @param url - The URL or file path to normalize
  * @returns The normalized URL using the current BASE_URL_MAIN
  */
 export const normalizeFileUrl = (url: string | null | undefined): string => {
     if (!url) return '';
+
+    // If it's a raw file path, build the download URL
+    if (isFilePath(url)) {
+        return buildDownloadUrl(url);
+    }
 
     // If it's already using the correct base URL, return as-is
     if (url.startsWith(config.BASE_URL_MAIN)) {
@@ -37,9 +67,15 @@ export const normalizeFileUrl = (url: string | null | undefined): string => {
 /**
  * Helper specifically for file download URLs
  * Converts various URL formats to the correct /api/files/download endpoint
+ * Also handles raw file paths like "deliveries/filename.pdf"
  */
 export const normalizeDownloadUrl = (url: string | null | undefined): string => {
     if (!url) return '';
+
+    // If it's a raw file path, build the download URL directly
+    if (isFilePath(url)) {
+        return buildDownloadUrl(url);
+    }
 
     // If it contains the download endpoint, normalize it
     if (url.includes('/api/files/download')) {
@@ -63,3 +99,4 @@ export const normalizeDownloadUrl = (url: string | null | undefined): string => 
 };
 
 export default normalizeFileUrl;
+

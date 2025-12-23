@@ -103,30 +103,20 @@ exports.uploadFile = async (fileBuffer, fileName, folder = "") => {
             data: fileBuffer
         });
 
-        // Construct a friendly URL (public URL)
-        // Format: https://f000.backblazeb2.com/file/<BucketName>/<FileName>
-        // We need the friendly hostname which is usually returned in authorize or we can construct it.
-        // Or specific S3 compatible URL. 
-        // B2 Native URL: https://f002.backblazeb2.com/file/myBubbleBucket/myPhoto.jpg
-
-        // We can get download URL base from authorize response
-        // But simply, we can construct the file info.
-
-        // Ideally we return the fileId and a URL.
-
-        // Generate a signed URL for immediate usage or return a proxy URL
-        // We will return a proxy URL that points to our backend, which will then generate a signed B2 URL.
-        // This ensures "auth based" access.
-        const proxyUrl = `${process.env.APP_API_URL || process.env.VITE_APP_BASE_URL || 'http://localhost:5000'}/api/files/download?file=${finalName}`;
-
         const bucketName = process.env.B2_BUCKET_NAME;
 
-        // Also helpful to return the direct B2 path info
+        // DYNAMIC SOLUTION: Return only the file path, not a full URL
+        // The frontend will construct the full URL using its own BASE_URL config
+        // This avoids storing localhost URLs in the database
         return {
             fileId: response.data.fileId,
-            fileName: response.data.fileName,
-            url: proxyUrl, // Frontend uses this to "download"
-            b2Url: `${downloadUrlCache}/file/${bucketName}/${finalName}` // For debug/admin if needed
+            fileName: response.data.fileName,  // Full path like "deliveries/filename-123.pdf"
+            filePath: finalName,               // Same as fileName but explicitly named
+            // Only include full URL if APP_API_URL is configured (for backward compatibility)
+            url: process.env.APP_API_URL
+                ? `${process.env.APP_API_URL}/api/files/download?file=${finalName}`
+                : null,
+            b2Url: downloadUrlCache ? `${downloadUrlCache}/file/${bucketName}/${finalName}` : null
         };
 
     } catch (err) {
