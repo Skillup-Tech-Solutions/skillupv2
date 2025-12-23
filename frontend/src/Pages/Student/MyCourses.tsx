@@ -16,6 +16,12 @@ import {
     IconButton,
     Divider,
     Stack,
+    Stepper,
+    Step,
+    StepLabel,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -32,11 +38,15 @@ import {
     MdDescription,
     MdCloudDownload,
     MdCheckCircle,
+    MdExpandMore,
+    MdHistory,
+    MdAssignment,
 } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import config from "../../Config/Config";
 import { primaryButtonStyle, outlinedButtonStyle, dangerButtonStyle } from "../../assets/Styles/ButtonStyles";
+import { downloadFileAsBlob } from "../../utils/normalizeUrl";
 
 const MyCourses = () => {
     const token = Cookies.get("skToken");
@@ -90,18 +100,26 @@ const MyCourses = () => {
     });
 
     const handleDownload = (path: string, filename: string) => {
-        const link = document.createElement("a");
-        if (path.startsWith("http")) {
-            link.href = path;
-        } else {
-            link.href = `${import.meta.env.VITE_APP_BASE_URL}/${path}`;
-        }
-        link.setAttribute("download", filename);
-        link.target = "_blank";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadFileAsBlob(path, filename).catch(() =>
+            CustomSnackBar.errorSnackbar("Download failed")
+        );
     };
+
+    // Get current step for progress stepper
+    const getActiveStep = (assignment: any) => {
+        const status = assignment.status;
+        const paymentStatus = assignment.payment?.status;
+        const paymentRequired = assignment.payment?.required;
+
+        if (status === "completed") return 4;
+        if (status === "in-progress" || status === "assigned" && !paymentRequired) return 2;
+        if (paymentStatus === "paid") return 2;
+        if (paymentStatus === "pending") return 1;
+        return 0;
+    };
+
+    // Progress steps with labels
+    const progressSteps = ["Enrolled", "Payment", "Learning", "Completed"];
 
     // Get status badge
     const getStatusBadge = (assignment: any) => {
@@ -282,6 +300,23 @@ const MyCourses = () => {
 
                                 <Divider />
 
+                                {/* Progress Stepper */}
+                                <Box sx={{ p: 2, bgcolor: "#f8fafc" }}>
+                                    <Stepper activeStep={getActiveStep(assignment)} alternativeLabel sx={{
+                                        "& .MuiStepIcon-root.Mui-active": { color: "var(--webprimary)" },
+                                        "& .MuiStepIcon-root.Mui-completed": { color: "#22c55e" },
+                                        "& .MuiStepLabel-label": { fontFamily: "Regular_W", fontSize: "11px" }
+                                    }}>
+                                        {progressSteps.map((label) => (
+                                            <Step key={label}>
+                                                <StepLabel>{label}</StepLabel>
+                                            </Step>
+                                        ))}
+                                    </Stepper>
+                                </Box>
+
+                                <Divider />
+
                                 {/* Action Section */}
                                 <Box sx={{ p: 3 }}>
                                     {/* PAYMENT REQUIRED */}
@@ -454,6 +489,79 @@ const MyCourses = () => {
                                                 Your course will start soon. Check back for updates.
                                             </Typography>
                                         </Box>
+                                    )}
+
+                                    {/* MY SUBMISSIONS SECTION */}
+                                    {assignment.courseSubmissions?.length > 0 && (
+                                        <Accordion
+                                            elevation={0}
+                                            sx={{
+                                                mt: 2,
+                                                border: "1px solid #e0e0e0",
+                                                borderRadius: "8px !important",
+                                                "&:before": { display: "none" }
+                                            }}
+                                        >
+                                            <AccordionSummary
+                                                expandIcon={<MdExpandMore />}
+                                                sx={{
+                                                    bgcolor: "#f8fafc",
+                                                    borderRadius: "8px",
+                                                    minHeight: "48px",
+                                                    "& .MuiAccordionSummary-content": { my: 1 }
+                                                }}
+                                            >
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                    <MdHistory color="var(--webprimary)" size={18} />
+                                                    <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "13px", color: "var(--title)" }}>
+                                                        My Submissions ({assignment.courseSubmissions.length})
+                                                    </Typography>
+                                                </Box>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ p: 0 }}>
+                                                {assignment.courseSubmissions.map((sub: any, idx: number) => (
+                                                    <Box
+                                                        key={idx}
+                                                        sx={{
+                                                            p: 2,
+                                                            borderTop: idx > 0 ? "1px solid #e0e0e0" : "none",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "space-between"
+                                                        }}
+                                                    >
+                                                        <Box>
+                                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                                <MdAssignment color="var(--greyText)" size={16} />
+                                                                <Typography sx={{ fontFamily: "Medium_W", fontSize: "13px" }}>
+                                                                    {sub.fileName}
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "var(--greyText)", mt: 0.5 }}>
+                                                                Submitted: {new Date(sub.uploadedAt).toLocaleString()}
+                                                            </Typography>
+                                                            {sub.notes && (
+                                                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "var(--greyText)", fontStyle: "italic" }}>
+                                                                    Notes: {sub.notes}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                        <Button
+                                                            size="small"
+                                                            startIcon={<MdDownload />}
+                                                            onClick={() => handleDownload(sub.filePath, sub.fileName)}
+                                                            sx={{
+                                                                fontFamily: "Medium_W",
+                                                                fontSize: "11px",
+                                                                color: "var(--webprimary)"
+                                                            }}
+                                                        >
+                                                            Download
+                                                        </Button>
+                                                    </Box>
+                                                ))}
+                                            </AccordionDetails>
+                                        </Accordion>
                                     )}
 
                                     {/* Course Materials */}
