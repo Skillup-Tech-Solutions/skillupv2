@@ -1,4 +1,5 @@
 import config from "../Config/Config";
+import Cookies from "js-cookie";
 
 /**
  * Checks if a string looks like a raw file path (not a full URL)
@@ -98,5 +99,77 @@ export const normalizeDownloadUrl = (url: string | null | undefined): string => 
     return normalizeFileUrl(url);
 };
 
-export default normalizeFileUrl;
+/**
+ * Downloads a file using blob approach - fetches via proxy and downloads locally
+ * This ensures the file is downloaded through the authenticated backend proxy
+ * 
+ * @param filePathOrUrl - The file path or URL to download
+ * @param fileName - Optional filename for the downloaded file
+ * @param onProgress - Optional progress callback
+ * @returns Promise that resolves when download is complete
+ */
+export const downloadFileAsBlob = async (
+    filePathOrUrl: string | null | undefined,
+    fileName?: string,
+    onProgress?: (percent: number) => void
+): Promise<void> => {
+    if (!filePathOrUrl) {
+        throw new Error('File path is required');
+    }
 
+    const downloadUrl = normalizeDownloadUrl(filePathOrUrl);
+    const token = Cookies.get('skToken');
+
+    try {
+        const response = await fetch(downloadUrl, {
+            method: 'GET',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        });
+
+        if (!response.ok) {
+            throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+        }
+
+        // Get the blob
+        const blob = await response.blob();
+
+        // Determine filename
+        let finalFileName = fileName;
+        if (!finalFileName) {
+            // Try to get filename from Content-Disposition header
+            const contentDisposition = response.headers.get('Content-Disposition');
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match && match[1]) {
+                    finalFileName = match[1].replace(/['"]/g, '');
+                }
+            }
+            // Fall back to extracting from the path
+            if (!finalFileName) {
+                const pathParts = filePathOrUrl.split('/');
+                finalFileName = pathParts[pathParts.length - 1].split('?')[0];
+            }
+        }
+
+        // Create blob URL and trigger download
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = finalFileName || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Clean up the blob URL
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+
+        if (onProgress) {
+            onProgress(100);
+        }
+    } catch (error) {
+        console.error('[downloadFileAsBlob] Download error:', error);
+        throw error;
+    }
+};
+
+export default normalizeFileUrl;

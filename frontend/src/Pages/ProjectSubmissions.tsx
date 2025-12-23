@@ -38,6 +38,7 @@ import {
 } from "react-icons/md";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import { smallPrimaryButton, dangerButtonStyle, cancelButtonStyle, textLinkStyle } from "../assets/Styles/ButtonStyles";
+import { downloadFileAsBlob } from "../utils/normalizeUrl";
 
 const statusOptions = [
     { value: "assigned", label: "Assigned" },
@@ -587,9 +588,7 @@ const ProjectSubmissions = () => {
                                                 variant="outlined"
                                                 size="small"
                                                 startIcon={<MdDownload />}
-                                                href={file.filePath.startsWith("http") ? file.filePath : `${import.meta.env.VITE_APP_BASE_URL}/${file.filePath}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
+                                                onClick={() => downloadFileAsBlob(file.filePath, file.fileName).catch(() => CustomSnackBar.errorSnackbar('Download failed'))}
                                             >
                                                 {file.fileName}
                                             </Button>
@@ -719,7 +718,12 @@ const ProjectSubmissions = () => {
                                         <Typography variant="body2" fontWeight="600">{file.fileName}</Typography>
                                         <Chip label={file.fileType} size="small" sx={{ mt: 0.5, height: 20, fontSize: "0.7rem" }} />
                                     </Box>
-                                    <Button size="small" variant="outlined" href={file.filePath} target="_blank" rel="noopener noreferrer" startIcon={<MdDownload />}>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<MdDownload />}
+                                        onClick={() => downloadFileAsBlob(file.filePath, file.fileName).catch(() => CustomSnackBar.errorSnackbar('Download failed'))}
+                                    >
                                         Download
                                     </Button>
                                 </Box>
