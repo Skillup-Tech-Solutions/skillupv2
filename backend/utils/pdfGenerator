@@ -1,0 +1,29 @@
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+
+function generatePDF(data, filename) {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument();
+    const filePath = path.join(__dirname, '..', 'temp', filename);
+    const stream = fs.createWriteStream(filePath);
+
+    doc.pipe(stream);
+
+    doc.fontSize(18).text('Course Certificate Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(14).text(`Name: ${data.name}`);
+    doc.text(`Email: ${data.email}`);
+    doc.text(`Certification: ${data.certification}`);
+    doc.text(`Course Name: ${data.courseName}`);
+    doc.text(`From: ${data.fromDate}`);
+    doc.text(`To: ${data.toDate}`);
+
+    doc.end();
+
+    stream.on('finish', () => resolve(filePath));
+    stream.on('error', (err) => reject(err));
+  });
+}
+
+module.exports = generatePDF;
