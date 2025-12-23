@@ -1,5 +1,5 @@
 {
-    "name": "skillupv2-frontend",
+    "name": "skillupv2",
     "compatibility_date": "2025-12-23",
     "assets": {
         "directory": "./dist",
