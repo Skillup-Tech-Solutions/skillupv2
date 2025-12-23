@@ -109,7 +109,9 @@ exports.getMyAssignments = async (req, res, next) => {
 // Get dashboard stats
 exports.getDashboard = async (req, res, next) => {
     try {
-        const assignments = await StudentAssignment.find({ student: req.user.id }).lean();
+        const assignments = await StudentAssignment.find({ student: req.user.id })
+            .populate("itemId")
+            .lean();
 
         const stats = {
             totalCourses: assignments.filter(a => a.itemType === "course").length,
@@ -120,6 +122,18 @@ exports.getDashboard = async (req, res, next) => {
             assigned: assignments.filter(a => a.status === "assigned").length
         };
 
+        // Get Recent Activity (Last 3 updated/assigned items that are NOT completed)
+        const recentActivity = assignments
+            .filter(a => a.status !== "completed" && a.status !== "delivered")
+            .sort((a, b) => new Date(b.updatedAt || b.assignedAt) - new Date(a.updatedAt || a.assignedAt))
+            .slice(0, 3);
+
+        // Get Upcoming Deadlines (Projects with deadlines in the future)
+        const upcomingDeadlines = assignments
+            .filter(a => a.itemType === "project" && a.itemId?.deadline && new Date(a.itemId.deadline) > new Date())
+            .sort((a, b) => new Date(a.itemId.deadline) - new Date(b.itemId.deadline))
+            .slice(0, 3);
+
         const announcements = await Announcement.find({
             isActive: true,
             targetAudience: { $in: ["all", "students"] }
@@ -128,7 +142,12 @@ exports.getDashboard = async (req, res, next) => {
             .limit(5)
             .lean();
 
-        res.status(200).json({ stats, recentAnnouncements: announcements });
+        res.status(200).json({
+            stats,
+            recentAnnouncements: announcements,
+            recentActivity,
+            upcomingDeadlines
+        });
     } catch (err) {
         next(err);
     }
