@@ -303,8 +303,14 @@ const Users = () => {
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    if (getUsersResponse?.data) {
-      setRows(getUsersResponse.data);
+    if (getUsersResponse) {
+      // Handle both cases: when API returns array directly or wrapped in data property
+      const usersData = Array.isArray(getUsersResponse)
+        ? getUsersResponse
+        : getUsersResponse.data;
+      if (usersData) {
+        setRows(usersData);
+      }
     }
   }, [getUsersResponse]);
 
@@ -483,7 +489,7 @@ const Users = () => {
     switch (status) {
       case "Active": return "✓ Active";
       case "Self-Signed": return "✓ Verified";
-      case "Invited": return "📧 Invited";
+      case "Invited": return "Invited";
       case "Created": return "🕐 Pending";
       case "Suspended": return "⛔ Suspended";
       default: return status;

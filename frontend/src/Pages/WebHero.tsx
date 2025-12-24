@@ -25,7 +25,7 @@ const WebHero = () => {
           "@media (max-width: 450px)": { fontSize: "24px" },
         }}
       >
-        Build Your Future with Tech-Driven Learning
+        Custom Software Development & Tech Training
       </Typography>
       <Typography
         variant="h6"
@@ -35,8 +35,7 @@ const WebHero = () => {
           "@media (max-width: 768px)": { fontSize: "14px" },
         }}
       >
-        From Web Solutions to Inplant Training, Internships, Courses, and Final
-        Year Projects — We Shape Careers.
+        Web & App Development, Cloud Solutions, AI/ML — Plus Training, Internships, and Final Year Projects.
       </Typography>
       <Box
         sx={{

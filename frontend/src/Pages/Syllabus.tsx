@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -105,28 +105,28 @@ const Syllabus: React.FC = () => {
   const { mutate: lessonDelete } = SyllabusDeleteApi();
   const { mutate: lessonUpdate } = lessonUpdateApi();
   const [loading, setLoading] = useState(false);
-  // Transform API data to match our interface
-  const transformedSyllabusData: SyllabusData[] =
-    lessonData && Array.isArray(lessonData)
-      ? lessonData.map((item: any) => ({
-        id: item._id,
-        course: item.courseId._id,
-        courseName: item.courseId.name,
-        status: "Active", // You can add status field to your API response if needed
-        units: (item.units || []).map((unit: any) => ({
-          id: unit._id,
-          unitName: unit.unitName,
-          unitDescription: unit.unitDescription || "",
-          lessons: (unit.lessons || []).map((lesson: any) => ({
-            id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
-            lessonName:
-              lesson.title || lesson.lessonName || "Untitled Lesson",
-            lessonDescription:
-              lesson.description || lesson.lessonDescription || "",
-          })),
+  // Memoize transformed API data to avoid recalculation on every render
+  const transformedSyllabusData: SyllabusData[] = useMemo(() => {
+    if (!lessonData || !Array.isArray(lessonData)) return [];
+    return lessonData.map((item: any) => ({
+      id: item._id,
+      course: item.courseId._id,
+      courseName: item.courseId.name,
+      status: "Active", // You can add status field to your API response if needed
+      units: (item.units || []).map((unit: any) => ({
+        id: unit._id,
+        unitName: unit.unitName,
+        unitDescription: unit.unitDescription || "",
+        lessons: (unit.lessons || []).map((lesson: any) => ({
+          id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
+          lessonName:
+            lesson.title || lesson.lessonName || "Untitled Lesson",
+          lessonDescription:
+            lesson.description || lesson.lessonDescription || "",
         })),
-      }))
-      : [];
+      })),
+    }));
+  }, [lessonData]);
 
   // Main state
   const [syllabusData, setSyllabusData] = useState<SyllabusData[]>(
@@ -186,12 +186,13 @@ const Syllabus: React.FC = () => {
     unitId?: string;
   } | null>(null);
 
-  // Course options
-  const courseOptions =
-    coursesData?.courses?.map((course: any) => ({
+  // Memoize course options to avoid recalculating on every render
+  const courseOptions = useMemo(() => {
+    return coursesData?.courses?.map((course: any) => ({
       label: course.name,
       value: course._id,
     })) || [];
+  }, [coursesData]);
 
   // Forms
   const mainForm = useForm({

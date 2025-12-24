@@ -3,10 +3,10 @@ import CountUp from "react-countup";
 
 // Numeric values extracted separately for animation
 const stats = [
-  { label: "Projects", value: 200 },
-  { label: "Placed Students", value: 80 },
+  { label: "Software Projects", value: 200 },
+  { label: "Clients Served", value: 80 },
   { label: "Experience", value: 3, suffix: "+ Years" },
-  { label: "Happy Clients", value: 99 },
+  { label: "Success Rate", value: 99 },
 ];
 
 const WebCount = () => {

@@ -77,22 +77,34 @@ const WebFooter = () => {
                 <IoIosMail style={{ fontSize: "18px" }} />
                 skilluptechsolution@gmail.com
               </Typography>
-              <Typography
-                component={"a"}
-                href="tel:8220079950"
-                sx={{
-                  display: "flex",
-                  gap: "3px",
-                  color: "var(--title)",
-                  fontFamily: "Regular_W",
-                  textDecoration: "none",
-                  fontSize: "12px",
-                  alignItems: "center",
-                }}
-              >
-                <FaPhoneAlt style={{ fontSize: "14px" }} />
-                +91 8220079950
-              </Typography>
+              <Box sx={{ display: "flex", gap: "3px", alignItems: "center" }}>
+                <FaPhoneAlt style={{ fontSize: "14px", color: "var(--title)" }} />
+                <Typography
+                  component={"a"}
+                  href="tel:8220079950"
+                  sx={{
+                    color: "var(--title)",
+                    fontFamily: "Regular_W",
+                    textDecoration: "none",
+                    fontSize: "12px",
+                  }}
+                >
+                  +91 8220079950
+                </Typography>
+                <span style={{ color: "var(--title)", fontFamily: "Regular_W", fontSize: "12px" }}>,</span>
+                <Typography
+                  component={"a"}
+                  href="tel:8220669990"
+                  sx={{
+                    color: "var(--title)",
+                    fontFamily: "Regular_W",
+                    textDecoration: "none",
+                    fontSize: "12px",
+                  }}
+                >
+                  8220669990
+                </Typography>
+              </Box>
             </Box>
           </Box>
         </Box>
@@ -159,105 +171,14 @@ const WebFooter = () => {
             Contact Us
           </Link>
         </Box>
-        <Box>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "SemiBold_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "10px",
-            }}
-          >
-            Services
-          </Link>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "Regular_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "10px",
-            }}
-          >
-            Courses
-          </Link>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "Regular_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "10px",
-            }}
-          >
-            Inplant Training
-          </Link>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "Regular_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "10px",
-            }}
-          >
-            Intenship
-          </Link>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "Regular_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "10px",
-            }}
-          >
-            Final Year Project
-          </Link>
-          <Link
-            to="/services"
-            style={{
-              display: "flex",
-              gap: "3px",
-              color: "var(--title)",
-              fontFamily: "Regular_W",
-              textDecoration: "none",
-              fontSize: "12px",
-              alignItems: "center",
-              paddingBottom: "5px",
-            }}
-          >
-            Workshop
-          </Link>
-        </Box>
+        {/* Software Development - Now First */}
         <Box>
           <Link
             to="/itservices"
             style={{
               display: "flex",
               gap: "3px",
-              color: "var(--title)",
+              color: "var(--webprimary)",
               fontFamily: "SemiBold_W",
               textDecoration: "none",
               fontSize: "12px",
@@ -307,10 +228,118 @@ const WebFooter = () => {
               textDecoration: "none",
               fontSize: "12px",
               alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Cloud Solutions
+          </Link>
+          <Link
+            to="/itservices"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
               paddingBottom: "5px",
             }}
           >
-            Digital Marketing
+            AI & Machine Learning
+          </Link>
+        </Box>
+        {/* Services - Now Second */}
+        <Box>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "SemiBold_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Training & Courses
+          </Link>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Courses
+          </Link>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Inplant Training
+          </Link>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Internship
+          </Link>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "10px",
+            }}
+          >
+            Final Year Project
+          </Link>
+          <Link
+            to="/services"
+            style={{
+              display: "flex",
+              gap: "3px",
+              color: "var(--title)",
+              fontFamily: "Regular_W",
+              textDecoration: "none",
+              fontSize: "12px",
+              alignItems: "center",
+              paddingBottom: "5px",
+            }}
+          >
+            Workshop
           </Link>
         </Box>
         <Box>
