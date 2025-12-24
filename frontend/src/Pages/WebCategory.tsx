@@ -547,7 +547,7 @@ const WebCategory = () => {
                     fontSize: "24px",
                   }}
                 >
-                  👨‍💼
+
                 </Box>
                 <Typography
                   variant="h6"

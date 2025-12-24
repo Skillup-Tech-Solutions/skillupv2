@@ -411,7 +411,7 @@ const EmployeeManagement = () => {
             {/* Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
                 <Typography variant="h5" fontWeight="bold">
-                    👨‍💼 Employee Management
+                    Employee Management
                 </Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <Tooltip title="Refresh">
