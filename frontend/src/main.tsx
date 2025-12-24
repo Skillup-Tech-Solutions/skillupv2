@@ -4,6 +4,8 @@ import './index.css'
 import App from './App.tsx'
 // Import interceptor to register global axios interceptors for token refresh
 import './Interceptors/Interceptor'
+// Import PWA registration from vite-plugin-pwa
+import { registerSW } from 'virtual:pwa-register'
 
 // Handle chunk load errors (happens after deployment when old chunks no longer exist)
 // This will auto-refresh the page once to get the latest version
@@ -46,16 +48,31 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Register Service Worker for image caching (production only)
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then((registration) => {
-        console.log('[App] Service Worker registered:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('[App] Service Worker registration failed:', error);
-      });
+// Register Service Worker with auto-update from vite-plugin-pwa
+// This replaces the manual service worker registration
+if ('serviceWorker' in navigator) {
+  const updateSW = registerSW({
+    onNeedRefresh() {
+      // New content available, prompt user or auto-update
+      if (confirm('New content available. Reload to update?')) {
+        updateSW(true);
+      }
+    },
+    onOfflineReady() {
+      console.log('[PWA] App ready to work offline');
+    },
+    onRegistered(registration) {
+      console.log('[PWA] Service Worker registered:', registration?.scope);
+
+      // Check for updates periodically (every hour)
+      if (registration) {
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000);
+      }
+    },
+    onRegisterError(error) {
+      console.error('[PWA] Service Worker registration failed:', error);
+    }
   });
 }

@@ -3,6 +3,7 @@ import { callApi } from "../api/apiService";
 import { apiUrls } from "../api/apiUrl";
 import type { ApiResponse } from "../Interface/interface";
 import CustomSnackBar from "../Custom/CustomSnackBar";
+import { CACHE_TIMES } from "./ReactQueryProvider";
 
 export const useGetCoursesApi = () => {
   return useQuery({
@@ -15,6 +16,8 @@ export const useGetCoursesApi = () => {
         throw error;
       }
     },
+    // Courses update occasionally - use medium cache time
+    ...CACHE_TIMES.MEDIUM,
   });
 };
 
@@ -29,6 +32,8 @@ export const useGetActiveCoursesApi = () => {
         throw error;
       }
     },
+    // Active courses - medium cache time
+    ...CACHE_TIMES.MEDIUM,
   });
 };
 export const useCoursesAddApi = () => {

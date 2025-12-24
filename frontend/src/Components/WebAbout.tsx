@@ -51,11 +51,11 @@ const WebAbout = () => {
         <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px" }}>
           SkillUp Tech Solutions helps students and professionals become skilled
           IT experts through cutting-edge software development and hands-on
-          training programs. 
+          training programs.
           We combine industry experience, modern technology,
           and practical learning to bridge the gap between education and
-          employment. 
-           As a leading software development and training company, we
+          employment.
+          As a leading software development and training company, we
           specialize in real-world projects, inplant training, and
           career-focused IT courses designed to build future-ready
           professionals. Through partnerships with colleges, universities, and
@@ -114,7 +114,7 @@ const WebAbout = () => {
           Our Mission
         </Typography>
         <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px" }}>
-          To deliver exceptional IT services, equipping individuals with the
+          To deliver exceptional software development services, equipping individuals with the
           expertise and guidance needed to excel in their careers and make a
           meaningful impact in the tech industry.
         </Typography>

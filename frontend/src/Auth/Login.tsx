@@ -212,13 +212,13 @@ const Login = () => {
                 register={register}
                 errors={errors}
               />
-              {/* <Typography
+              <Typography
                 variant="h6"
                 sx={{ ...ForgetButton }}
                 onClick={() => navigate("/forgotpassword")}
               >
                 Forgot Password?
-              </Typography> */}
+              </Typography>
               <CustomButton type="submit" variant="contained" label="Sign in" disabled={loading} />
               {/* <Box sx={{ ...relative }}>
                 <Typography sx={{ ...loginOr }}>or</Typography>

@@ -142,7 +142,7 @@ const WebServices = () => {
                 "@media (max-width: 690px)": { fontSize: "20px" },
               }}
             >
-              IT Services
+              Software Development
             </Typography>
             <Typography
               sx={{
@@ -327,7 +327,7 @@ const WebServices = () => {
           })}
         </Box>
 
-        {/* More IT Services Indicator */}
+        {/* More Software Development Indicator */}
         <Box
           sx={{
             mt: 3,

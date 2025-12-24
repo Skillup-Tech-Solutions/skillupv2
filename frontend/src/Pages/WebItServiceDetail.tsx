@@ -333,7 +333,7 @@ const WebItServiceDetail = () => {
                     Service Not Found
                 </Typography>
                 <Typography sx={{ fontFamily: "Regular_W" }}>
-                    Please select a service from the IT Services page.
+                    Please select a service from the Software Development page.
                 </Typography>
             </Box>
         );

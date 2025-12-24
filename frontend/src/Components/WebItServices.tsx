@@ -159,7 +159,7 @@ const WebItServices = () => {
             "@media (max-width: 690px)": { fontSize: "22px" },
           }}
         >
-          IT Services
+          Software Development
         </Typography>
         <Typography
           sx={{
@@ -169,7 +169,7 @@ const WebItServices = () => {
             maxWidth: "600px",
           }}
         >
-          We provide professional IT services that empower businesses and students
+          We provide search professional software development services that empower businesses and students
           to build, grow, and compete in the digital world. From interactive
           websites to mobile apps and performance-focused solutions.
         </Typography>

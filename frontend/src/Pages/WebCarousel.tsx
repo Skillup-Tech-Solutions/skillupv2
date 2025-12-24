@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { images } from "../assets/Images/Images";
 
 const carouselData = [
-  "We Provide Outsourced IT Services & Solutions",
+  "We Provide Outsourced Software Development Services & Solutions",
   "Now learning from anywhere & build your bright career.",
   "Let’s Experience be Your Guide",
   "Transform Your Ideas Into Projects",
@@ -77,7 +77,7 @@ const WebCarousel = () => {
                   lineHeight: "1.4",
                 },
                 "@media (max-width: 690px)": { fontSize: "26px" },
-                "@media (max-width: 450px)": { fontSize: "24px",padding:"10px" },
+                "@media (max-width: 450px)": { fontSize: "24px", padding: "10px" },
               }}
             >
               {text}

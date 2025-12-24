@@ -15,7 +15,7 @@ import {
   AccordionDetails,
   Divider,
 } from "@mui/material";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import { MdEdit, MdDeleteOutline, MdExpandMore } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { useForm } from "react-hook-form";
@@ -109,23 +109,23 @@ const Syllabus: React.FC = () => {
   const transformedSyllabusData: SyllabusData[] =
     lessonData && Array.isArray(lessonData)
       ? lessonData.map((item: any) => ({
-          id: item._id,
-          course: item.courseId._id,
-          courseName: item.courseId.name,
-          status: "Active", // You can add status field to your API response if needed
-          units: (item.units || []).map((unit: any) => ({
-            id: unit._id,
-            unitName: unit.unitName,
-            unitDescription: unit.unitDescription || "",
-            lessons: (unit.lessons || []).map((lesson: any) => ({
-              id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
-              lessonName:
-                lesson.title || lesson.lessonName || "Untitled Lesson",
-              lessonDescription:
-                lesson.description || lesson.lessonDescription || "",
-            })),
+        id: item._id,
+        course: item.courseId._id,
+        courseName: item.courseId.name,
+        status: "Active", // You can add status field to your API response if needed
+        units: (item.units || []).map((unit: any) => ({
+          id: unit._id,
+          unitName: unit.unitName,
+          unitDescription: unit.unitDescription || "",
+          lessons: (unit.lessons || []).map((lesson: any) => ({
+            id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
+            lessonName:
+              lesson.title || lesson.lessonName || "Untitled Lesson",
+            lessonDescription:
+              lesson.description || lesson.lessonDescription || "",
           })),
-        }))
+        })),
+      }))
       : [];
 
   // Main state
@@ -245,9 +245,9 @@ const Syllabus: React.FC = () => {
       prev.map((item) =>
         item.id === syllabus.id
           ? {
-              ...item,
-              status: item.status === "Active" ? "InActive" : "Active",
-            }
+            ...item,
+            status: item.status === "Active" ? "InActive" : "Active",
+          }
           : item
       )
     );
@@ -284,10 +284,10 @@ const Syllabus: React.FC = () => {
         prev.map((unit) =>
           unit.id === editingUnit.id
             ? {
-                ...unit,
-                unitName: data.unitName,
-                unitDescription: data.unitDescription,
-              }
+              ...unit,
+              unitName: data.unitName,
+              unitDescription: data.unitDescription,
+            }
             : unit
         )
       );
@@ -336,13 +336,13 @@ const Syllabus: React.FC = () => {
         prev.map((unit) =>
           unit.id === currentUnitId
             ? {
-                ...unit,
-                lessons: unit.lessons.map((lesson) =>
-                  lesson.id === editingLesson.lesson.id
-                    ? { ...lesson, ...data }
-                    : lesson
-                ),
-              }
+              ...unit,
+              lessons: unit.lessons.map((lesson) =>
+                lesson.id === editingLesson.lesson.id
+                  ? { ...lesson, ...data }
+                  : lesson
+              ),
+            }
             : unit
         )
       );
@@ -423,11 +423,11 @@ const Syllabus: React.FC = () => {
         prev.map((unit) =>
           unit.id === itemToDelete.unitId
             ? {
-                ...unit,
-                lessons: unit.lessons.filter(
-                  (lesson) => lesson.id !== itemToDelete.id
-                ),
-              }
+              ...unit,
+              lessons: unit.lessons.filter(
+                (lesson) => lesson.id !== itemToDelete.id
+              ),
+            }
             : unit
         )
       );

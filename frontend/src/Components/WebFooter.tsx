@@ -50,8 +50,9 @@ const WebFooter = () => {
                 justifyContent: "center",
                 alignItems: "center",
                 borderRadius: "3px",
-                cursor:"pointer"
+                cursor: "pointer",
               }}
+              onClick={() => navigate("/")}
             >
               <Box
                 component={"img"}
@@ -402,13 +403,13 @@ const WebFooter = () => {
             paddingTop: "20px",
           }}
         >
-          © <span id="year">{currentYear}</span> <Typography component={"a"}           sx={{
+          © <span id="year">{currentYear}</span> <Typography component={"a"} sx={{
             color: "var(--title)",
             fontFamily: "Regular_W",
             fontSize: "12px",
             textAlign: "center",
             paddingTop: "20px",
-            cursor:"pointer",
+            cursor: "pointer",
           }} href="https://skilluptechbuzz.in/" target="_blank" >SkillUp Tech Solutions</Typography>. All
           rights reserved.
         </Typography>

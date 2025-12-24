@@ -189,7 +189,7 @@ const AnnouncementManagement = () => {
         <Box sx={{ p: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
                 <Typography variant="h5" fontWeight="bold">
-                    📢 Announcements
+                    Announcements
                 </Typography>
                 <Button
                     variant="contained"

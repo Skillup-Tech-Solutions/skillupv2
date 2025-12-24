@@ -1,16 +1,110 @@
 import { createHashRouter } from "react-router-dom";
-import { lazy, Suspense } from "react";
-import { Box, CircularProgress } from "@mui/material";
+import { lazy, Suspense, Component, type ReactNode, type ComponentType } from "react";
+import { Box, CircularProgress, Typography, Button } from "@mui/material";
 
-// Lazy loading wrapper
+// Helper function to retry dynamic imports with page reload on failure
+// This handles chunk loading errors that occur after deployment updates
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyRetry<T extends ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> {
+  return lazy(async () => {
+    const sessionKey = `retry-lazy-refreshed-${componentImport.toString().slice(0, 50)}`;
+    const hasRefreshed = sessionStorage.getItem(sessionKey);
+
+    try {
+      const component = await componentImport();
+      // Clear the flag on successful load
+      sessionStorage.removeItem(sessionKey);
+      return component;
+    } catch (error) {
+      if (!hasRefreshed) {
+        // Set flag to prevent infinite reload loops
+        sessionStorage.setItem(sessionKey, 'true');
+        // Force reload to get fresh chunks
+        window.location.reload();
+        // Return a never-resolving promise to prevent render during reload
+        return new Promise(() => { });
+      }
+      // If already refreshed and still failing, throw the error
+      throw error;
+    }
+  });
+}
+
+// Error boundary to catch any remaining chunk load errors
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ChunkErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  handleReload = () => {
+    // Clear all retry flags and reload
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('retry-lazy-refreshed-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const isChunkError = this.state.error?.message?.includes('Failed to fetch dynamically imported module') ||
+        this.state.error?.message?.includes('Loading chunk') ||
+        this.state.error?.message?.includes('Loading CSS chunk');
+
+      return (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          gap: 2,
+          p: 3,
+          textAlign: "center"
+        }}>
+          <Typography variant="h5" color="error">
+            {isChunkError ? "Application Updated" : "Something went wrong"}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {isChunkError
+              ? "A new version of the application is available. Please reload to continue."
+              : "An unexpected error occurred. Please try reloading the page."}
+          </Typography>
+          <Button variant="contained" onClick={this.handleReload}>
+            Reload Page
+          </Button>
+        </Box>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Lazy loading wrapper with error boundary
 const LazyLoad = ({ children }: { children: React.ReactNode }) => (
-  <Suspense fallback={
-    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-      <CircularProgress />
-    </Box>
-  }>
-    {children}
-  </Suspense>
+  <ChunkErrorBoundary>
+    <Suspense fallback={
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+        <CircularProgress />
+      </Box>
+    }>
+      {children}
+    </Suspense>
+  </ChunkErrorBoundary>
 );
 
 // Auth pages - Load immediately (small)
@@ -29,48 +123,49 @@ import WebsiteLayout from "../Components/WebsiteLayout";
 import ProtectedRoute from "./ProtectedRoute";
 
 // ========== LAZY LOADED PAGES ==========
+// Using lazyRetry for automatic retry with page reload on chunk loading failures
 
 // Public Website - Lazy
-const WebHome = lazy(() => import("../Components/WebHome"));
-const WebAbout = lazy(() => import("../Components/WebAbout"));
-const WebContactUs = lazy(() => import("../Pages/WebContactUs"));
-const WebCarrers = lazy(() => import("../Components/WebCarrers"));
-const WebCoursesPage = lazy(() => import("../Pages/WebCoursesPage"));
-const WebItServices = lazy(() => import("../Components/WebItServices"));
-const WebItServiceDetail = lazy(() => import("../Pages/WebItServiceDetail"));
-const WebServicesPage = lazy(() => import("../Pages/WebServicesPage"));
-const WebServiceDetail = lazy(() => import("../Pages/WebServiceDetail"));
-const WebCategory = lazy(() => import("../Pages/WebCategory"));
-const WebSyllabusView = lazy(() => import("../Pages/WebSyllabusView"));
+const WebHome = lazyRetry(() => import("../Components/WebHome"));
+const WebAbout = lazyRetry(() => import("../Components/WebAbout"));
+const WebContactUs = lazyRetry(() => import("../Pages/WebContactUs"));
+const WebCarrers = lazyRetry(() => import("../Components/WebCarrers"));
+const WebCoursesPage = lazyRetry(() => import("../Pages/WebCoursesPage"));
+const WebItServices = lazyRetry(() => import("../Components/WebItServices"));
+const WebItServiceDetail = lazyRetry(() => import("../Pages/WebItServiceDetail"));
+const WebServicesPage = lazyRetry(() => import("../Pages/WebServicesPage"));
+const WebServiceDetail = lazyRetry(() => import("../Pages/WebServiceDetail"));
+const WebCategory = lazyRetry(() => import("../Pages/WebCategory"));
+const WebSyllabusView = lazyRetry(() => import("../Pages/WebSyllabusView"));
 
 // Admin pages - Lazy
-const AdminDashboard = lazy(() => import("../Pages/AdminDashboard"));
-const PeopleManagement = lazy(() => import("../Pages/PeopleManagement"));
-const ProgramsManagement = lazy(() => import("../Pages/ProgramsManagement"));
-const Offers = lazy(() => import("../Pages/Offers"));
-const Category = lazy(() => import("../Pages/Category"));
-const Carrers = lazy(() => import("../Pages/Carrers"));
-const Syllabus = lazy(() => import("../Pages/Syllabus"));
-const Certificate = lazy(() => import("../Pages/Certificate"));
-const AnnouncementManagement = lazy(() => import("../Pages/AnnouncementManagement"));
-const StudentDetail = lazy(() => import("../Pages/StudentDetail"));
-const SalarySetup = lazy(() => import("../Pages/Admin/Payroll/SalarySetup"));
-const PayrollManagement = lazy(() => import("../Pages/Admin/Payroll/PayrollManagement"));
-const PaymentSettings = lazy(() => import("../Pages/Admin/PaymentSettings"));
-const PaymentManagement = lazy(() => import("../Pages/Admin/PaymentManagement"));
+const AdminDashboard = lazyRetry(() => import("../Pages/AdminDashboard"));
+const PeopleManagement = lazyRetry(() => import("../Pages/PeopleManagement"));
+const ProgramsManagement = lazyRetry(() => import("../Pages/ProgramsManagement"));
+const Offers = lazyRetry(() => import("../Pages/Offers"));
+const Category = lazyRetry(() => import("../Pages/Category"));
+const Carrers = lazyRetry(() => import("../Pages/Carrers"));
+const Syllabus = lazyRetry(() => import("../Pages/Syllabus"));
+const Certificate = lazyRetry(() => import("../Pages/Certificate"));
+const AnnouncementManagement = lazyRetry(() => import("../Pages/AnnouncementManagement"));
+const StudentDetail = lazyRetry(() => import("../Pages/StudentDetail"));
+const SalarySetup = lazyRetry(() => import("../Pages/Admin/Payroll/SalarySetup"));
+const PayrollManagement = lazyRetry(() => import("../Pages/Admin/Payroll/PayrollManagement"));
+const PaymentSettings = lazyRetry(() => import("../Pages/Admin/PaymentSettings"));
+const PaymentManagement = lazyRetry(() => import("../Pages/Admin/PaymentManagement"));
 
 // Student pages - Lazy
-const StudentDashboard = lazy(() => import("../Pages/Student/StudentDashboard"));
-const MyCourses = lazy(() => import("../Pages/Student/MyCourses"));
-const MyInternships = lazy(() => import("../Pages/Student/MyInternships"));
-const MyProjects = lazy(() => import("../Pages/Student/MyProjects"));
-const Pay = lazy(() => import("../Pages/Student/Pay"));
-const StudentAnnouncements = lazy(() => import("../Pages/Student/StudentAnnouncements"));
-const StudentProfile = lazy(() => import("../Pages/Student/StudentProfile"));
-const SubmitProject = lazy(() => import("../Pages/Student/SubmitProject"));
+const StudentDashboard = lazyRetry(() => import("../Pages/Student/StudentDashboard"));
+const MyCourses = lazyRetry(() => import("../Pages/Student/MyCourses"));
+const MyInternships = lazyRetry(() => import("../Pages/Student/MyInternships"));
+const MyProjects = lazyRetry(() => import("../Pages/Student/MyProjects"));
+const Pay = lazyRetry(() => import("../Pages/Student/Pay"));
+const StudentAnnouncements = lazyRetry(() => import("../Pages/Student/StudentAnnouncements"));
+const StudentProfile = lazyRetry(() => import("../Pages/Student/StudentProfile"));
+const SubmitProject = lazyRetry(() => import("../Pages/Student/SubmitProject"));
 
 // Employee pages - Lazy
-const EmployeePortal = lazy(() => import("../Pages/Employee/EmployeePortal"));
+const EmployeePortal = lazyRetry(() => import("../Pages/Employee/EmployeePortal"));
 
 const routes = createHashRouter([
   // Auth Routes (not lazy - small and needed immediately)

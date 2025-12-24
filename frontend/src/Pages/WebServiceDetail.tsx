@@ -10,6 +10,28 @@ import {
 import { FaAngleLeft } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import { images } from "../assets/Images/Images";
+import BusinessIcon from "@mui/icons-material/Business";
+import SchoolIcon from "@mui/icons-material/School";
+import HandshakeIcon from "@mui/icons-material/Handshake";
+import CardMembershipIcon from "@mui/icons-material/CardMembership";
+import WorkIcon from "@mui/icons-material/Work";
+import BuildIcon from "@mui/icons-material/Build";
+import ComputerIcon from "@mui/icons-material/Computer";
+import PersonIcon from "@mui/icons-material/Person";
+import TrackChangesIcon from "@mui/icons-material/TrackChanges";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import DescriptionIcon from "@mui/icons-material/Description";
+import LightbulbIcon from "@mui/icons-material/Lightbulb";
+import CodeIcon from "@mui/icons-material/Code";
+import ArchitectureIcon from "@mui/icons-material/Architecture";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import LiveHelpIcon from "@mui/icons-material/LiveHelp";
+import AccessibilityNewIcon from "@mui/icons-material/AccessibilityNew";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import MicIcon from "@mui/icons-material/Mic";
+import SearchIcon from "@mui/icons-material/Search";
+import InsightsIcon from "@mui/icons-material/Insights";
+import type { ReactNode } from "react";
 
 const serviceDetails: Record<
   string,
@@ -18,11 +40,9 @@ const serviceDetails: Record<
     desc: string;
     highlights: { img: string; title: string; desc: string }[];
     benefits: {
-      icon: string;
+      icon: ReactNode;
       title: string;
       desc: string;
-      gradient: string;
-      textColor: string;
     }[];
   }
 > = {
@@ -43,46 +63,34 @@ const serviceDetails: Record<
     ],
     benefits: [
       {
-        icon: "🏭",
+        icon: <BusinessIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Industry Exposure",
         desc: "Get firsthand experience of how real companies operate and function",
-        gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textColor: "white",
       },
       {
-        icon: "🎓",
+        icon: <SchoolIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Professional Skills",
         desc: "Develop workplace etiquette and professional communication skills",
-        gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        textColor: "white",
       },
       {
-        icon: "🤝",
+        icon: <HandshakeIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Industry Connections",
         desc: "Build valuable connections with industry professionals and mentors",
-        gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        textColor: "white",
       },
       {
-        icon: "",
+        icon: <CardMembershipIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Training Certificate",
         desc: "Receive official certification to validate your industrial training",
-        gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-        textColor: "white",
       },
       {
-        icon: "💼",
+        icon: <WorkIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Career Readiness",
         desc: "Prepare yourself for the transition from academics to professional life",
-        gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-        textColor: "#333",
       },
       {
-        icon: "🔧",
+        icon: <BuildIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Practical Knowledge",
         desc: "Apply theoretical concepts in real-world industrial scenarios",
-        gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-        textColor: "#333",
       },
     ],
   },
@@ -103,46 +111,34 @@ const serviceDetails: Record<
     ],
     benefits: [
       {
-        icon: "💻",
+        icon: <ComputerIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Real Project Experience",
         desc: "Work on actual industry projects and gain hands-on development experience",
-        gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textColor: "white",
       },
       {
-        icon: "👨‍💼",
+        icon: <PersonIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Industry Mentorship",
         desc: "Get guided by experienced professionals throughout your internship journey",
-        gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        textColor: "white",
       },
       {
-        icon: "🎯",
+        icon: <TrackChangesIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Skill Enhancement",
         desc: "Develop technical skills, teamwork, and time management abilities",
-        gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        textColor: "white",
       },
       {
-        icon: "📈",
+        icon: <TrendingUpIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Career Growth",
         desc: "Build practical knowledge that directly contributes to job placement success",
-        gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-        textColor: "white",
       },
       {
-        icon: "🤝",
+        icon: <HandshakeIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Professional Network",
         desc: "Connect with industry experts and build valuable professional relationships",
-        gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-        textColor: "#333",
       },
       {
-        icon: "📜",
+        icon: <CardMembershipIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Internship Certificate",
         desc: "Receive official certification that validates your internship completion",
-        gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-        textColor: "#333",
       },
     ],
   },
@@ -163,52 +159,40 @@ const serviceDetails: Record<
     ],
     benefits: [
       {
-        icon: "💡",
+        icon: <LightbulbIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Innovative Project Ideas",
         desc: "Get access to cutting-edge project concepts that align with industry trends",
-        gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textColor: "white",
       },
       {
-        icon: "👨‍💻",
+        icon: <CodeIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Expert Technical Guidance",
         desc: "Receive mentorship from experienced developers throughout your project development",
-        gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        textColor: "white",
       },
       {
-        icon: "🏗️",
+        icon: <ArchitectureIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "End-to-End Development",
         desc: "Learn complete project lifecycle from planning to deployment and maintenance",
-        gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        textColor: "white",
       },
       {
-        icon: "",
+        icon: <DescriptionIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Professional Documentation",
         desc: "Create industry-standard documentation including reports and technical specifications",
-        gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-        textColor: "white",
       },
       {
-        icon: "🎯",
+        icon: <TrackChangesIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Portfolio Enhancement",
         desc: "Build impressive projects that showcase your skills to potential employers",
-        gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-        textColor: "#333",
       },
       {
-        icon: "🏆",
+        icon: <EmojiEventsIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Academic Excellence",
         desc: "Achieve high grades with well-structured and innovative project submissions",
-        gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-        textColor: "#333",
       },
     ],
   },
   "Workshop Sessions": {
     title: "Workshop Sessions",
-    desc: "We conduct practical and hands-on workshops on trending technologies like web development, data science, AI, cloud computing, etc. These workshops are designed to be interactive, beginner-friendly, and include live coding, demos, and Q&A. It’s ideal for both students and professionals looking to upskill quickly.",
+    desc: "We conduct practical and hands-on workshops on trending technologies like web development, data science, AI, cloud computing, etc. These workshops are designed to be interactive, beginner-friendly, and include live coding, demos, and Q&A. It's ideal for both students and professionals looking to upskill quickly.",
     highlights: [
       {
         img: "https://via.placeholder.com/400x200?text=Live+Coding",
@@ -223,46 +207,34 @@ const serviceDetails: Record<
     ],
     benefits: [
       {
-        icon: "💻",
+        icon: <ComputerIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Live Coding Sessions",
         desc: "Practice coding in real-time with expert instructors and immediate feedback",
-        gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textColor: "white",
       },
       {
-        icon: "🚀",
+        icon: <RocketLaunchIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Latest Technologies",
         desc: "Learn cutting-edge technologies that are currently trending in the industry",
-        gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        textColor: "white",
       },
       {
-        icon: "🎯",
+        icon: <TrackChangesIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Hands-on Practice",
         desc: "Get practical experience through interactive demos and guided exercises",
-        gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        textColor: "white",
       },
       {
-        icon: "❓",
+        icon: <LiveHelpIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Q&A Sessions",
         desc: "Clear your doubts instantly with dedicated question and answer sessions",
-        gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-        textColor: "white",
       },
       {
-        icon: "",
+        icon: <AccessibilityNewIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Beginner Friendly",
         desc: "Workshops designed for all skill levels, from beginners to advanced learners",
-        gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-        textColor: "#333",
       },
       {
-        icon: "📜",
+        icon: <CardMembershipIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Participation Certificate",
         desc: "Receive official certificates to validate your workshop participation and learning",
-        gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-        textColor: "#333",
       },
     ],
   },
@@ -283,46 +255,34 @@ const serviceDetails: Record<
     ],
     benefits: [
       {
-        icon: "🎯",
+        icon: <TrackChangesIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Personalized Career Mentoring",
         desc: "Get one-on-one guidance tailored to your specific career goals and aspirations",
-        gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        textColor: "white",
       },
       {
-        icon: "📝",
+        icon: <DescriptionIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Professional Resume Building",
         desc: "Learn to craft compelling resumes that stand out to recruiters and employers",
-        gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-        textColor: "white",
       },
       {
-        icon: "🎤",
+        icon: <MicIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Mock Interview Practice",
         desc: "Practice with real interview scenarios and receive detailed feedback for improvement",
-        gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        textColor: "white",
       },
       {
-        icon: "🔍",
+        icon: <SearchIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Job Search Strategy",
         desc: "Learn effective job search techniques and strategies to find the right opportunities",
-        gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-        textColor: "white",
       },
       {
-        icon: "💼",
+        icon: <InsightsIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Industry Insights",
         desc: "Gain valuable insights about different industries and career paths available",
-        gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-        textColor: "#333",
       },
       {
-        icon: "🚀",
+        icon: <RocketLaunchIcon sx={{ color: "var(--webprimary)", fontSize: 24 }} />,
         title: "Career Transition Support",
         desc: "Get specialized support whether you're a fresher or switching career domains",
-        gradient: "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)",
-        textColor: "#333",
       },
     ],
   },
@@ -434,7 +394,7 @@ const WebServiceDetail = () => {
                   "Cyber Security",
                   "GSM & GPS Control",
                 ].map((domain, index) => (
-                  <Grid item xs={6} sm={4} md={3} key={index}>
+                  <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
                     <Box
                       sx={{
                         backgroundColor: "#fff",
@@ -506,8 +466,8 @@ const WebServiceDetail = () => {
                 mb: 3,
                 "@media (max-width: 768px)": {
                   fontSize: "22px",
-                  "@media (max-width: 690px)": { fontSize: "20px" },
                 },
+                "@media (max-width: 690px)": { fontSize: "20px" },
               }}
             >
               What You'll Get From This Service
@@ -515,73 +475,86 @@ const WebServiceDetail = () => {
 
             <Box
               sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  lg: "repeat(3, 1fr)",
-                },
+                display: "flex",
+                flexWrap: "wrap",
                 gap: 3,
+                justifyContent: "space-between",
                 mb: 4,
               }}
             >
               {data.benefits.map((benefit, index) => (
-                <Card
+                <Box
                   key={index}
                   sx={{
-                    p: 3,
-                    height: "100%",
-                    boxShadow: 3,
-                    borderRadius: "12px",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: 6,
-                    },
-                    background: benefit.gradient,
-                    color: benefit.textColor,
+                    flexBasis: "30%",
+                    "@media (max-width: 991px)": { flexBasis: "48%" },
+                    "@media (max-width: 690px)": { flexBasis: "100%" },
                   }}
                 >
-                  <Box display="flex" alignItems="center" gap={2} mb={2}>
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "12px",
-                        backgroundColor:
-                          benefit.textColor === "white"
-                            ? "rgba(255,255,255,0.2)"
-                            : "rgba(0,0,0,0.1)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "24px",
-                      }}
-                    >
-                      {benefit.icon}
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily: "SemiBold_W",
-                        fontSize: "18px",
-                      }}
-                    >
-                      {benefit.title}
-                    </Typography>
-                  </Box>
-                  <Typography
-                    variant="body2"
+                  <Card
+                    elevation={0}
                     sx={{
-                      fontFamily: "Regular_W",
-                      fontSize: "14px",
-                      opacity: benefit.textColor === "white" ? 0.9 : 0.8,
-                      lineHeight: 1.6,
+                      p: 3,
+                      height: "100%",
+                      borderRadius: "10px",
+                      border: "1px solid #e0e0e0",
+                      backgroundColor: "#fff",
+                      transition: "all 0.3s ease",
+                      cursor: "default",
+                      "&:hover": {
+                        borderColor: "var(--webprimary)",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                        "& .benefit-icon-bg": {
+                          transform: "scale(1.1)",
+                        },
+                      },
                     }}
                   >
-                    {benefit.desc}
-                  </Typography>
-                </Card>
+                    <Box display="flex" alignItems="flex-start" gap={2}>
+                      <Box
+                        className="benefit-icon-bg"
+                        sx={{
+                          width: 50,
+                          height: 50,
+                          borderRadius: "10px",
+                          backgroundColor: "var(--weblight)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "24px",
+                          flexShrink: 0,
+                          transition: "transform 0.3s ease",
+                        }}
+                      >
+                        {benefit.icon}
+                      </Box>
+                      <Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontFamily: "SemiBold_W",
+                            fontSize: "16px",
+                            color: "#333",
+                            mb: 0.5,
+                          }}
+                        >
+                          {benefit.title}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontFamily: "Regular_W",
+                            fontSize: "13px",
+                            color: "#666",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {benefit.desc}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Box>
               ))}
             </Box>
           </Box>

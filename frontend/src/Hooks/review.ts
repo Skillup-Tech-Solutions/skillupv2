@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { callApi } from "../api/apiService";
 import { apiUrls } from "../api/apiUrl";
 import type { ApiResponse } from "../Interface/interface";
+import { CACHE_TIMES } from "./ReactQueryProvider";
 
 export const useGetReviews = () => {
   return useQuery({
@@ -14,6 +15,8 @@ export const useGetReviews = () => {
         throw error;
       }
     },
+    // Reviews - use medium cache time
+    ...CACHE_TIMES.MEDIUM,
   });
 };
 export const useReviewPost = () => {

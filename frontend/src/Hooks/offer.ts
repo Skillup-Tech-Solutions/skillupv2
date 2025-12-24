@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { callApi } from "../api/apiService";
 import { apiUrls } from "../api/apiUrl";
 import type { ApiResponse } from "../Interface/interface";
+import { CACHE_TIMES } from "./ReactQueryProvider";
 
 export const useGetOffers = () => {
   return useQuery({
@@ -14,6 +15,8 @@ export const useGetOffers = () => {
         throw error;
       }
     },
+    // Offers change occasionally - use medium cache time
+    ...CACHE_TIMES.MEDIUM,
   });
 };
 export const useOfferAddApi = () => {
@@ -33,14 +36,14 @@ export const useOfferAddApi = () => {
 export const offerUpdateApi = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { id: string; status: string,description:string }) => {
+    mutationFn: async (payload: { id: string; status: string, description: string }) => {
       const response = await callApi(
         `${apiUrls.offers}/${payload.id}`,
         "PUT",
         {
-         status: payload.status,
-         description: payload.description,
-         id: payload.id
+          status: payload.status,
+          description: payload.description,
+          id: payload.id
         }
       );
       return response as ApiResponse;

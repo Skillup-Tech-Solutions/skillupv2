@@ -1,6 +1,5 @@
 import {
   Box,
-  Typography,
   IconButton,
   Drawer,
   List,
@@ -86,6 +85,7 @@ const WebNavbar = () => {
               borderRadius: "3px",
               cursor: "pointer",
             }}
+            onClick={() => navigate("/")}
           >
             <Box
               component={"img"}
@@ -192,6 +192,10 @@ const WebNavbar = () => {
                 borderRadius: "3px",
                 cursor: "pointer",
                 marginBottom: "10px",
+              }}
+              onClick={() => {
+                navigate("/");
+                toggleDrawer();
               }}
             >
               <Box

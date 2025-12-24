@@ -59,8 +59,10 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:4173',  // Vite preview server
   'http://localhost:3000',
-  'http://127.0.0.1:5173'
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173'
 ].filter(Boolean);
 
 app.use(cors({
@@ -149,6 +151,11 @@ app.use('/uploads', express.static('uploads', {
 });
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Cache middleware for public GET endpoints
+// Note: Route-level caching removed to avoid CORS issues
+// Caching is handled by React Query (frontend) and Service Worker (PWA)
+// const { cacheMiddleware } = require('./middleware/cacheMiddleware');
+
 // Student Portal API Routes - Mount explicit paths first
 app.use("/api/files", filesRoutes);
 app.use("/api/payment", paymentPublicRoutes);
@@ -160,6 +167,7 @@ app.use("/api/admin/employees", employeeRoutes);
 app.use("/api/admin/payroll", payrollRoutes);
 app.use("/api/employee", employeePortalRoutes);
 
+// Public routes
 app.use("/api", categoryRoutes);
 app.use("/api", reviewRoutes);
 app.use("/api", userRoutes);
