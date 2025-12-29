@@ -22,28 +22,27 @@ import {
     CircularProgress,
     Alert,
     MenuItem,
+    Tooltip
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
+import dayjs from "dayjs";
 import {
     MdSchool,
     MdUpload,
     MdAssignment,
     MdDownload,
     MdVisibility,
-    MdDelete
+    MdDelete,
+    MdEdit
 } from "react-icons/md";
 import { IoCheckmarkDoneCircle } from "react-icons/io5";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import logo from "../../assets/Images/blacklogo.png";
-import background from "../../assets/Images/background.png";
-import msme from "../../assets/Images/msms.png";
-import iso from "../../assets/Images/isonew.png";
-import iaf from "../../assets/Images/iaf.png";
-import sign from "../../assets/Images/dummysign.png";
+import background from "../../assets/Images/certificate_bg.jpg";
+import { openFileInNewTab } from "../../utils/normalizeUrl";
 import { smallPrimaryButton } from "../../assets/Styles/ButtonStyles";
 
 const InternshipSubmissionsList = () => {
@@ -64,8 +63,18 @@ const InternshipSubmissionsList = () => {
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
     const [fileTypes, setFileTypes] = useState<string[]>([]);
 
+    // Certificate Edit State
+    const [certEditModal, setCertEditModal] = useState(false);
+    const [certForm, setCertForm] = useState({
+        recipientName: "",
+        domain: "",
+        startDate: "",
+        endDate: ""
+    });
+    const [regenerating, setRegenerating] = useState(false);
+
     // Fetch assignments
-    const { data: assignments, isLoading, error } = useQuery({
+    const { data: assignments, isLoading } = useQuery({
         queryKey: ["internship-assignments"],
         queryFn: async () => {
             const response = await axios.get(
@@ -106,7 +115,14 @@ const InternshipSubmissionsList = () => {
         if (!certificateRef.current || !selectedAssignment) return;
         setGenerating(true);
         try {
-            const canvas = await html2canvas(certificateRef.current, { scale: 2 });
+            // Wait a bit for images/fonts to render
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const canvas = await html2canvas(certificateRef.current, {
+                scale: 3,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+            });
             const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
@@ -147,6 +163,75 @@ const InternshipSubmissionsList = () => {
     const handleOpenUpload = (item: any) => { setSelectedAssignment(item); setUploadModal(true); setUploadFiles([]); setFileTypes([]); };
     const handleOpenViewFiles = (item: any) => { setSelectedAssignment(item); setViewFilesModal(true); };
     const handleOpenCertificate = (item: any) => { setSelectedAssignment(item); setCertificateModal(true); };
+    const handleOpenViewProof = (proof: string) => {
+        openFileInNewTab(proof);
+    };
+
+    // Certificate Edit Handlers
+    const handleOpenCertEdit = (assignment: any) => {
+        setSelectedAssignment(assignment);
+        setCertForm({
+            recipientName: assignment.certificateDetails?.recipientName || assignment.student?.name || "",
+            domain: assignment.certificateDetails?.domain || assignment.itemId?.title || "",
+            startDate: assignment.certificateDetails?.startDate
+                ? new Date(assignment.certificateDetails.startDate).toISOString().split('T')[0]
+                : assignment.itemId?.startDate
+                    ? new Date(assignment.itemId.startDate).toISOString().split('T')[0]
+                    : "",
+            endDate: assignment.certificateDetails?.endDate
+                ? new Date(assignment.certificateDetails.endDate).toISOString().split('T')[0]
+                : assignment.itemId?.endDate
+                    ? new Date(assignment.itemId.endDate).toISOString().split('T')[0]
+                    : ""
+        });
+        setCertEditModal(true);
+    };
+
+    const handleRegenerateCertificate = async () => {
+        if (!certificateRef.current || !selectedAssignment) return;
+        setRegenerating(true);
+        try {
+            // Save details first
+            await axios.put(
+                `${import.meta.env.VITE_APP_BASE_URL}admin/internship-assignments/${selectedAssignment._id}/certificate-details`,
+                certForm,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Generate certificate
+            await new Promise(resolve => setTimeout(resolve, 500));
+            const canvas = await html2canvas(certificateRef.current, {
+                scale: 3,
+                useCORS: true,
+                allowTaint: true,
+                logging: false,
+            });
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("l", "mm", "a4");
+            const width = pdf.internal.pageSize.getWidth();
+            const height = pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, "PNG", 0, 0, width, height);
+
+            const pdfBlob = pdf.output("blob");
+            const formData = new FormData();
+            formData.append("certificate", pdfBlob, `${certForm.recipientName}_Certificate.pdf`);
+
+            await axios.post(
+                `${import.meta.env.VITE_APP_BASE_URL}admin/internship-assignments/${selectedAssignment._id}/regenerate-certificate`,
+                formData,
+                { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
+            );
+
+            CustomSnackBar.successSnackbar("Certificate regenerated & sent to student!");
+            queryClient.invalidateQueries({ queryKey: ["internship-assignments"] });
+            setCertEditModal(false);
+        } catch (err: any) {
+            console.error("Regenerate Error:", err);
+            CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to regenerate certificate");
+        } finally {
+            setRegenerating(false);
+        }
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -188,6 +273,7 @@ const InternshipSubmissionsList = () => {
                                 <TableCell>Student</TableCell>
                                 <TableCell>Internship Title</TableCell>
                                 <TableCell>Status</TableCell>
+                                <TableCell>Payment</TableCell>
                                 <TableCell>Assigned At</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
@@ -208,6 +294,30 @@ const InternshipSubmissionsList = () => {
                                         <TableCell>
                                             <Chip label={row.status} color={row.status === "completed" ? "success" : "warning"} size="small" />
                                         </TableCell>
+                                        <TableCell>
+                                            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                                <Typography variant="body2" fontWeight="600">
+                                                    {row.payment?.amount ? `₹${row.payment.amount}` : "N/A"}
+                                                </Typography>
+                                                <Chip
+                                                    label={row.payment?.status?.toUpperCase() || "PENDING"}
+                                                    size="small"
+                                                    color={row.payment?.status === "paid" ? "success" : "warning"}
+                                                    sx={{ height: 18, fontSize: "0.6rem", width: "fit-content" }}
+                                                />
+                                                {row.payment?.proofFile && (
+                                                    <Button
+                                                        size="small"
+                                                        variant="text"
+                                                        startIcon={<MdVisibility />}
+                                                        onClick={() => handleOpenViewProof(row.payment.proofFile)}
+                                                        sx={{ fontSize: "10px", p: 0, minWidth: 0, justifyContent: "flex-start", color: "var(--webprimary)" }}
+                                                    >
+                                                        View Proof
+                                                    </Button>
+                                                )}
+                                            </Box>
+                                        </TableCell>
                                         <TableCell>{new Date(row.assignedAt).toLocaleDateString()}</TableCell>
                                         <TableCell>
                                             <Box sx={{ display: "flex", gap: 1 }}>
@@ -221,9 +331,16 @@ const InternshipSubmissionsList = () => {
                                                         </Button>
                                                     </>
                                                 ) : (
-                                                    <Button size="small" variant="text" href={row.certificate?.url} target="_blank" startIcon={<MdDownload />}>
-                                                        Certificate
-                                                    </Button>
+                                                    <>
+                                                        <Button size="small" variant="text" href={row.certificate?.url} target="_blank" startIcon={<MdDownload />}>
+                                                            Certificate
+                                                        </Button>
+                                                        <Tooltip title="Edit & Regenerate">
+                                                            <IconButton size="small" color="secondary" onClick={() => handleOpenCertEdit(row)}>
+                                                                <MdEdit />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
                                                 )}
                                                 <IconButton size="small" onClick={() => handleOpenViewFiles(row)}>
                                                     <MdVisibility />
@@ -475,88 +592,115 @@ const InternshipSubmissionsList = () => {
             </Dialog>
 
             {/* Hidden Certificate Template for Generation */}
-            < Box sx={{ position: "absolute", left: "-3000px", top: 0 }}>
+            <Box sx={{ position: "absolute", left: "-3000px", top: 0 }}>
                 <Box
                     ref={certificateRef}
                     sx={{
                         position: "relative",
-                        width: "800px",
-                        height: "530px",
+                        width: "1000px",
+                        height: "707px",
                         margin: "auto",
                         overflow: "hidden",
                         fontFamily: "'Trykker', serif",
-                        color: "#545151",
+                        color: "#333",
                         backgroundColor: "#fff",
-                        boxShadow: "0 0 10px rgba(0,0,0,0.2)",
+                        boxShadow: "0 0 20px rgba(0,0,0,0.1)",
                     }}
                 >
-                    {/* Background */}
+                    {/* Background Image */}
                     <img
                         src={background}
                         alt="Background"
-                        width="100%"
-                        height="100%"
-                        style={{ position: "absolute", top: 0, left: 0, zIndex: 0 }}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            zIndex: 0,
+                        }}
                     />
 
-                    {/* Certificate Content */}
+                    {/* Overlay Content */}
                     <Box
                         sx={{
                             position: "absolute",
                             top: 0,
+                            left: 0,
                             width: "100%",
                             height: "100%",
-                            textAlign: "center",
-                            zIndex: 2,
+                            zIndex: 1,
                         }}
                     >
-                        <img
-                            src={logo}
-                            alt="logo"
-                            style={{ width: "100px", marginTop: "30px" }}
-                        />
+                        {/* Recipient Name Container for Automatic Centering */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                top: "40%",
+                                left: 0,
+                                width: "100%",
+                                zIndex: 2,
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    textAlign: "center",
+                                    fontFamily: "'Alata', sans-serif",
+                                    fontSize: "48px",
+                                    color: "#262525ff",
+                                    fontWeight: 500,
+                                    textTransform: "uppercase",
+                                    width: "100%",
+                                }}
+                            >
+                                {selectedAssignment?.student?.name || "Student Name"}
+                            </Typography>
+                        </Box>
 
-                        <h2 style={{ margin: 0, fontFamily: "Trykker", fontSize: "35px", color: "#545151" }}>
-                            CERTIFICATE
-                        </h2>
+                        {/* Domain Overlay */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                bottom: "34.2%",
+                                left: "30.5%",
+                                fontFamily: "'Trykker', serif",
+                                fontSize: "17px",
+                                color: "#333",
+                            }}
+                        >
+                            {selectedAssignment?.itemId?.title || "Field of Study"}
+                        </Box>
 
-                        <h3 style={{ margin: 0, fontFamily: "Style Script", fontSize: "25px", color: "#545151" }}>
-                            Of Internship Completion
-                        </h3>
+                        {/* Start Date Overlay */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                bottom: "30.6%",
+                                left: "32%",
+                                fontFamily: "'Trykker', serif",
+                                fontSize: "17px",
+                                color: "#333",
+                            }}
+                        >
+                            {selectedAssignment?.itemId?.startDate ? dayjs(selectedAssignment.itemId.startDate).format("Do MMMM YYYY") : "30th June 2025"}
+                        </Box>
 
-                        <h4 style={{ marginTop: "30px", fontFamily: "Trykker", fontSize: "18px", color: "#545151" }}>
-                            This Certificate is Proudly Presented to
-                        </h4>
-
-                        <h5 style={{ marginTop: "10px", fontFamily: "Style Script", fontSize: "35px", color: "#545151" }}>
-                            {selectedAssignment?.student?.name || "Student Name"}
-                        </h5>
-
-                        <h6 style={{ margin: "10px auto 0 auto", fontFamily: "Trykker", fontSize: "16px", color: "#545151", maxWidth: "85%", lineHeight: "1.5" }}>
-                            Has successfully completed the internship as <strong>{selectedAssignment?.itemId?.title}</strong> at Skill Up Tech Solution.
-                        </h6>
-
-                        {/* Bottom Section */}
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0px 40px", position: "absolute", bottom: "60px", width: "100%" }}>
-                            <img src={iaf} alt="IAF" style={{ width: "100px" }} />
-                            <img src={msme} alt="MSME" style={{ width: "100px" }} />
-                            <img src={iso} alt="ISO" style={{ width: "100px" }} />
-
-                            <div style={{ textAlign: "center" }}>
-                                <img src={sign} alt="Sign" style={{ width: "100px" }} />
-                                <h3 style={{ margin: 0, fontFamily: "Trykker", fontSize: "16px", color: "#545151" }}>Nivetha</h3>
-                                <p style={{ margin: 0, fontFamily: "Trykker", fontSize: "16px", color: "#545151" }}>Co-ordinator</p>
-                            </div>
-
-                            <div style={{ textAlign: "center" }}>
-                                <img src={sign} alt="Sign" style={{ width: "100px" }} />
-                                <h3 style={{ margin: 0, fontFamily: "Trykker", fontSize: "16px", color: "#545151" }}>Mohamed Faroon</h3>
-                                <p style={{ margin: 0, fontFamily: "Trykker", fontSize: "16px", color: "#545151" }}>Head Manager</p>
-                            </div>
-                        </div>
+                        {/* End Date Overlay */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                bottom: "27%",
+                                left: "32%",
+                                fontFamily: "'Trykker', serif",
+                                fontSize: "17px",
+                                color: "#333",
+                            }}
+                        >
+                            {selectedAssignment?.itemId?.endDate ? dayjs(selectedAssignment.itemId.endDate).format("Do MMMM YYYY") : "14th July 2025"}
+                        </Box>
                     </Box>
                 </Box>
-            </Box >
+            </Box>
         </Box >
     );
 };

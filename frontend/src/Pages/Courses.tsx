@@ -5,11 +5,6 @@ import {
   Typography,
   Grid,
   TextField,
-  Switch,
-  FormControlLabel,
-  Tabs,
-  Tab,
-  Paper,
 } from "@mui/material";
 import { IoClose } from "react-icons/io5";
 import { useEffect, useState } from "react";
@@ -48,7 +43,7 @@ const style = {
   },
 };
 
-const Courses = () => {
+const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -56,7 +51,6 @@ const Courses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCourse, setEditingCourse] = useState<any>(null);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
-  const [tabValue, setTabValue] = useState(0); // State for Tabs
 
   const { data: courseGet } = useGetCoursesApi();
   const { mutate: courseAdd } = useCoursesAddApi();
@@ -66,7 +60,8 @@ const Courses = () => {
   const { mutate: courseToggleStatus } = useCourseStatusToggleApi();
   useEffect(() => {
     if (courseGet) {
-      setCourses(courseGet?.courses);
+      // @ts-ignore
+      setCourses(courseGet?.courses || []);
     }
   }, [courseGet]);
 
@@ -226,20 +221,9 @@ const Courses = () => {
   };
   return (
     <>
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-          Course Management
-        </Typography>
-
-        <Paper sx={{ mb: 3 }}>
-          <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} indicatorColor="primary" textColor="primary">
-            <Tab label="All Courses" />
-            <Tab label="Student Submissions & Certificates" />
-          </Tabs>
-        </Paper>
-
+      <Box>
         {/* TAB 1: ALL COURSES (CRUD) */}
-        {tabValue === 0 && (
+        {activeSubTab === 0 && (
           <Box>
             <Box
               sx={{
@@ -302,16 +286,11 @@ const Courses = () => {
               <Grid container spacing={3}>
                 {filteredCourses.map((course) => (
                   <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={4}
-                    lg={3}
-                    key={course.id}
+                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+                    key={course._id}
                     sx={{
                       display: "flex",
                       justifyContent: "center",
-                      flexBasis: "30% !important",
                       "@media (max-width: 991px)": {
                         flexBasis: "48% !important",
                       },
@@ -653,7 +632,7 @@ const Courses = () => {
         )}
 
         {/* TAB 2: SUBMISSIONS */}
-        {tabValue === 1 && (
+        {activeSubTab === 1 && (
           <CourseSubmissionsList />
         )}
       </Box > {/* End Main Box */}

@@ -149,4 +149,36 @@ exports.getSignedUrl = async (fileName) => {
     }
 };
 
+exports.deleteFile = async (fileName) => {
+    if (!authorized) await authorize();
+    try {
+        const bucketId = await getBucketId();
+
+        // B2 delete needs both fileName and fileId
+        // First we list to get the fileId
+        const response = await b2.listFileNames({
+            bucketId: bucketId,
+            startFileName: fileName,
+            maxFileCount: 1,
+            prefix: fileName
+        });
+
+        const file = response.data.files.find(f => f.fileName === fileName);
+        if (file) {
+            await b2.deleteFileVersion({
+                fileName: file.fileName,
+                fileId: file.fileId
+            });
+            console.log(`Deleted file from B2: ${fileName}`);
+            return true;
+        }
+        console.warn(`File not found in B2 for deletion: ${fileName}`);
+        return false;
+    } catch (err) {
+        console.error("Error deleting file from B2:", err);
+        // Don't throw so the main flow (uploading new file) can continue even if deletion fails
+        return false;
+    }
+};
+
 exports.getB2 = () => b2; // Export instance if needed

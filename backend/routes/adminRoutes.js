@@ -291,7 +291,7 @@ router.post("/project-assignments/:id/upload-files", upload.array("files", 10), 
                 const uploadResult = await b2Service.uploadFile(file.buffer, file.originalname, "deliveries");
                 newFiles.push({
                     fileName: uploadResult.fileName, // Use B2 filename which has timestamp
-                    filePath: uploadResult.url, // Store the B2 URL instead of local path
+                    filePath: uploadResult.url || uploadResult.filePath, // Store the B2 URL instead of local path
                     fileType: parsedTypes[index] || "project-file",
                     uploadedBy: req.user.id,
                     uploadedAt: new Date(),
@@ -397,7 +397,7 @@ router.post("/course-assignments/:id/upload-submission", upload.single("file"), 
 
         assignment.courseSubmissions.push({
             fileName: req.file.originalname,
-            filePath: uploadResult.url,
+            filePath: uploadResult.url || uploadResult.filePath,
             uploadedBy: req.user.id,
             uploadedByRole: "admin",
             uploadedAt: new Date(),
@@ -433,7 +433,7 @@ router.post("/course-assignments/:id/complete", upload.single("certificate"), as
         if (req.file) {
             const uploadResult = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "certificates");
             assignment.certificate = {
-                url: uploadResult.url,
+                url: uploadResult.url || uploadResult.filePath,
                 issuedAt: new Date(),
                 issuedBy: req.user.id
             };
@@ -490,7 +490,7 @@ router.post("/internship-assignments/:id/upload-submission", upload.single("file
 
         assignment.courseSubmissions.push({
             fileName: req.file.originalname,
-            filePath: uploadResult.url,
+            filePath: uploadResult.url || uploadResult.filePath,
             uploadedBy: req.user.id,
             uploadedByRole: "admin",
             uploadedAt: new Date(),
@@ -590,7 +590,7 @@ router.post("/internship-assignments/:id/upload-files", upload.array("files", 10
                 const uploadResult = await b2Service.uploadFile(file.buffer, file.originalname, "deliveries");
                 newFiles.push({
                     fileName: uploadResult.fileName,
-                    filePath: uploadResult.url,
+                    filePath: uploadResult.url || uploadResult.filePath,
                     fileType: parsedTypes[index] || "other",
                     uploadedBy: req.user.id,
                     uploadedAt: new Date()
@@ -647,7 +647,7 @@ router.post("/course-assignments/:id/upload-files", upload.array("files", 10), a
                 const uploadResult = await b2Service.uploadFile(file.buffer, file.originalname, "deliveries");
                 newFiles.push({
                     fileName: uploadResult.fileName,
-                    filePath: uploadResult.url,
+                    filePath: uploadResult.url || uploadResult.filePath,
                     fileType: parsedTypes[index] || "other",
                     uploadedBy: req.user.id,
                     uploadedAt: new Date()
@@ -696,7 +696,7 @@ router.post("/internship-assignments/:id/complete", upload.single("certificate")
         if (req.file) {
             const uploadResult = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "certificates");
             assignment.certificate = {
-                url: uploadResult.url,
+                url: uploadResult.url || uploadResult.filePath,
                 issuedAt: new Date(),
                 issuedBy: req.user.id
             };
@@ -919,7 +919,7 @@ router.post("/assignments/:id/generate-invoice", async (req, res) => {
 
         // Save invoice to assignment
         assignment.invoice = {
-            url: uploadResult.url,
+            url: uploadResult.url || uploadResult.filePath,
             invoiceNumber: invoiceNumber,
             generatedAt: new Date(),
             generatedBy: req.user.id
@@ -933,6 +933,194 @@ router.post("/assignments/:id/generate-invoice", async (req, res) => {
         });
     } catch (err) {
         console.error("Generate Invoice Error:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ===== CERTIFICATE EDITING & REGENERATION ROUTES =====
+
+// Update certificate details for Course
+router.put("/course-assignments/:id/certificate-details", async (req, res) => {
+    try {
+        const { recipientName, domain, startDate, endDate } = req.body;
+        const assignment = await StudentAssignment.findById(req.params.id);
+
+        if (!assignment) {
+            return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        assignment.certificateDetails = {
+            recipientName: recipientName || assignment.student?.name,
+            domain: domain || assignment.itemId?.name,
+            startDate: startDate ? new Date(startDate) : assignment.itemId?.startDate,
+            endDate: endDate ? new Date(endDate) : assignment.itemId?.endDate
+        };
+
+        await assignment.save();
+
+        res.status(200).json({
+            message: "Certificate details updated",
+            certificateDetails: assignment.certificateDetails
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Update certificate details for Internship
+router.put("/internship-assignments/:id/certificate-details", async (req, res) => {
+    try {
+        const { recipientName, domain, startDate, endDate } = req.body;
+        const assignment = await StudentAssignment.findById(req.params.id);
+
+        if (!assignment) {
+            return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        assignment.certificateDetails = {
+            recipientName: recipientName || assignment.student?.name,
+            domain: domain || assignment.itemId?.title,
+            startDate: startDate ? new Date(startDate) : assignment.itemId?.startDate,
+            endDate: endDate ? new Date(endDate) : assignment.itemId?.endDate
+        };
+
+        await assignment.save();
+
+        res.status(200).json({
+            message: "Certificate details updated",
+            certificateDetails: assignment.certificateDetails
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Regenerate certificate for Course (accepts PDF blob from frontend)
+router.post("/course-assignments/:id/regenerate-certificate", upload.single("certificate"), async (req, res) => {
+    try {
+        const assignment = await StudentAssignment.findById(req.params.id)
+            .populate("student", "name email").populate("itemId", "name");
+
+        if (!assignment) {
+            return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No certificate file provided" });
+        }
+
+        // Delete old certificate from B2 if exists
+        if (assignment.certificate?.url) {
+            try {
+                let oldPath = assignment.certificate.url;
+                if (oldPath.includes('file=')) {
+                    const match = oldPath.match(/file=([^&]+)/);
+                    if (match) oldPath = decodeURIComponent(match[1]);
+                }
+                await b2Service.deleteFile(oldPath);
+            } catch (delErr) {
+                console.error("Failed to delete old certificate:", delErr);
+            }
+        }
+
+        // Upload new certificate
+        const uploadResult = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "certificates");
+
+        assignment.certificate = {
+            url: uploadResult.url || uploadResult.filePath,
+            issuedAt: new Date(),
+            issuedBy: req.user.id
+        };
+
+        await assignment.save();
+
+        // Send email with new certificate
+        const emailAttachments = [{
+            ContentType: "application/pdf",
+            Filename: req.file.originalname,
+            Base64Content: req.file.buffer.toString("base64")
+        }];
+
+        try {
+            await sendCourseMail("CERTIFICATE_REGENERATED",
+                { email: assignment.student.email, name: assignment.student.name },
+                { courseName: assignment.itemId.name },
+                emailAttachments
+            );
+        } catch (mailErr) {
+            console.error("Error sending regenerated certificate email:", mailErr);
+        }
+
+        res.status(200).json({
+            message: "Certificate regenerated successfully",
+            certificate: assignment.certificate
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Regenerate certificate for Internship
+router.post("/internship-assignments/:id/regenerate-certificate", upload.single("certificate"), async (req, res) => {
+    try {
+        const assignment = await StudentAssignment.findById(req.params.id)
+            .populate("student", "name email").populate("itemId", "title");
+
+        if (!assignment) {
+            return res.status(404).json({ message: "Assignment not found" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No certificate file provided" });
+        }
+
+        // Delete old certificate from B2 if exists
+        if (assignment.certificate?.url) {
+            try {
+                let oldPath = assignment.certificate.url;
+                if (oldPath.includes('file=')) {
+                    const match = oldPath.match(/file=([^&]+)/);
+                    if (match) oldPath = decodeURIComponent(match[1]);
+                }
+                await b2Service.deleteFile(oldPath);
+            } catch (delErr) {
+                console.error("Failed to delete old certificate:", delErr);
+            }
+        }
+
+        // Upload new certificate
+        const uploadResult = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "certificates");
+
+        assignment.certificate = {
+            url: uploadResult.url || uploadResult.filePath,
+            issuedAt: new Date(),
+            issuedBy: req.user.id
+        };
+
+        await assignment.save();
+
+        // Send email with new certificate
+        const emailAttachments = [{
+            ContentType: "application/pdf",
+            Filename: req.file.originalname,
+            Base64Content: req.file.buffer.toString("base64")
+        }];
+
+        try {
+            await sendCourseMail("CERTIFICATE_REGENERATED",
+                { email: assignment.student.email, name: assignment.student.name },
+                { courseName: assignment.itemId.title || "Internship" },
+                emailAttachments
+            );
+        } catch (mailErr) {
+            console.error("Error sending regenerated certificate email:", mailErr);
+        }
+
+        res.status(200).json({
+            message: "Certificate regenerated successfully",
+            certificate: assignment.certificate
+        });
+    } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });

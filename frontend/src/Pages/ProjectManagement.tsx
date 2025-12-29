@@ -13,9 +13,6 @@ import {
     Chip,
     MenuItem,
     Grid,
-    Tabs,
-    Tab,
-    Paper,
 } from "@mui/material";
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,10 +22,9 @@ import CustomSnackBar from "../Custom/CustomSnackBar";
 import { primaryButtonStyle, cancelButtonStyle, submitButtonStyle } from "../assets/Styles/ButtonStyles";
 import ProjectSubmissions from "./ProjectSubmissions";
 
-const ProjectManagement = () => {
+const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
     const token = Cookies.get("skToken");
     const queryClient = useQueryClient();
-    const [tabValue, setTabValue] = useState(0);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [formData, setFormData] = useState({
@@ -221,39 +217,30 @@ const ProjectManagement = () => {
     ];
 
     return (
-        <Box sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                <Typography variant="h5" fontWeight="bold">📝 Projects</Typography>
-                {tabValue === 0 && (
-                    <Button
-                        variant="contained"
-                        startIcon={<MdAdd />}
-                        onClick={() => handleOpen()}
-                        sx={{ ...primaryButtonStyle }}
-                    >
-                        Add Project
-                    </Button>
-                )}
-            </Box>
-
-            <Paper sx={{ mb: 3 }}>
-                <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} indicatorColor="primary" textColor="primary">
-                    <Tab label="Manage Projects" />
-                    <Tab label="Student Submissions & Certificates" />
-                </Tabs>
-            </Paper>
-
-            {tabValue === 0 ? (
-                <DataGrid
-                    rows={data || []}
-                    columns={columns}
-                    loading={isLoading}
-                    getRowId={(row) => row._id}
-                    pageSizeOptions={[10, 25]}
-                    initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-                    autoHeight
-                    sx={{ borderRadius: 2 }}
-                />
+        <Box>
+            {activeSubTab === 0 ? (
+                <Box>
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<MdAdd />}
+                            onClick={() => handleOpen()}
+                            sx={{ ...primaryButtonStyle }}
+                        >
+                            Add Project
+                        </Button>
+                    </Box>
+                    <DataGrid
+                        rows={data || []}
+                        columns={columns}
+                        loading={isLoading}
+                        getRowId={(row) => row._id}
+                        pageSizeOptions={[10, 25]}
+                        initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+                        autoHeight
+                        sx={{ borderRadius: 2 }}
+                    />
+                </Box>
             ) : (
                 <ProjectSubmissions />
             )}
@@ -262,22 +249,22 @@ const ProjectManagement = () => {
                 <DialogTitle>{editingItem ? "Edit Project" : "New Project"}</DialogTitle>
                 <DialogContent>
                     <Grid container spacing={2} sx={{ mt: 1 }}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Title *" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Mentor *" value={formData.mentor} onChange={(e) => setFormData({ ...formData, mentor: e.target.value })} fullWidth />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField label="Requirements" value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} fullWidth multiline rows={2} />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <TextField label="Tasks (one per line)" value={formData.tasks} onChange={(e) => setFormData({ ...formData, tasks: e.target.value })} fullWidth multiline rows={3} placeholder="Task 1&#10;Task 2&#10;Task 3" />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid size={12}>
                             <Typography variant="subtitle2" sx={{ mb: 1 }}>Required Deliverables</Typography>
                             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                                 {commonDeliverables.map((del) => (
@@ -296,22 +283,22 @@ const ProjectManagement = () => {
                                 ))}
                             </Box>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Deadline *" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Mentor Email" value={formData.mentorEmail} onChange={(e) => setFormData({ ...formData, mentorEmail: e.target.value })} fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField select label="Project Type" value={formData.projectType} onChange={(e) => setFormData({ ...formData, projectType: e.target.value })} fullWidth>
                                 <MenuItem value="individual">Individual</MenuItem>
                                 <MenuItem value="group">Group</MenuItem>
                             </TextField>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Max Group Size" type="number" value={formData.maxGroupSize} onChange={(e) => setFormData({ ...formData, maxGroupSize: Number(e.target.value) })} fullWidth disabled={formData.projectType === "individual"} />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} fullWidth>
                                 <MenuItem value="Active">Active</MenuItem>
                                 <MenuItem value="Assigned">Assigned</MenuItem>
@@ -319,13 +306,13 @@ const ProjectManagement = () => {
                                 <MenuItem value="Completed">Completed</MenuItem>
                             </TextField>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Skills (comma separated)" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} fullWidth placeholder="e.g., React, Node.js" />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Max Score" type="number" value={formData.maxScore} onChange={(e) => setFormData({ ...formData, maxScore: Number(e.target.value) })} fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField label="Passing Score" type="number" value={formData.passingScore} onChange={(e) => setFormData({ ...formData, passingScore: Number(e.target.value) })} fullWidth />
                         </Grid>
                     </Grid>

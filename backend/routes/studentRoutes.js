@@ -285,7 +285,7 @@ router.post("/courses/:assignmentId/upload-assignment", upload.single("file"), a
 
         assignment.courseSubmissions.push({
             fileName: req.file.originalname,
-            filePath: uploadResult.url,
+            filePath: uploadResult.url || uploadResult.filePath,
             uploadedBy: req.user.id,
             uploadedByRole: "student",
             uploadedAt: new Date(),
@@ -327,11 +327,26 @@ router.post("/assignments/:assignmentId/upload-payment-proof", upload.single("pr
             return res.status(400).json({ message: "No proof file uploaded" });
         }
 
+        // If there's an existing proof, delete it from B2
+        if (assignment.payment?.proofFile) {
+            try {
+                let oldPath = assignment.payment.proofFile;
+                // If it's a URL, extract the 'file' param
+                if (oldPath.includes('file=')) {
+                    const match = oldPath.match(/file=([^&]+)/);
+                    if (match) oldPath = decodeURIComponent(match[1]);
+                }
+                await b2Service.deleteFile(oldPath);
+            } catch (delErr) {
+                console.error("Failed to delete old B2 file:", delErr);
+            }
+        }
+
         // Upload to B2
         const uploadResult = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "payment-proofs");
 
         // Update payment with proof details
-        assignment.payment.proofFile = uploadResult.url;
+        assignment.payment.proofFile = uploadResult.url || uploadResult.filePath;
         assignment.payment.proofUploadedAt = new Date();
         assignment.payment.paymentMethod = paymentMethod || "other";
         if (transactionId) {

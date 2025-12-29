@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { openFileInNewTab } from "../utils/normalizeUrl";
 import {
     Box,
     Typography,
@@ -277,6 +278,9 @@ const ProjectSubmissions = () => {
     const handleOpenUpload = (assignment: any) => { setSelectedAssignment(assignment); setUploadModal(true); };
     const handleOpenViewFiles = (assignment: any) => { setSelectedAssignment(assignment); setViewFilesModal(true); };
     const handleOpenViewRequirement = (assignment: any) => { setSelectedAssignment(assignment); setViewRequirementModal(true); };
+    const handleOpenViewProof = (proof: string) => {
+        openFileInNewTab(proof);
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -394,6 +398,17 @@ const ProjectSubmissions = () => {
                                             <Typography variant="caption" sx={{ display: "block", color: item.payment?.status === "paid" ? "success.main" : "warning.main" }}>
                                                 {item.payment?.status?.toUpperCase()}
                                             </Typography>
+                                            {item.payment?.proofFile && (
+                                                <Button
+                                                    size="small"
+                                                    variant="text"
+                                                    startIcon={<MdVisibility />}
+                                                    onClick={() => handleOpenViewProof(item.payment.proofFile)}
+                                                    sx={{ ...textLinkStyle, fontSize: "10px", p: 0, minWidth: 0, justifyContent: "flex-start" }}
+                                                >
+                                                    View Proof
+                                                </Button>
+                                            )}
                                         </Box>
                                     </TableCell>
                                     <TableCell>

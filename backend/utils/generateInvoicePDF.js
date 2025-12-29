@@ -46,7 +46,7 @@ const generateInvoicePDF = async (invoiceData) => {
             currentY += 15;
             doc.font("Helvetica-Bold").fontSize(14).fillColor(primaryColor).text("Skill Up Tech Solutions", 130, currentY);
             doc.font("Helvetica").fontSize(9).fillColor(grey);
-            doc.text("53/10, Virudhachalam Main Road,", 130, currentY + 18);
+            doc.text("344 -1 st Floor,Faru complex,Annai Tersa Nagar,", 130, currentY + 18);
             doc.text("Ulundurpet - 606107", 130, currentY + 30);
             doc.text("Email: skilluptechsolution@gmail.com", 130, currentY + 42);
 

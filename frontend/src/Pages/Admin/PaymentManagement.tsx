@@ -27,9 +27,10 @@ import {
 } from "@mui/material";
 import { MdVisibility, MdCheck, MdRefresh, MdReceipt, MdDownload } from "react-icons/md";
 import { useGetPendingPayments, useMarkPaymentPaid, useGenerateInvoice } from "../../Hooks/payment";
+import { openFileInNewTab, normalizeDownloadUrl } from "../../utils/normalizeUrl";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import { submitButtonStyle } from "../../assets/Styles/ButtonStyles";
-import { normalizeDownloadUrl } from "../../utils/normalizeUrl";
+
 
 interface Payment {
     _id: string;
@@ -57,8 +58,6 @@ interface Payment {
 const PaymentManagement = () => {
     const [statusFilter, setStatusFilter] = useState<string>("pending");
     const [typeFilter, setTypeFilter] = useState<string>("");
-    const [proofModal, setProofModal] = useState(false);
-    const [selectedProof, setSelectedProof] = useState<string | null>(null);
     const [markPaidModal, setMarkPaidModal] = useState(false);
     const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
     const [transactionId, setTransactionId] = useState("");
@@ -88,8 +87,7 @@ const PaymentManagement = () => {
     };
 
     const handleViewProof = (proofUrl: string) => {
-        setSelectedProof(normalizeDownloadUrl(proofUrl));
-        setProofModal(true);
+        openFileInNewTab(proofUrl);
     };
 
     const handleOpenMarkPaid = (payment: Payment) => {
@@ -110,6 +108,7 @@ const PaymentManagement = () => {
                 setMarkPaidModal(false);
                 setSelectedPayment(null);
                 setTransactionId("");
+                refetch(); // Refetch payments after marking one as paid
             },
             onError: (err: any) => {
                 CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to mark as paid");
@@ -142,7 +141,7 @@ const PaymentManagement = () => {
         <Box sx={{ p: 3 }}>
             {/* Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Typography variant="h5" fontWeight="bold">💳 Payment Management</Typography>
+                <Typography variant="h5" fontWeight="bold"> Payment Management</Typography>
 
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                     <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -302,33 +301,6 @@ const PaymentManagement = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
-
-            {/* Proof View Modal */}
-            <Dialog open={proofModal} onClose={() => setProofModal(false)} maxWidth="md" fullWidth>
-                <DialogTitle>Payment Proof</DialogTitle>
-                <DialogContent>
-                    {selectedProof && (
-                        <Box sx={{ textAlign: "center", py: 2 }}>
-                            <img
-                                src={selectedProof}
-                                alt="Payment Proof"
-                                style={{ maxWidth: "100%", maxHeight: "70vh", borderRadius: 8, border: "1px solid #e5e7eb" }}
-                            />
-                        </Box>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setProofModal(false)}>Close</Button>
-                    {selectedProof && (
-                        <Button
-                            variant="contained"
-                            onClick={() => window.open(selectedProof, "_blank")}
-                        >
-                            Open in New Tab
-                        </Button>
-                    )}
-                </DialogActions>
-            </Dialog>
 
             {/* Mark as Paid Modal */}
             <Dialog open={markPaidModal} onClose={() => setMarkPaidModal(false)} maxWidth="sm" fullWidth>

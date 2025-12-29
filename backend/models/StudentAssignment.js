@@ -173,6 +173,14 @@ const studentAssignmentSchema = new mongoose.Schema({
         }
     },
 
+    // Custom Certificate Details (for editing/regeneration)
+    certificateDetails: {
+        recipientName: { type: String },    // Custom name (defaults to student.name)
+        domain: { type: String },           // Custom domain/field of study
+        startDate: { type: Date },          // Custom start date
+        endDate: { type: Date }             // Custom end date
+    },
+
     // Timestamps
     assignedAt: {
         type: Date,

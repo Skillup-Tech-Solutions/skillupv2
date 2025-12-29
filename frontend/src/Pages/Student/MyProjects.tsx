@@ -46,6 +46,7 @@ import { IoClose } from "react-icons/io5";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import { primaryButtonStyle, outlinedButtonStyle, dangerButtonStyle } from "../../assets/Styles/ButtonStyles";
 import { useUploadPaymentProof, useGetPaymentSettings } from "../../Hooks/payment";
+import PaymentVerifying from "../../Components/PaymentVerifying";
 
 import { downloadFileAsBlob } from "../../utils/normalizeUrl";
 
@@ -107,7 +108,7 @@ const getStatusBadge = (assignment: any) => {
         return { label: "Ready to Download", color: "#3b82f6", bg: "#eff6ff" };
     }
     if (status === "final-payment-pending" || status === "advance-payment-pending") {
-        if (assignment.payment?.proofFile) {
+        if (assignment.payment?.proofFile || assignment.payment?.proofUploadedAt) {
             return { label: "Payment Verifying", color: "#f59e0b", bg: "#fffbeb" };
         }
         return { label: "Payment Required", color: "#ef4444", bg: "#fef2f2" };
@@ -301,8 +302,8 @@ const MyProjects = () => {
                         const activeStep = getActiveStep(assignment.status);
                         const isDelivered = assignment.status === "delivered" || assignment.status === "completed";
                         const needsRequirement = assignment.status === "assigned";
-                        const needsPayment = (assignment.status === "advance-payment-pending" || assignment.status === "final-payment-pending") && !assignment.payment?.proofFile;
-                        const paymentVerifying = (assignment.status === "advance-payment-pending" || assignment.status === "final-payment-pending") && assignment.payment?.proofFile;
+                        const needsPayment = (assignment.status === "advance-payment-pending" || assignment.status === "final-payment-pending") && !assignment.payment?.proofFile && !assignment.payment?.proofUploadedAt;
+                        const paymentVerifying = (assignment.status === "advance-payment-pending" || assignment.status === "final-payment-pending") && (assignment.payment?.proofFile || assignment.payment?.proofUploadedAt);
                         const readyToDownload = assignment.status === "ready-for-download";
 
                         return (
@@ -449,15 +450,7 @@ const MyProjects = () => {
 
                                     {/* PAYMENT VERIFYING */}
                                     {paymentVerifying && (
-                                        <Box sx={{ p: 3, bgcolor: "#fffbeb", borderRadius: "8px", border: "1px solid #fcd34d", textAlign: "center" }}>
-                                            <MdAccessTime size={32} color="#f59e0b" />
-                                            <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "16px", color: "#d97706", mt: 1 }}>
-                                                Payment Under Review
-                                            </Typography>
-                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "13px", color: "var(--greyText)" }}>
-                                                Admin will verify your payment soon.
-                                            </Typography>
-                                        </Box>
+                                        <PaymentVerifying onReupload={() => { setSelectedProject(assignment); setPaymentProofModal(true); }} />
                                     )}
 
                                     {/* IN PROGRESS / DEMO / REQ SUBMITTED */}
