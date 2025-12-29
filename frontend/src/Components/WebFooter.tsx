@@ -21,12 +21,23 @@ const WebFooter = () => {
     >
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: "20px",
           alignItems: "start",
           paddingBottom: "15px",
-          "@media (max-width: 768px)": { flexDirection: "column" },
-          "@media (max-width: 690px)": { gap: "20px" },
+          "@media (max-width: 991px)": {
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: "25px 20px",
+          },
+          "@media (max-width: 768px)": {
+            gridTemplateColumns: "repeat(2, 1fr)",
+            gap: "20px",
+          },
+          "@media (max-width: 450px)": {
+            gridTemplateColumns: "1fr",
+            gap: "25px",
+          },
         }}
       >
         <Box>

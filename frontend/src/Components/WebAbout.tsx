@@ -3,7 +3,7 @@ import { images } from "../assets/Images/Images";
 
 const WebAbout = () => {
   return (
-    <Box>
+    <Box sx={{ overflowX: "hidden" }}>
       <Box
         sx={{
           fontSize: "130px",
@@ -71,14 +71,14 @@ const WebAbout = () => {
             <img
               src={images.iso}
               alt="ISO Certified"
-              style={{ height: "50px", objectFit: "contain" }}
+              style={{ height: "50px", maxWidth: "100%", objectFit: "contain" }}
             />
           </Box>
           <Box>
             <img
               src={images.msme}
               alt="MSME Registered"
-              style={{ height: "50px", objectFit: "contain" }}
+              style={{ height: "50px", maxWidth: "100%", objectFit: "contain" }}
             />
           </Box>
         </Grid>

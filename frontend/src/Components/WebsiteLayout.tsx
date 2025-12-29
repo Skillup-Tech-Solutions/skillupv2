@@ -49,7 +49,7 @@ const WebsiteLayout = () => {
   };
 
   return (
-    <Box sx={{ position: "relative" }}>
+    <Box sx={{ position: "relative", overflowX: "hidden" }}>
       <Box sx={{ ...webImages }}>
         <Box
           component={"img"}
@@ -68,6 +68,7 @@ const WebsiteLayout = () => {
           padding: "10px 20px",
           zIndex: "999",
           position: "relative",
+          minHeight: "100vh",
           "@media (max-width: 991px)": { padding: "10px" },
           "@media (max-width: 600px)": { background: "#ffffffc4" },
           "@media (max-width: 450px)": { padding: "10px 5px" },
@@ -81,6 +82,7 @@ const WebsiteLayout = () => {
             position: "relative",
             "@media (max-width: 991px)": { padding: "10px 20px" },
             "@media (max-width: 550px)": { padding: "10px" },
+            "@media (max-width: 320px)": { padding: "8px 6px" },
           }}
         >
           <WebNavbar />

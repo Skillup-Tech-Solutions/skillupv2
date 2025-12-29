@@ -15,17 +15,13 @@ import { IoClose } from "react-icons/io5";
 import CustomInput from "../Custom/CustomInput";
 import CustomButton from "../Custom/CustomButton";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  carrersWebSchema,
-  carrersWebSchemaNew,
-} from "../assets/Validation/Schema";
-import { Controller, useForm } from "react-hook-form";
+import { carrersWebSchemaNew } from "../assets/Validation/Schema";
+import { useForm } from "react-hook-form";
 import { useGetCarrers } from "../Hooks/carrers";
-import CustomFileUpload from "../Custom/CustomFileUpload";
-import { useCarrerMail } from "../Hooks/review";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import emailjs from "emailjs-com";
 import { outlinedButtonStyle } from "../assets/Styles/ButtonStyles";
+
 
 const style = {
   position: "absolute",
@@ -49,19 +45,23 @@ const WebCareers = () => {
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(carrersWebSchemaNew),
   });
   const [loading, setLoading] = useState(false);
-  const { data: getUsersResponse } = useGetCarrers();
+  const { data: getUsersResponse, isLoading } = useGetCarrers();
   const jobData = getUsersResponse && getUsersResponse.data;
   const [open, setOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<{
     title: string;
     id: string;
   } | null>(null);
+
+  // Filter active careers
+  const activeCareers = jobData?.filter(
+    (job: any) => job.status?.toLowerCase() === "active"
+  );
 
   const handleOpen = (jobTitle: string, jobId: string) => {
     setSelectedJob({ title: jobTitle, id: jobId });
@@ -72,7 +72,7 @@ const WebCareers = () => {
     reset();
     setOpen(false);
   };
-  const { mutate: carrerMutation } = useCarrerMail();
+
   const onsubmit = async (data: any) => {
     setLoading(true);
     if (selectedJob) {
@@ -106,140 +106,194 @@ const WebCareers = () => {
 
   return (
     <Box>
-      {/* Heading */}
+      {/* Header Section */}
       <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
         sx={{
-          fontSize: "130px",
-          fontFamily: "Bold_W",
-          textTransform: "uppercase",
-          background: "linear-gradient(-1deg, #fff, var(--webprimary))",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          opacity: 0.8,
-          paddingTop: "40px",
-          mb: 4,
-          "@media (max-width: 768px)": { fontSize: "100px" },
-          "@media (max-width: 650px)": { fontSize: "80px" },
-          "@media (max-width: 500px)": { fontSize: "60px" },
-          "@media (max-width: 450px)": { fontSize: "50px" },
+          "@media (max-width: 690px)": {
+            flexDirection: "column",
+            alignItems: "start",
+            gap: 2,
+          },
         }}
       >
-        Careers
+        <Box
+          width={"80%"}
+          sx={{ "@media (max-width: 690px)": { width: "100%" } }}
+        >
+          <Typography
+            variant="h4"
+            fontWeight="bold"
+            gutterBottom
+            sx={{
+              fontFamily: "SemiBold_W",
+              fontSize: "24px",
+              "@media (max-width: 768px)": {
+                fontSize: "22px",
+              },
+              "@media (max-width: 690px)": { fontSize: "20px" },
+            }}
+          >
+            Career Opportunities
+          </Typography>
+          <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px" }}>
+            Join our team and be part of an innovative organization. We offer
+            exciting career opportunities with competitive packages and growth
+            potential.
+          </Typography>
+        </Box>
       </Box>
 
       {/* Job Cards */}
       <Grid
         container
         sx={{
-          alignItems: "center",
+          gap: 3,
+          alignItems: "stretch",
           justifyContent: "space-between",
-          gap: "20px",
         }}
       >
-        {getUsersResponse &&
-          jobData
-            ?.filter((job: any) => job.status?.toLowerCase() === "active") // ✅ Only show active careers
-            .map((job: any, index: any) => (
-              <Box
-                flexBasis={"48%"}
-                key={index}
+        {isLoading ? (
+          <Typography
+            sx={{
+              fontFamily: "Regular_W",
+              fontSize: "14px",
+              textAlign: "center",
+              margin: "auto",
+              width: "max-content",
+              py: 4,
+            }}
+          >
+            Loading careers...
+          </Typography>
+        ) : activeCareers && activeCareers.length > 0 ? (
+          activeCareers.map((job: any, index: any) => (
+            <Box
+              flexBasis={"48%"}
+              key={index}
+              sx={{
+                maxWidth: "100%",
+                "@media (max-width: 768px)": { flexBasis: "100%" },
+              }}
+            >
+              <Card
                 sx={{
-                  "@media (max-width: 768px)": { flexBasis: "100%" },
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "10px",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
-                <Card
-                  sx={{
-                    border: "1px solid #eee",
-                    borderRadius: "10px",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
-                    height: "100%",
-                  }}
-                >
-                  <CardContent>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={1}
-                    >
-                      <Typography
-                        variant="h6"
-                        sx={{ fontFamily: "SemiBold_W", color: "#222" }}
-                      >
-                        {job.jobTitle}
-                      </Typography>
-                      <Chip
-                        label={job.vancancy}
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            job.vancancy.toLowerCase() === "open"
-                              ? "#e0f7e9"
-                              : "#f9e0e0",
-                          color:
-                            job.vancancy.toLowerCase() === "open"
-                              ? "#219653"
-                              : "#d32f2f",
-                          fontWeight: 500,
-                        }}
-                      />
-                    </Stack>
-
+                <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    mb={1}
+                  >
                     <Typography
-                      variant="body2"
-                      sx={{ color: "#555", fontFamily: "Regular_W", mb: 2 }}
+                      variant="h6"
+                      sx={{ fontFamily: "SemiBold_W", color: "#222", fontSize: "18px" }}
                     >
-                      {job.description}
+                      {job.jobTitle}
                     </Typography>
-
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      flexWrap="wrap"
-                      mb={2}
-                      sx={{ gap: "10px" }}
-                    >
-                      <Chip
-                        label={`Work Type: ${job.workType}`}
-                        size="small"
-                        sx={{ fontSize: "12px" }}
-                      />
-                      <Chip
-                        label={`Openings: ${job.noOfopening}`}
-                        size="small"
-                        sx={{ fontSize: "12px" }}
-                      />
-                      <Chip
-                        label={`Salary: ${job.salaryRange}`}
-                        size="small"
-                        sx={{ fontSize: "12px" }}
-                      />
-                    </Stack>
-
-                    <Typography
-                      variant="body2"
+                    <Chip
+                      label={job.vancancy}
+                      size="small"
                       sx={{
-                        fontSize: "13px",
-                        color: "#777",
+                        backgroundColor:
+                          job.vancancy?.toLowerCase() === "open"
+                            ? "#e0f7e9"
+                            : "#f9e0e0",
+                        color:
+                          job.vancancy?.toLowerCase() === "open"
+                            ? "#219653"
+                            : "#d32f2f",
+                        fontWeight: 500,
                         fontFamily: "Medium_W",
-                        mb: 2,
                       }}
-                    >
-                      <strong>Key Skills:</strong> {job.keySkill}
-                    </Typography>
+                    />
+                  </Stack>
 
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleOpen(job.jobTitle, job.id)}
-                      sx={{ ...outlinedButtonStyle, textTransform: "none", borderRadius: "6px" }}
-                      disabled={job.vancancy.toLowerCase() !== "open"}
-                    >
-                      Apply
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Box>
-            ))}
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#555", fontFamily: "Regular_W", mb: 2, flex: 1 }}
+                  >
+                    {job.description}
+                  </Typography>
+
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    mb={2}
+                    sx={{ gap: 1 }}
+                  >
+                    <Chip
+                      label={`Work Type: ${job.workType}`}
+                      size="small"
+                      sx={{ fontSize: "12px", fontFamily: "Medium_W" }}
+                    />
+                    <Chip
+                      label={`Openings: ${job.noOfopening}`}
+                      size="small"
+                      sx={{ fontSize: "12px", fontFamily: "Medium_W" }}
+                    />
+                    <Chip
+                      label={`Salary: ${job.salaryRange}`}
+                      size="small"
+                      sx={{ fontSize: "12px", fontFamily: "Medium_W" }}
+                    />
+                  </Stack>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontSize: "13px",
+                      color: "#777",
+                      fontFamily: "Medium_W",
+                      mb: 2,
+                    }}
+                  >
+                    <strong>Key Skills:</strong> {job.keySkill}
+                  </Typography>
+
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleOpen(job.jobTitle, job._id || job.id)}
+                    sx={{
+                      ...outlinedButtonStyle,
+                      textTransform: "none",
+                      borderRadius: "6px",
+                      minHeight: "44px",
+                    }}
+                    disabled={job.vancancy?.toLowerCase() !== "open"}
+                  >
+                    Apply Now
+                  </Button>
+                </CardContent>
+              </Card>
+            </Box>
+          ))
+        ) : (
+          <Typography
+            sx={{
+              fontFamily: "Regular_W",
+              fontSize: "14px",
+              textAlign: "center",
+              margin: "auto",
+              width: "max-content",
+              py: 4,
+            }}
+          >
+            No career opportunities available at the moment. Please check back later.
+          </Typography>
+        )}
       </Grid>
 
       {/* Apply Modal */}

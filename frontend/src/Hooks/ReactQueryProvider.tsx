@@ -4,8 +4,17 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { HydrationBoundary } from "@tanstack/react-query";
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { lazy, Suspense } from "react";
 import type { ReactNode } from "react";
+
+// Only load devtools in development
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+    import("@tanstack/react-query-devtools").then((mod) => ({
+      default: mod.ReactQueryDevtools,
+    }))
+  )
+  : () => null;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,7 +86,11 @@ export function ReactQueryProvider({
       <HydrationBoundary state={dehydratedState}>
         {children}
       </HydrationBoundary>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      )}
     </QueryClientProvider>
   );
 }

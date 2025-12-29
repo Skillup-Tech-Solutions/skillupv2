@@ -43,6 +43,8 @@ const WebHero = () => {
           justifyContent: "center",
           alignItems: "center",
           gap: "10px",
+          flexWrap: "wrap",
+          "@media (max-width: 450px)": { gap: "8px" },
         }}
       >
         <Button
@@ -53,12 +55,18 @@ const WebHero = () => {
             color: "var(--white)",
             width: "fit-content",
             textTransform: "capitalize",
-            padding: "5px 20px",
+            padding: "10px 24px",
             fontFamily: "Medium_W",
-            fontSize: "12px",
+            fontSize: "14px",
+            minHeight: "44px",
             "&:hover": {
               backgroundColor: "transparent",
               color: "var(--webprimary)",
+            },
+            "@media (max-width: 450px)": {
+              padding: "8px 20px",
+              fontSize: "13px",
+              minHeight: "40px",
             },
           }}
           onClick={() => navigate("/services")}
@@ -73,12 +81,18 @@ const WebHero = () => {
             color: "var(--webprimary)",
             width: "fit-content",
             textTransform: "capitalize",
-            padding: "5px 20px",
+            padding: "10px 24px",
             fontFamily: "Medium_W",
-            fontSize: "12px",
+            fontSize: "14px",
+            minHeight: "44px",
             "&:hover": {
               backgroundColor: "var(--webprimary)",
               color: "var(--white)",
+            },
+            "@media (max-width: 450px)": {
+              padding: "8px 20px",
+              fontSize: "13px",
+              minHeight: "40px",
             },
           }}
           onClick={() => navigate("/contact")}

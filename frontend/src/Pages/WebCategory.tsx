@@ -182,8 +182,8 @@ const WebCategory = () => {
       sx={
         location.pathname === "/"
           ? {
-            paddingTop: "60px",
-            "@media (max-width: 768px)": { paddingTop: "40px" },
+            paddingTop: "30px",
+            "@media (max-width: 768px)": { paddingTop: "20px" },
           }
           : { padding: "0px" }
       }
@@ -306,7 +306,11 @@ const WebCategory = () => {
             ]}
             value={selectedFilter}
             onValueChange={(value: any) => setSelectedFilter(value)}
-            boxSx={{ mb: 3, maxWidth: 300 }}
+            boxSx={{
+              mb: 3,
+              maxWidth: 300,
+              "@media (max-width: 450px)": { maxWidth: "100%" },
+            }}
             required={false}
           />
         </>
@@ -321,7 +325,10 @@ const WebCategory = () => {
           mockCategoryData.map((item, index) => (
             <Grid
               flexBasis={"48%"}
-              sx={{ "@media (max-width:690px)": { flexBasis: "100%" } }}
+              sx={{
+                maxWidth: "100%",
+                "@media (max-width:690px)": { flexBasis: "100%" },
+              }}
               key={index}
             >
               <Card sx={{ borderRadius: 3, overflow: "hidden" }}>

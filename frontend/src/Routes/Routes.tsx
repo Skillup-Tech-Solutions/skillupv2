@@ -138,6 +138,9 @@ const WebServiceDetail = lazyRetry(() => import("../Pages/WebServiceDetail"));
 const WebCategory = lazyRetry(() => import("../Pages/WebCategory"));
 const WebSyllabusView = lazyRetry(() => import("../Pages/WebSyllabusView"));
 
+// Utility Pages
+import OfflinePage from "../Components/OfflinePage";
+
 // Admin pages - Lazy
 const AdminDashboard = lazyRetry(() => import("../Pages/AdminDashboard"));
 const PeopleManagement = lazyRetry(() => import("../Pages/PeopleManagement"));
@@ -176,6 +179,10 @@ const routes = createHashRouter([
   { path: "/activate-account", element: <ActivateAccount /> },
   { path: "/forgotpassword", element: <ForgetPassword /> },
   { path: "/reviews", element: <Review /> },
+
+  // Offline/Error Pages (not lazy - needed when network fails)
+  { path: "/offline", element: <OfflinePage type="offline" /> },
+  { path: "/connection-error", element: <OfflinePage type="error" /> },
 
   // Public Website Routes (lazy loaded)
   {

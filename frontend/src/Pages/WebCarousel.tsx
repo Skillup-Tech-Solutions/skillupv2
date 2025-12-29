@@ -75,9 +75,11 @@ const WebCarousel = () => {
                 "@media (max-width: 768px)": {
                   fontSize: "30px",
                   lineHeight: "1.4",
+                  px: 4,
                 },
-                "@media (max-width: 690px)": { fontSize: "26px" },
-                "@media (max-width: 450px)": { fontSize: "24px", padding: "10px" },
+                "@media (max-width: 690px)": { fontSize: "26px", px: 3 },
+                "@media (max-width: 450px)": { fontSize: "20px", px: 2 },
+                "@media (max-width: 320px)": { fontSize: "18px", px: 1.5 },
               }}
             >
               {text}
@@ -100,12 +102,13 @@ const WebCarousel = () => {
               key={i}
               onClick={() => setIndex(i)}
               sx={{
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 borderRadius: "50%",
-                backgroundColor: index === i ? "#fff" : "#ccc",
+                backgroundColor: index === i ? "#fff" : "rgba(255,255,255,0.5)",
                 cursor: "pointer",
                 transition: "all 0.3s ease-in-out",
+                "&:hover": { transform: "scale(1.2)" },
               }}
             />
           ))}

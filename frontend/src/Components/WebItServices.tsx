@@ -19,6 +19,12 @@ import RouterIcon from "@mui/icons-material/Router";
 import BugReportIcon from "@mui/icons-material/BugReport";
 import CampaignIcon from "@mui/icons-material/Campaign";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import SpeedIcon from "@mui/icons-material/Speed";
+import GroupsIcon from "@mui/icons-material/Groups";
+import SupportIcon from "@mui/icons-material/Support";
+import SavingsIcon from "@mui/icons-material/Savings";
+import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const itServices = [
@@ -104,34 +110,63 @@ const itServices = [
 
 const whyChooseUs = [
   {
-    icon: "⚡",
+    icon: SpeedIcon,
     title: "On-Time Delivery",
     desc: "We respect deadlines and deliver projects on schedule without compromising quality.",
   },
   {
-    icon: "👨‍💻",
+    icon: GroupsIcon,
     title: "Expert Team",
     desc: "Our skilled professionals bring years of experience and cutting-edge expertise.",
   },
   {
-    icon: "🛠️",
+    icon: SupportIcon,
     title: "24/7 Support",
     desc: "Round-the-clock technical support to ensure your business runs smoothly.",
   },
   {
-    icon: "💰",
+    icon: SavingsIcon,
     title: "Cost-Effective",
     desc: "Premium quality services at competitive prices that fit your budget.",
   },
   {
-    icon: "🚀",
+    icon: RocketLaunchIcon,
     title: "Latest Technology",
     desc: "We use cutting-edge tools and frameworks to build future-ready solutions.",
   },
   {
-    icon: "📈",
+    icon: TrendingUpIcon,
     title: "Scalable Solutions",
     desc: "Our solutions grow with your business, adapting to your evolving needs.",
+  },
+];
+
+// Training Services
+const trainingServices = [
+  {
+    number: "01",
+    title: "Inplant Training",
+    desc: "Gain hands-on exposure in real-time industrial environments with practical learning experiences.",
+  },
+  {
+    number: "02",
+    title: "Internship Programmes",
+    desc: "Work on live projects under professional guidance and gain real industry experience.",
+  },
+  {
+    number: "03",
+    title: "Final Year Projects",
+    desc: "Complete assistance on innovative final year projects with expert mentorship.",
+  },
+  {
+    number: "04",
+    title: "Workshop Sessions",
+    desc: "Expert-led workshops on current technologies and industry best practices.",
+  },
+  {
+    number: "05",
+    title: "Courses",
+    desc: "Industry-relevant skills through hands-on training and certification programs.",
   },
 ];
 
@@ -146,8 +181,28 @@ const WebItServices = () => {
 
   return (
     <Box>
+      {/* Large Gradient Watermark Text - same style as About page */}
+      <Box
+        sx={{
+          fontSize: "130px",
+          fontFamily: "Bold_W",
+          paddingTop: "40px",
+          textTransform: "uppercase",
+          background: "linear-gradient(-1deg, #fff, var(--webprimary))",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          opacity: "0.8",
+          "@media (max-width: 768px)": { fontSize: "100px" },
+          "@media (max-width: 650px)": { fontSize: "80px" },
+          "@media (max-width: 500px)": { fontSize: "60px" },
+          "@media (max-width: 450px)": { fontSize: "50px" },
+        }}
+      >
+        Software Development
+      </Box>
+
       {/* Header Section */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, position: "relative", zIndex: 1, pt: 6 }}>
         <Typography
           variant="h4"
           fontWeight="bold"
@@ -368,7 +423,188 @@ const WebItServices = () => {
             justifyContent: "space-between",
           }}
         >
-          {whyChooseUs.map((item, index) => (
+          {whyChooseUs.map((item, index) => {
+            const IconComponent = item.icon;
+            return (
+              <Box
+                flexBasis={"30%"}
+                key={index}
+                sx={{
+                  "@media (max-width: 991px)": { flexBasis: "48%" },
+                  "@media (max-width: 690px)": { flexBasis: "100%" },
+                }}
+              >
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: "10px",
+                    border: "1px solid #e0e0e0",
+                    height: "100%",
+                    transition: "all 0.3s ease",
+                    position: "relative",
+                    overflow: "hidden",
+                    "&:hover": {
+                      borderColor: "var(--webprimary)",
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                      "& .why-icon-bg": {
+                        transform: "scale(1.1)",
+                      },
+                      "& .why-arrow": {
+                        backgroundColor: "var(--webprimary)",
+                        borderColor: "var(--webprimary)",
+                        "& svg": {
+                          color: "#fff",
+                        },
+                      },
+                    },
+                  }}
+                >
+                  <CardContent sx={{ position: "relative", zIndex: 1 }}>
+                    {/* Icon and Number Row */}
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      mb={2}
+                    >
+                      {/* Icon */}
+                      <Box
+                        className="why-icon-bg"
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: "10px",
+                          backgroundColor: "var(--weblight)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "transform 0.3s ease",
+                        }}
+                      >
+                        <IconComponent
+                          sx={{
+                            fontSize: 24,
+                            color: "var(--webprimary)",
+                          }}
+                        />
+                      </Box>
+                      {/* Number */}
+                      <Typography
+                        sx={{
+                          fontFamily: "SemiBold_W",
+                          fontSize: "20px",
+                          color: "var(--webprimary)",
+                          opacity: 0.6,
+                        }}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </Typography>
+                    </Box>
+
+                    {/* Title */}
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontFamily: "Bold_W",
+                        fontSize: "18px",
+                        lineHeight: "1.4",
+                        mb: 1,
+                        "@media (max-width: 768px)": { fontSize: "16px" },
+                      }}
+                    >
+                      {item.title}
+                    </Typography>
+
+                    {/* Description */}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        fontFamily: "Regular_W",
+                        fontSize: "14px",
+                        lineHeight: 1.6,
+                        "@media (max-width: 768px)": { fontSize: "13px" },
+                      }}
+                    >
+                      {item.desc}
+                    </Typography>
+
+                    {/* Arrow Button */}
+                    <Box mt={2}>
+                      <IconButton
+                        className="why-arrow"
+                        sx={{
+                          border: "1px solid #eee",
+                          width: 36,
+                          height: 36,
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        <NorthEastIcon
+                          fontSize="small"
+                          sx={{ color: "var(--webprimary)" }}
+                        />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+
+      {/* Training & Education Section */}
+      <Box sx={{ mb: 4 }}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+          sx={{
+            "@media (max-width: 690px)": {
+              flexDirection: "column",
+              alignItems: "start",
+              gap: 2,
+            },
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              gutterBottom
+              sx={{
+                fontFamily: "SemiBold_W",
+                fontSize: "24px",
+                "@media (max-width: 768px)": { fontSize: "22px" },
+                "@media (max-width: 690px)": { fontSize: "20px" },
+              }}
+            >
+              Training & Education
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: "Regular_W",
+                fontSize: "14px",
+                color: "#666",
+              }}
+            >
+              Industry-ready skills through hands-on training and project-based learning programs
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Training Services Grid */}
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 3,
+            justifyContent: "space-between",
+          }}
+        >
+          {trainingServices.map((item, index) => (
             <Box
               flexBasis={"30%"}
               key={index}
@@ -384,38 +620,55 @@ const WebItServices = () => {
                   border: "1px solid #e0e0e0",
                   height: "100%",
                   transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  position: "relative",
+                  overflow: "hidden",
                   "&:hover": {
                     borderColor: "var(--webprimary)",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                    "& .training-arrow": {
+                      backgroundColor: "var(--webprimary)",
+                      borderColor: "var(--webprimary)",
+                      "& svg": {
+                        color: "#fff",
+                      },
+                    },
                   },
                 }}
+                onClick={() => {
+                  if (item.title === "Courses") {
+                    navigate("/services/courses");
+                  } else if (item.title === "Internship Programmes" || item.title === "Workshop Sessions") {
+                    navigate("/services/category", { state: item.title });
+                  } else {
+                    navigate("/services/details", { state: item.title });
+                  }
+                }}
               >
-                <CardContent>
-                  {/* Icon */}
-                  <Box
+                <CardContent sx={{ position: "relative", zIndex: 1 }}>
+                  {/* Number */}
+                  <Typography
                     sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: "10px",
-                      backgroundColor: "var(--weblight)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      fontFamily: "SemiBold_W",
                       fontSize: "24px",
-                      mb: 2,
+                      textAlign: "right",
+                      color: "var(--webprimary)",
+                      opacity: 0.6,
+                      "@media (max-width: 768px)": { fontSize: "20px" },
                     }}
                   >
-                    {item.icon}
-                  </Box>
+                    {item.number}
+                  </Typography>
 
                   {/* Title */}
                   <Typography
                     variant="subtitle1"
+                    mt={1}
                     sx={{
                       fontFamily: "Bold_W",
-                      fontSize: "16px",
+                      fontSize: "18px",
                       lineHeight: "1.4",
-                      mb: 1,
+                      "@media (max-width: 768px)": { fontSize: "16px" },
                     }}
                   >
                     {item.title}
@@ -425,14 +678,34 @@ const WebItServices = () => {
                   <Typography
                     variant="body2"
                     color="text.secondary"
+                    mt={1}
                     sx={{
                       fontFamily: "Regular_W",
                       fontSize: "14px",
                       lineHeight: 1.6,
+                      "@media (max-width: 768px)": { fontSize: "13px" },
                     }}
                   >
                     {item.desc}
                   </Typography>
+
+                  {/* Arrow Button */}
+                  <Box mt={2}>
+                    <IconButton
+                      className="training-arrow"
+                      sx={{
+                        border: "1px solid #eee",
+                        width: 36,
+                        height: 36,
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <NorthEastIcon
+                        fontSize="small"
+                        sx={{ color: "var(--webprimary)" }}
+                      />
+                    </IconButton>
+                  </Box>
                 </CardContent>
               </Card>
             </Box>

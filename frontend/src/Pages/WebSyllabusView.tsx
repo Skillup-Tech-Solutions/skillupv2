@@ -143,9 +143,9 @@ const WebSyllabusView = () => {
                       <Chip
                         label={`₹${Math.round(
                           syllabusData.courseId.price -
-                            (syllabusData.courseId.price *
-                              syllabusData.courseId.discount) /
-                              100
+                          (syllabusData.courseId.price *
+                            syllabusData.courseId.discount) /
+                          100
                         )}`}
                         variant="filled"
                         sx={{ fontFamily: "Medium_W" }}

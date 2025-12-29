@@ -107,6 +107,29 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
   if (error.code === "ECONNABORTED") {
     setTimeOutModal(true);
   }
+
+  // Handle network errors - redirect to offline page
+  if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+    // Save the intended URL before redirecting
+    const currentPath = window.location.hash.replace("#", "") || "/";
+    if (!currentPath.includes("/offline") && !currentPath.includes("/connection-error")) {
+      sessionStorage.setItem("intendedUrl", currentPath);
+    }
+
+    // Check if browser is offline or server is unreachable
+    if (!navigator.onLine) {
+      // No internet connection
+      if (!window.location.hash.includes("/offline")) {
+        window.location.href = "/#/offline";
+      }
+    } else {
+      // Internet is available but server is unreachable
+      if (!window.location.hash.includes("/connection-error")) {
+        window.location.href = "/#/connection-error";
+      }
+    }
+  }
+
   return Promise.reject(error);
 };
 

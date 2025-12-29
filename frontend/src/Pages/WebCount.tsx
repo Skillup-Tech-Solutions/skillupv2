@@ -18,12 +18,25 @@ const WebCount = () => {
         px: 4,
         py: 3,
         marginTop: "30px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
+        display: "grid",
+        gridTemplateColumns: "repeat(4, 1fr)",
         gap: 2,
         boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+        "@media (max-width: 768px)": {
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 3,
+          px: 3,
+        },
+        "@media (max-width: 450px)": {
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 2,
+          px: 2,
+          py: 2.5,
+        },
+        "@media (max-width: 320px)": {
+          gridTemplateColumns: "1fr",
+          gap: 2,
+        },
       }}
     >
       {stats.map((item, index) => (
@@ -34,11 +47,16 @@ const WebCount = () => {
             flexDirection: "column",
             alignItems: "center",
             px: 2,
+            py: 1,
             textAlign: "center",
-            borderRight: index !== stats.length - 1 ? "1px solid #eee" : "none",
-            minWidth: 100,
-            "@media (max-width: 690px)": { flexBasis: "48%" },
-            "@media (max-width: 550px)": { flexBasis: "100%" },
+            borderRight: {
+              xs: "none",
+              md: index !== stats.length - 1 ? "1px solid #eee" : "none",
+            },
+            "@media (max-width: 768px)": {
+              borderRight: "none",
+              py: 1.5,
+            },
           }}
         >
           <Typography
@@ -47,6 +65,8 @@ const WebCount = () => {
               fontWeight: "bold",
               color: "var(--webprimary)",
               fontFamily: "SemiBold_W",
+              "@media (max-width: 450px)": { fontSize: "18px" },
+              "@media (max-width: 320px)": { fontSize: "16px" },
             }}
           >
             {item.label === "Happy Clients" ? (
@@ -71,6 +91,8 @@ const WebCount = () => {
               fontWeight: 500,
               color: "#333",
               fontFamily: "Regular_W",
+              "@media (max-width: 450px)": { fontSize: "12px" },
+              "@media (max-width: 320px)": { fontSize: "11px" },
             }}
           >
             {item.label}

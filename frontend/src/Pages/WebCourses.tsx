@@ -206,7 +206,10 @@ const WebCourses = () => {
           courses.map((course, index) => (
             <Box
               flexBasis={"48%"}
-              sx={{ "@media (max-width: 690px)": { flexBasis: "100%" } }}
+              sx={{
+                maxWidth: "100%",
+                "@media (max-width: 690px)": { flexBasis: "100%" },
+              }}
               key={index}
             >
               <Card
@@ -275,6 +278,11 @@ const WebCourses = () => {
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      "@media (max-width: 450px)": {
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        gap: 1.5,
+                      },
                     }}
                   >
                     <Stack
@@ -329,7 +337,17 @@ const WebCourses = () => {
                       <Button
                         variant="outlined"
                         fullWidth
-                        sx={{ ...primaryButtonStyle, width: "max-content", marginBottom: "10px", borderRadius: "6px" }}
+                        sx={{
+                          ...primaryButtonStyle,
+                          width: "max-content",
+                          marginBottom: "10px",
+                          borderRadius: "6px",
+                          minHeight: "40px",
+                          "@media (max-width: 450px)": {
+                            width: "100%",
+                            marginBottom: 0,
+                          },
+                        }}
                         onClick={() => handleSyllabus(course._id)}
                       >
                         View Syllabus
@@ -340,7 +358,12 @@ const WebCourses = () => {
                   <Button
                     variant="outlined"
                     fullWidth
-                    sx={{ ...outlinedButtonStyle, borderRadius: "6px" }}
+                    sx={{
+                      ...outlinedButtonStyle,
+                      borderRadius: "6px",
+                      minHeight: "44px",
+                      mt: 2,
+                    }}
                     onClick={() => handleOpen(course.name, course._id)}
                   >
                     Get it Now
