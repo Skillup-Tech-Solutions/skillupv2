@@ -29,6 +29,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 import dayjs from "dayjs";
+import advancedFormat from "dayjs/plugin/advancedFormat";
+dayjs.extend(advancedFormat);
 import {
     MdSchool,
     MdUpload,
@@ -90,16 +92,16 @@ const CourseSubmissionsList = () => {
             // Wait a bit for images/fonts to render
             await new Promise(resolve => setTimeout(resolve, 500));
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 3,
+                scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
             });
-            const imgData = canvas.toDataURL("image/png");
+            const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
             const height = pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, "PNG", 0, 0, width, height);
+            pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
             // Convert PDF to Blob
             const pdfBlob = pdf.output("blob");
@@ -276,16 +278,16 @@ const CourseSubmissionsList = () => {
             // Generate certificate
             await new Promise(resolve => setTimeout(resolve, 500));
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 3,
+                scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
             });
-            const imgData = canvas.toDataURL("image/png");
+            const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
             const height = pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, "PNG", 0, 0, width, height);
+            pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
             const pdfBlob = pdf.output("blob");
             const formData = new FormData();

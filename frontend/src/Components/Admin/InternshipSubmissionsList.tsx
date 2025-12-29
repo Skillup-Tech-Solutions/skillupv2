@@ -28,6 +28,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 import dayjs from "dayjs";
+import advancedFormat from "dayjs/plugin/advancedFormat";
+dayjs.extend(advancedFormat);
 import {
     MdSchool,
     MdUpload,
@@ -42,7 +44,7 @@ import CustomSnackBar from "../../Custom/CustomSnackBar";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import background from "../../assets/Images/certificate_bg.jpg";
-import { openFileInNewTab } from "../../utils/normalizeUrl";
+import { openFileInNewTab, normalizeDownloadUrl } from "../../utils/normalizeUrl";
 import { smallPrimaryButton } from "../../assets/Styles/ButtonStyles";
 
 const InternshipSubmissionsList = () => {
@@ -118,16 +120,16 @@ const InternshipSubmissionsList = () => {
             // Wait a bit for images/fonts to render
             await new Promise(resolve => setTimeout(resolve, 500));
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 3,
+                scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
             });
-            const imgData = canvas.toDataURL("image/png");
+            const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
             const height = pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, "PNG", 0, 0, width, height);
+            pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
             // Convert PDF to Blob
             const pdfBlob = pdf.output("blob");
@@ -201,16 +203,16 @@ const InternshipSubmissionsList = () => {
             // Generate certificate
             await new Promise(resolve => setTimeout(resolve, 500));
             const canvas = await html2canvas(certificateRef.current, {
-                scale: 3,
+                scale: 2,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
             });
-            const imgData = canvas.toDataURL("image/png");
+            const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
             const height = pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, "PNG", 0, 0, width, height);
+            pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
             const pdfBlob = pdf.output("blob");
             const formData = new FormData();
@@ -332,7 +334,7 @@ const InternshipSubmissionsList = () => {
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <Button size="small" variant="text" href={row.certificate?.url} target="_blank" startIcon={<MdDownload />}>
+                                                        <Button size="small" variant="text" href={normalizeDownloadUrl(row.certificate?.url)} target="_blank" startIcon={<MdDownload />}>
                                                             Certificate
                                                         </Button>
                                                         <Tooltip title="Edit & Regenerate">
@@ -591,6 +593,64 @@ const InternshipSubmissionsList = () => {
                 </DialogActions>
             </Dialog>
 
+            {/* Certificate Edit Modal */}
+            <Dialog open={certEditModal} onClose={() => setCertEditModal(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ fontFamily: "SemiBold_W", fontSize: "18px" }}>
+                    Edit & Regenerate Certificate
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+                        <Alert severity="info" sx={{ fontFamily: "Regular_W", fontSize: "13px" }}>
+                            Edit the certificate details below. The regenerated certificate will be sent to the student's email.
+                        </Alert>
+                        <TextField
+                            label="Recipient Name"
+                            fullWidth
+                            value={certForm.recipientName}
+                            onChange={(e) => setCertForm({ ...certForm, recipientName: e.target.value })}
+                            sx={{ "& .MuiInputBase-input": { fontFamily: "Regular_W" } }}
+                        />
+                        <TextField
+                            label="Domain / Field of Study"
+                            fullWidth
+                            value={certForm.domain}
+                            onChange={(e) => setCertForm({ ...certForm, domain: e.target.value })}
+                            sx={{ "& .MuiInputBase-input": { fontFamily: "Regular_W" } }}
+                        />
+                        <Box sx={{ display: "flex", gap: 2 }}>
+                            <TextField
+                                label="Start Date"
+                                type="date"
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                value={certForm.startDate}
+                                onChange={(e) => setCertForm({ ...certForm, startDate: e.target.value })}
+                            />
+                            <TextField
+                                label="End Date"
+                                type="date"
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                value={certForm.endDate}
+                                onChange={(e) => setCertForm({ ...certForm, endDate: e.target.value })}
+                            />
+                        </Box>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button onClick={() => setCertEditModal(false)} sx={{ fontFamily: "Medium_W" }}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleRegenerateCertificate}
+                        disabled={regenerating}
+                        sx={{ fontFamily: "Medium_W", bgcolor: "var(--webprimary)" }}
+                    >
+                        {regenerating ? "Regenerating..." : "Regenerate & Send"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Hidden Certificate Template for Generation */}
             <Box sx={{ position: "absolute", left: "-3000px", top: 0 }}>
                 <Box
@@ -653,7 +713,7 @@ const InternshipSubmissionsList = () => {
                                     width: "100%",
                                 }}
                             >
-                                {selectedAssignment?.student?.name || "Student Name"}
+                                {certForm.recipientName || selectedAssignment?.student?.name || "Student Name"}
                             </Typography>
                         </Box>
 
@@ -668,7 +728,7 @@ const InternshipSubmissionsList = () => {
                                 color: "#333",
                             }}
                         >
-                            {selectedAssignment?.itemId?.title || "Field of Study"}
+                            {certForm.domain || selectedAssignment?.itemId?.title || "Field of Study"}
                         </Box>
 
                         {/* Start Date Overlay */}
@@ -682,7 +742,7 @@ const InternshipSubmissionsList = () => {
                                 color: "#333",
                             }}
                         >
-                            {selectedAssignment?.itemId?.startDate ? dayjs(selectedAssignment.itemId.startDate).format("Do MMMM YYYY") : "30th June 2025"}
+                            {certForm.startDate ? dayjs(certForm.startDate).format("Do MMMM YYYY") : selectedAssignment?.itemId?.startDate ? dayjs(selectedAssignment.itemId.startDate).format("Do MMMM YYYY") : "30th June 2025"}
                         </Box>
 
                         {/* End Date Overlay */}
@@ -696,7 +756,7 @@ const InternshipSubmissionsList = () => {
                                 color: "#333",
                             }}
                         >
-                            {selectedAssignment?.itemId?.endDate ? dayjs(selectedAssignment.itemId.endDate).format("Do MMMM YYYY") : "14th July 2025"}
+                            {certForm.endDate ? dayjs(certForm.endDate).format("Do MMMM YYYY") : selectedAssignment?.itemId?.endDate ? dayjs(selectedAssignment.itemId.endDate).format("Do MMMM YYYY") : "14th July 2025"}
                         </Box>
                     </Box>
                 </Box>
