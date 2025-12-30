@@ -213,13 +213,14 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                 left: 0,
                 right: 0,
                 bottom: 0,
-                zIndex: 99999,
-                width: "100vw",
-                height: "100vh",
+                zIndex: 1000, // Reduced from 99999 to avoid being flagged as a malicious overlay
+                width: "100%",
+                height: "100%",
                 display: "flex",
                 flexDirection: "column",
                 bgcolor: "#0f172a",
                 overflow: "hidden",
+                touchAction: "none", // Help browser distinguish between UI taps and gestures
             }}
         >
             {/* Header Bar */}

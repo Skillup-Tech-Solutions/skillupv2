@@ -18,14 +18,12 @@ import {
     UploadSimple,
     CreditCard,
     Clock,
-    User,
     CalendarBlank,
     CheckCircle,
     CaretDown,
     ClockCounterClockwise,
     File,
     X,
-    Sparkle,
     Trophy,
     Buildings,
     FileText,
@@ -134,7 +132,7 @@ const MyInternships = () => {
             color: "#f8fafc",
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: "14px",
-            borderRadius: "8px",
+            borderRadius: "6px",
             "& fieldset": { borderColor: "#475569" },
             "&:hover fieldset": { borderColor: "#64748b" },
             "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
@@ -187,7 +185,7 @@ const MyInternships = () => {
                 <Box
                     component="h1"
                     sx={{
-                        fontSize: { xs: "20px", md: "24px" },
+                        fontSize: { xs: "18px", sm: "20px", md: "24px" },
                         fontFamily: "'Chivo', sans-serif",
                         fontWeight: 700,
                         textTransform: "uppercase",
@@ -196,13 +194,13 @@ const MyInternships = () => {
                         m: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: { xs: 1, md: 1.5 },
                     }}
                 >
                     <Briefcase size={28} weight="duotone" color="#a855f7" />
                     My Internships
                 </Box>
-                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: "14px" }}>
+                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: { xs: "13px", md: "14px" }, display: { xs: "none", sm: "block" } }}>
                     Track your internship progress and manage submissions
                 </Box>
             </Box>
@@ -212,8 +210,8 @@ const MyInternships = () => {
                     sx={{
                         bgcolor: "rgba(30, 41, 59, 0.4)",
                         border: "1px solid rgba(71, 85, 105, 0.6)",
-                        borderRadius: "12px",
-                        p: 6,
+                        borderRadius: "6px",
+                        p: { xs: 4, md: 6 },
                         textAlign: "center",
                     }}
                 >
@@ -237,7 +235,7 @@ const MyInternships = () => {
                                 sx={{
                                     bgcolor: "rgba(30, 41, 59, 0.4)",
                                     border: "1px solid rgba(71, 85, 105, 0.6)",
-                                    borderRadius: "12px",
+                                    borderRadius: "6px",
                                     overflow: "hidden",
                                 }}
                             >
@@ -259,7 +257,7 @@ const MyInternships = () => {
                                     )}
 
                                     {/* Internship Info */}
-                                    <Box sx={{ flex: 1, p: 3 }}>
+                                    <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
                                         {/* Status Badge */}
                                         <Box sx={{ mb: 2 }}>
                                             <Box
@@ -270,7 +268,7 @@ const MyInternships = () => {
                                                     gap: 0.5,
                                                     px: 1.5,
                                                     py: 0.5,
-                                                    borderRadius: "8px",
+                                                    borderRadius: "6px",
                                                     fontSize: "11px",
                                                     fontWeight: 600,
                                                     textTransform: "uppercase",
@@ -288,7 +286,7 @@ const MyInternships = () => {
                                         <Box
                                             component="h3"
                                             sx={{
-                                                fontSize: "18px",
+                                                fontSize: { xs: "16px", md: "18px" },
                                                 fontWeight: 600,
                                                 color: "#f8fafc",
                                                 m: 0,
@@ -339,8 +337,8 @@ const MyInternships = () => {
                                 </Box>
 
                                 {/* Progress Stepper */}
-                                <Box sx={{ p: 2, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)", overflowX: "auto" }}>
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 350 }}>
                                         {progressSteps.map((label, idx) => (
                                             <Box key={label} sx={{ display: "flex", alignItems: "center", flex: idx < progressSteps.length - 1 ? 1 : "none" }}>
                                                 <Box sx={{ textAlign: "center" }}>
@@ -378,7 +376,7 @@ const MyInternships = () => {
                                 </Box>
 
                                 {/* Action Section */}
-                                <Box sx={{ p: 3 }}>
+                                <Box sx={{ p: { xs: 2, md: 3 } }}>
                                     {/* PAYMENT REQUIRED */}
                                     {paymentPending && !assignment.payment?.proofFile && !assignment.payment?.proofUploadedAt && (
                                         <Box

@@ -196,7 +196,7 @@ const AdminDashboard = () => {
           <Box
             component="h1"
             sx={{
-              fontSize: "24px",
+              fontSize: { xs: "18px", sm: "20px", md: "24px" },
               fontFamily: "'Chivo', sans-serif",
               fontWeight: 700,
               color: "#f8fafc",
@@ -355,7 +355,7 @@ const AdminDashboard = () => {
             {monthYear}
           </Box>
         </Box>
-        <Box sx={{ height: 280 }}>
+        <Box sx={{ height: { xs: 200, md: 280 } }}>
           <Bar data={chartData} options={chartOptions} />
         </Box>
       </Box>

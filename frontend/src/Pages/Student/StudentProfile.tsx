@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, Button, CircularProgress, Alert } from "@mui/material";
+import { Box, TextField, Button, Alert } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -12,7 +12,6 @@ import {
     Lock,
     PencilSimple,
     CheckCircle,
-    XCircle,
     Sparkle,
     IdentificationBadge,
 } from "@phosphor-icons/react";
@@ -194,7 +193,7 @@ const StudentProfile = () => {
             color: "#f8fafc",
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: "14px",
-            borderRadius: "8px",
+            borderRadius: "6px",
             "& fieldset": { borderColor: "#475569" },
             "&:hover fieldset": { borderColor: "#64748b" },
             "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
@@ -224,7 +223,7 @@ const StudentProfile = () => {
                         m: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: { xs: 1, md: 1.5 },
                     }}
                 >
                     <User size={28} weight="duotone" color="#60a5fa" />
@@ -271,7 +270,7 @@ const StudentProfile = () => {
                         sx={{
                             width: 80,
                             height: 80,
-                            borderRadius: "12px",
+                            borderRadius: "6px",
                             background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
                             display: "flex",
                             alignItems: "center",
@@ -318,7 +317,7 @@ const StudentProfile = () => {
                                 gap: 0.5,
                                 px: 1.5,
                                 py: 0.5,
-                                borderRadius: "8px",
+                                borderRadius: "6px",
                                 fontSize: "12px",
                                 fontWeight: 600,
                                 textTransform: "uppercase",
@@ -350,8 +349,8 @@ const StudentProfile = () => {
                 sx={{
                     bgcolor: "rgba(30, 41, 59, 0.4)",
                     border: "1px solid rgba(71, 85, 105, 0.6)",
-                    borderRadius: "12px",
-                    p: 3,
+                    borderRadius: "6px",
+                    p: { xs: 2, md: 3 },
                     mb: 3,
                 }}
             >
@@ -400,7 +399,7 @@ const StudentProfile = () => {
                                     color: "#fff",
                                     px: 3,
                                     py: 1,
-                                    borderRadius: "8px",
+                                    borderRadius: "6px",
                                     fontWeight: 600,
                                     fontSize: "13px",
                                     textTransform: "uppercase",
@@ -447,7 +446,7 @@ const StudentProfile = () => {
                                 sx={{
                                     bgcolor: "rgba(15, 23, 42, 0.4)",
                                     border: "1px solid rgba(71, 85, 105, 0.4)",
-                                    borderRadius: "12px",
+                                    borderRadius: "6px",
                                     p: 2,
                                 }}
                             >
@@ -597,8 +596,8 @@ const StudentProfile = () => {
                 sx={{
                     bgcolor: "rgba(30, 41, 59, 0.4)",
                     border: "1px solid rgba(71, 85, 105, 0.6)",
-                    borderRadius: "12px",
-                    p: 3,
+                    borderRadius: "6px",
+                    p: { xs: 2, md: 3 },
                 }}
             >
                 <Box

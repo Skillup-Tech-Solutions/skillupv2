@@ -186,7 +186,7 @@ const MyCourses = () => {
                 <Box
                     component="h1"
                     sx={{
-                        fontSize: { xs: "20px", md: "24px" },
+                        fontSize: { xs: "18px", sm: "20px", md: "24px" },
                         fontFamily: "'Chivo', sans-serif",
                         fontWeight: 700,
                         textTransform: "uppercase",
@@ -195,13 +195,13 @@ const MyCourses = () => {
                         m: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: { xs: 1, md: 1.5 },
                     }}
                 >
                     <Books size={28} weight="duotone" color="#60a5fa" />
                     My Courses
                 </Box>
-                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: "14px" }}>
+                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: { xs: "13px", md: "14px" }, display: { xs: "none", sm: "block" } }}>
                     Track your learning progress and manage your course assignments
                 </Box>
             </Box>
@@ -270,7 +270,7 @@ const MyCourses = () => {
                                     )}
 
                                     {/* Course Info */}
-                                    <Box sx={{ flex: 1, p: 3 }}>
+                                    <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
                                         {/* Status Badge */}
                                         <Box sx={{ mb: 2 }}>
                                             <Box
@@ -299,7 +299,7 @@ const MyCourses = () => {
                                         <Box
                                             component="h3"
                                             sx={{
-                                                fontSize: "18px",
+                                                fontSize: { xs: "16px", md: "18px" },
                                                 fontWeight: 600,
                                                 color: "#f8fafc",
                                                 m: 0,
@@ -350,8 +350,8 @@ const MyCourses = () => {
                                 </Box>
 
                                 {/* Progress Stepper */}
-                                <Box sx={{ p: 2, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)", position: "relative", zIndex: 1 }}>
-                                    <Box sx={{ position: "relative", px: 2, pt: 1, pb: 1 }}>
+                                <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)", position: "relative", zIndex: 1, overflowX: "auto" }}>
+                                    <Box sx={{ position: "relative", px: 2, pt: 1, pb: 1, minWidth: 400 }}>
                                         {/* Background Connector Lines - Absolute Positioned */}
                                         <Box sx={{ position: "absolute", top: 27, left: 0, width: "100%", height: 3, zIndex: 0 }}>
                                             {/* Line 1 */}
@@ -435,12 +435,12 @@ const MyCourses = () => {
                                 </Box>
 
                                 {/* Action Section */}
-                                <Box sx={{ p: 3, position: "relative", zIndex: 1 }}>
+                                <Box sx={{ p: { xs: 2, md: 3 }, position: "relative", zIndex: 1 }}>
                                     {/* PAYMENT REQUIRED */}
                                     {paymentPending && !assignment.payment?.proofFile && !assignment.payment?.proofUploadedAt && (
                                         <Box
                                             sx={{
-                                                p: 3,
+                                                p: { xs: 2, md: 3 },
                                                 background: "linear-gradient(to bottom right, rgba(69, 10, 10, 0.3), rgba(127, 29, 29, 0.1))",
                                                 border: "1px solid rgba(239, 68, 68, 0.3)",
                                                 borderRadius: "6px",

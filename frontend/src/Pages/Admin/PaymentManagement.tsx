@@ -138,10 +138,10 @@ const PaymentManagement = () => {
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", md: "center" }, mb: 3, gap: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <MdReceipt size={28} style={{ color: "#60a5fa" }} />
-                    <Typography sx={{ fontSize: "24px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <Typography sx={{ fontSize: { xs: "18px", md: "24px" }, fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                         Payment Management
                     </Typography>
                 </Box>
@@ -181,8 +181,8 @@ const PaymentManagement = () => {
             </Box>
 
             {/* Table */}
-            <TableContainer component={Paper} elevation={0} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px" }}>
-                <Table>
+            <TableContainer component={Paper} elevation={0} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px", overflowX: "auto" }}>
+                <Table sx={{ minWidth: 900 }}>
                     <TableHead>
                         <TableRow sx={{ bgcolor: "#0f172a" }}>
                             <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Invoice ID</TableCell>

@@ -29,17 +29,19 @@ const ProgramsManagement = () => {
     };
 
     return (
-        <Box sx={{ p: 4, display: "flex", flexDirection: "column", gap: 4 }}>
+        <Box sx={{ p: { xs: 2, md: 4 }, display: "flex", flexDirection: "column", gap: { xs: 2, md: 4 } }}>
             <Box>
-                <Typography sx={{ fontSize: "28px", fontFamily: "'Chivo', sans-serif", fontWeight: 800, color: "#f8fafc", mb: 1 }}>Program Orchestrator</Typography>
-                <Typography sx={{ color: "#94a3b8", fontSize: "14px" }}>Control your academic offerings, track submissions, and issue professional certifications.</Typography>
+                <Typography sx={{ fontSize: { xs: "20px", md: "28px" }, fontFamily: "'Chivo', sans-serif", fontWeight: 800, color: "#f8fafc", mb: 1 }}>Program Orchestrator</Typography>
+                <Typography sx={{ color: "#94a3b8", fontSize: { xs: "12px", md: "14px" }, display: { xs: "none", sm: "block" } }}>Control your academic offerings, track submissions, and issue professional certifications.</Typography>
             </Box>
 
             <Paper elevation={0} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.6)", overflow: "hidden" }}>
                 <Tabs
                     value={tabValue}
                     onChange={handleTabChange}
-                    variant="fullWidth"
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    allowScrollButtonsMobile
                     sx={{
                         borderBottom: "1px solid rgba(71, 85, 105, 0.4)",
                         "& .MuiTabs-indicator": { bgcolor: "#3b82f6", height: 3 },
@@ -63,8 +65,11 @@ const ProgramsManagement = () => {
                 <Tabs
                     value={subTab}
                     onChange={(_, v) => setSubTab(v)}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    allowScrollButtonsMobile
                     sx={{
-                        px: 2,
+                        px: { xs: 1, md: 2 },
                         minHeight: 56,
                         "& .MuiTabs-indicator": { bgcolor: "#ea580c" },
                         "& .MuiTab-root": {

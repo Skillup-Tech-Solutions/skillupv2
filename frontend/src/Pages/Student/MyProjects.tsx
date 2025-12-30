@@ -292,7 +292,7 @@ const MyProjects = () => {
                 <Box
                     component="h1"
                     sx={{
-                        fontSize: { xs: "20px", md: "24px" },
+                        fontSize: { xs: "18px", sm: "20px", md: "24px" },
                         fontFamily: "'Chivo', sans-serif",
                         fontWeight: 700,
                         textTransform: "uppercase",
@@ -301,13 +301,13 @@ const MyProjects = () => {
                         m: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: { xs: 1, md: 1.5 },
                     }}
                 >
                     <FolderSimple size={28} weight="duotone" color="#22d3ee" />
                     My Projects
                 </Box>
-                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: "14px" }}>
+                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: { xs: "13px", md: "14px" }, display: { xs: "none", sm: "block" } }}>
                     Track your project progress from requirements to delivery
                 </Box>
             </Box>
@@ -318,7 +318,7 @@ const MyProjects = () => {
                         bgcolor: "rgba(30, 41, 59, 0.4)",
                         border: "1px solid rgba(71, 85, 105, 0.6)",
                         borderRadius: "6px",
-                        p: 6,
+                        p: { xs: 4, md: 6 },
                         textAlign: "center",
                     }}
                 >

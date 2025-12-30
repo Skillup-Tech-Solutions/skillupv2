@@ -188,7 +188,7 @@ const StudentDashboard = () => {
                     <Box
                         component="h1"
                         sx={{
-                            fontSize: "24px",
+                            fontSize: { xs: "18px", sm: "20px", md: "24px" },
                             fontFamily: "'Chivo', sans-serif",
                             fontWeight: 700,
                             textTransform: "uppercase",
@@ -197,11 +197,12 @@ const StudentDashboard = () => {
                             m: 0,
                             display: "flex",
                             alignItems: "center",
-                            gap: 1.5,
+                            gap: { xs: 1, md: 1.5 },
                         }}
                     >
                         <GraduationCap size={28} weight="duotone" style={{ color: "#60a5fa" }} />
-                        Student Dashboard
+                        <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>Student Dashboard</Box>
+                        <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>Dashboard</Box>
                     </Box>
                     {/* text-slate-500 mt-1 */}
                     <Box
@@ -342,7 +343,7 @@ const StudentDashboard = () => {
                                         ) : (
                                             <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#60a5fa" }} />
                                         )}
-                                        <Box sx={{ color: "#cbd5e1", fontSize: "14px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Box sx={{ color: "#cbd5e1", fontSize: { xs: "13px", md: "14px" }, maxWidth: { xs: 140, sm: 180, md: 200 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {announcement.title}
                                         </Box>
                                     </Box>
@@ -438,7 +439,7 @@ const StudentDashboard = () => {
                                         ) : (
                                             <Clock size={18} weight="duotone" style={{ color: "#60a5fa" }} />
                                         )}
-                                        <Box sx={{ color: "#cbd5e1", fontSize: "14px", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Box sx={{ color: "#cbd5e1", fontSize: { xs: "13px", md: "14px" }, maxWidth: { xs: 120, sm: 150, md: 180 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {item.itemId?.title || item.itemId?.name || "Activity"}
                                         </Box>
                                     </Box>
@@ -492,7 +493,7 @@ const StudentDashboard = () => {
                     bgcolor: "rgba(30, 41, 59, 0.4)",
                     border: "1px solid rgba(71, 85, 105, 0.6)",
                     borderRadius: "6px",
-                    p: 3,
+                    p: { xs: 2, md: 3 },
                     position: "relative",
                     overflow: "hidden",
                 }}
@@ -555,7 +556,7 @@ const StudentDashboard = () => {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
-                                    p: 2,
+                                    p: { xs: 1.5, md: 2 },
                                     background: action.cardBg,
                                     border: `1px solid ${action.borderColor}`,
                                     borderRadius: "6px",
