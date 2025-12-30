@@ -160,7 +160,7 @@ const MyCourses = () => {
 
     const isMobile = useMediaQuery("(max-width:600px)");
 
-    if (isLoading) {
+    if (isLoading && !isRefreshing) {
         return (
             <Box sx={{ maxWidth: 900, mx: "auto" }}>
                 <Box sx={{ mb: 4 }}>

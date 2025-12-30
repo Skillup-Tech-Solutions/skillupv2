@@ -190,16 +190,16 @@ input[type=number] {
   border: solid 1px rgba(71, 85, 105, 0.4);
 }
 
-/* Global DataGrid header dark fix */
-.MuiDataGrid-filler {
+/* Scoped DataGrid header dark fix */
+.portal-theme .MuiDataGrid-filler {
   background-color: #0f172a !important;
 }
 
-.MuiDataGrid-columnHeader {
+.portal-theme .MuiDataGrid-columnHeader {
   background-color: #0f172a !important;
 }
 
-.MuiDataGrid-columnHeaders {
+.portal-theme .MuiDataGrid-columnHeaders {
   background-color: #0f172a !important;
 }
 

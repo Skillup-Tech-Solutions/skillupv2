@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import Cookies from "js-cookie";
-import { Box, CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 
 interface ProtectedRouteProps {
   element: React.ReactNode;
@@ -115,7 +115,7 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
     verifyToken();
   }, []); // Remove location.pathname dependency - only verify once on mount
 
-  // Show loading spinner while verifying
+  // Show loading spinner while verifying (dark background to match startup)
   if (isLoading) {
     return (
       <Box
@@ -124,10 +124,10 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          background: "var(--background)"
+          bgcolor: "#020617", // Match absolute startup background
         }}
       >
-        <CircularProgress />
+        {/* Transparent gap to prevent flickering between logo and skeleton */}
       </Box>
     );
   }

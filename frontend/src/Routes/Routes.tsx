@@ -1,6 +1,6 @@
 import { createHashRouter } from "react-router-dom";
 import { lazy, Suspense, Component, type ReactNode, type ComponentType } from "react";
-import { Box, CircularProgress, Typography, Button } from "@mui/material";
+import { Box, Typography, Button } from "@mui/material";
 
 // Helper function to retry dynamic imports with page reload on failure
 // This handles chunk loading errors that occur after deployment updates
@@ -98,8 +98,15 @@ class ChunkErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundar
 const LazyLoad = ({ children }: { children: React.ReactNode }) => (
   <ChunkErrorBoundary>
     <Suspense fallback={
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-        <CircularProgress />
+      <Box sx={{
+        height: "100vh",
+        width: "100%",
+        bgcolor: "transparent", // Use transparent to inherit from html/body background
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        {/* Very subtle transition or just the background to prevent flashing */}
       </Box>
     }>
       {children}

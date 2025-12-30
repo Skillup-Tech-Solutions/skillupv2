@@ -247,7 +247,7 @@ const StudentDashboard = () => {
                 }}
             >
                 {/* Live Sessions Widget */}
-                <LiveSessionsWidget variant="student" maxItems={3} />
+                <LiveSessionsWidget variant="student" maxItems={3} hideSkeleton={isRefreshing} />
                 {/* Recent Announcements - bg-slate-800/40 border border-slate-700/60 rounded-xl p-6 relative overflow-hidden */}
                 <Box
                     sx={{

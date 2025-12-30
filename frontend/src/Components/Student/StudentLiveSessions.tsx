@@ -136,7 +136,7 @@ const StudentLiveSessions = () => {
         );
     }
 
-    if (liveLoading || upcomingLoading || historyLoading) {
+    if ((liveLoading || upcomingLoading || historyLoading) && !isRefreshing) {
         return (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <Box>
@@ -354,7 +354,7 @@ const StudentLiveSessions = () => {
             {/* Content */}
             {activeTab === 0 && (
                 <>
-                    {liveLoading ? (
+                    {liveLoading && !isRefreshing ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                             <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
                         </Box>
@@ -387,7 +387,7 @@ const StudentLiveSessions = () => {
 
             {activeTab === 1 && (
                 <>
-                    {upcomingLoading ? (
+                    {upcomingLoading && !isRefreshing ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                             <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
                         </Box>
@@ -421,7 +421,7 @@ const StudentLiveSessions = () => {
             {/* History Tab */}
             {activeTab === 2 && (
                 <>
-                    {historyLoading ? (
+                    {historyLoading && !isRefreshing ? (
                         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
                             <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
                         </Box>

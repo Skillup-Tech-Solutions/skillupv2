@@ -121,6 +121,7 @@ const StudentLayout = () => {
     return (
         // min-h-screen bg-slate-950 flex
         <Box
+            className="portal-theme"
             sx={{
                 minHeight: "100vh",
                 bgcolor: "#020617", // slate-950

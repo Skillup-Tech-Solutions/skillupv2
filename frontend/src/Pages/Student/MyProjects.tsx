@@ -264,7 +264,7 @@ const MyProjects = () => {
         "& .MuiSelect-icon": { color: "#64748b" },
     };
 
-    if (isLoading) {
+    if (isLoading && !isRefreshing) {
         return (
             <Box sx={{ maxWidth: 900, mx: "auto" }}>
                 <Box sx={{ mb: 4 }}>

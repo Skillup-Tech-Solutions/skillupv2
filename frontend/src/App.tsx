@@ -4,16 +4,9 @@ import { ReactQueryProvider } from "./Hooks/ReactQueryProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import routes from "./Routes/Routes";
-import { useEffect, useState } from "react";
-import LoaderSplash from "./Components/LoaderSplash";
+import { useEffect } from "react";
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 300); // Reduced from 1000ms
-    return () => clearTimeout(timer);
-  }, []);
 
   // Automatic offline detection and redirection
   useEffect(() => {
@@ -54,7 +47,7 @@ function App() {
     <>
       <ToastContainer limit={2} />
       <ReactQueryProvider>
-        {showSplash ? <LoaderSplash /> : <RouterProvider router={routes} />}
+        <RouterProvider router={routes} />
       </ReactQueryProvider>
     </>
   );

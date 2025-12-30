@@ -7,9 +7,10 @@ import { useGetLiveNowSessionsApi, useGetUpcomingSessionsApi, type LiveSession }
 interface LiveSessionsWidgetProps {
     variant?: "admin" | "student";
     maxItems?: number;
+    hideSkeleton?: boolean;
 }
 
-const LiveSessionsWidget = ({ variant = "student", maxItems = 3 }: LiveSessionsWidgetProps) => {
+const LiveSessionsWidget = ({ variant = "student", maxItems = 3, hideSkeleton = false }: LiveSessionsWidgetProps) => {
     const navigate = useNavigate();
     const { data: liveData, isLoading: liveLoading } = useGetLiveNowSessionsApi();
     const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
@@ -17,7 +18,7 @@ const LiveSessionsWidget = ({ variant = "student", maxItems = 3 }: LiveSessionsW
     const liveSessions = liveData?.sessions || [];
     const activeLiveSessionsCount = liveSessions.filter(s => (s.activeParticipantsCount || 0) > 0).length;
     const upcomingSessions = upcomingData?.sessions || [];
-    const isLoading = liveLoading || upcomingLoading;
+    const isLoading = (liveLoading || upcomingLoading) && !hideSkeleton;
 
     const handleViewAll = () => {
         navigate(variant === "admin" ? "/courses" : "/student/live-sessions");

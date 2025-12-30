@@ -9,24 +9,105 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SkillUp">
-  <meta name="theme-color" content="#020617">
+  <title>SkillUp Software Solutions</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #ffffff;
+      /* Explicitly white for landing */
+    }
+
+    #instant-loader {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #020617;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+
+    .loader-logo {
+      width: 60px;
+      height: 60px;
+      opacity: 0.8;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.4;
+        transform: scale(0.95);
+      }
+
+      50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+    }
+
+    /* Portal specific background injection - NO GLOBAL COLOR OVERRIDE */
+    .portal-theme {
+      background-color: #020617 !important;
+    }
+  </style>
+  <script>
+    (function () {
+      const hash = window.location.hash;
+      const isPortal = hash.includes('/student') || hash.includes('/dashboard');
+      if (isPortal) {
+        document.documentElement.classList.add('portal-theme');
+        // Set dynamic theme color for portal
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = "#020617";
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      } else {
+        // Explicitly set theme color for landing
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = "#ffffff";
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+    })();
+  </script>
   <!-- Allow camera and microphone for Jitsi iframe -->
   <meta http-equiv="Permissions-Policy" content="camera=*, microphone=*, display-capture=*" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Alata&family=Licorice&family=Style+Script&family=Trykker&display=swap"
-    rel="stylesheet" />
-  <!-- Dark Theme Fonts -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet" />
-  <title>SkillUp Software Solutions</title>
 </head>
 
 <body>
+  <div id="instant-loader">
+    <img src="./src/assets/Images/newlogo.png" class="loader-logo" alt="SkillUp" onerror="this.style.display='none'">
+  </div>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
+  <script>
+    (function () {
+      const hash = window.location.hash;
+      const isPortal = hash.includes('/student') || hash.includes('/dashboard');
+      const loader = document.getElementById('instant-loader');
+
+      if (isPortal && loader) {
+        loader.style.display = 'flex';
+      }
+
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 500);
+          }
+        }, 800);
+      });
+    })();
+  </script>
 </body>
 
 </html>
