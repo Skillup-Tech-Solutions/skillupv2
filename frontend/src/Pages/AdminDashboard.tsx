@@ -17,6 +17,7 @@ import {
   CalendarBlank,
 } from "@phosphor-icons/react";
 import { useGetDashboardCountsApi } from "../Hooks/dashboard";
+import LiveSessionsWidget from "../Components/LiveSessionsWidget";
 import {
   Chart as ChartJS,
   BarElement,
@@ -357,6 +358,17 @@ const AdminDashboard = () => {
         <Box sx={{ height: 280 }}>
           <Bar data={chartData} options={chartOptions} />
         </Box>
+      </Box>
+
+      {/* Live Sessions Widget */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+          gap: 3,
+        }}
+      >
+        <LiveSessionsWidget variant="admin" maxItems={4} />
       </Box>
     </Box>
   );

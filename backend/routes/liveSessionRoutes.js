@@ -7,6 +7,7 @@ const roleAuth = require("../middleware/roleAuth");
 // Protected routes (for students and admins to view)
 router.get("/live", auth, liveSessionController.getLiveSessions);
 router.get("/upcoming", auth, liveSessionController.getUpcomingSessions);
+router.get("/history", auth, liveSessionController.getSessionHistory);
 router.get("/reference/:type/:id", auth, liveSessionController.getSessionsByReference);
 router.get("/:id", auth, liveSessionController.getSession);
 router.post("/:id/join", auth, liveSessionController.joinSession);

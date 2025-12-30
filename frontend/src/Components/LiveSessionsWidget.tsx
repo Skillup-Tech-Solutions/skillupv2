@@ -156,10 +156,21 @@ const SessionRow = ({
     const navigate = useNavigate();
 
     const handleClick = () => {
+        // For students, navigate to live sessions page where they can join
         if (variant === "student") {
             navigate("/student/live-sessions");
         } else {
-            navigate("/courses");
+            // For admin, navigate to programs management with Live Sessions tab
+            // Use switch based on session type
+            if (session.sessionType === "COURSE") {
+                navigate("/courses");
+            } else if (session.sessionType === "PROJECT") {
+                navigate("/projects");
+            } else if (session.sessionType === "INTERNSHIP") {
+                navigate("/internships");
+            } else {
+                navigate("/courses");
+            }
         }
     };
 

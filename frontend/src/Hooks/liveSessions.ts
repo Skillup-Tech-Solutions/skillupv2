@@ -141,12 +141,14 @@ export const useGetSessionHistoryApi = (filters?: {
     limit?: number;
 }) => {
     const queryParams = new URLSearchParams();
-    queryParams.append("status", "ENDED");
     if (filters?.sessionType) queryParams.append("sessionType", filters.sessionType);
     if (filters?.referenceId) queryParams.append("referenceId", filters.referenceId);
-    queryParams.append("includeEnded", "true");
+    if (filters?.limit) queryParams.append("limit", filters.limit.toString());
 
-    const url = `${apiUrls.liveSessions}?${queryParams.toString()}`;
+    const queryString = queryParams.toString();
+    const url = queryString
+        ? `${apiUrls.liveSessions}/history?${queryString}`
+        : `${apiUrls.liveSessions}/history`;
 
     return useQuery({
         queryKey: ["liveSessions", "history", filters],

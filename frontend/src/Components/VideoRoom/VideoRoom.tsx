@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Box, IconButton, Typography, Chip, Button, Tooltip } from "@mui/material";
-import { ArrowLeft, Users, Clock, VideoCamera, PencilSimple, X } from "@phosphor-icons/react";
+import { Box, Typography, Chip, Button } from "@mui/material";
+import { ArrowLeft, Users, Clock, VideoCamera } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
 
 declare global {
@@ -24,7 +24,6 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
     const jitsiInitialized = useRef(false);
     const [mounted, setMounted] = useState(false);
     const [participantCount, setParticipantCount] = useState(1);
-    const [showWhiteboard, setShowWhiteboard] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -52,7 +51,8 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                 return;
             }
             const script = document.createElement("script");
-            script.src = "https://8x8.vc/external_api.js";
+            // Use jitsi.riot.im (Element's Jitsi) - no lobby restrictions
+            script.src = "https://jitsi.riot.im/external_api.js";
             script.async = true;
             script.onload = () => resolve();
             script.onerror = reject;
@@ -80,9 +80,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
         try {
             await loadJitsiScript();
 
-            const domain = "8x8.vc";
-            // Use the session's unique room ID for Jitsi
-            const roomName = `vpaas-magic-cookie-ef5ce88c523d41a599c8b1dc5b3ab765/${session.roomId}`;
+            // Use jitsi.riot.im (Element's Jitsi) - no lobby enforcement
+            const domain = "jitsi.riot.im";
+            // Simple room name without special characters
+            const roomName = `skillup${session.roomId.replace(/-/g, '')}`;
 
             // Generate a unique user ID based on email (consistent across sessions)
             const userId = btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
@@ -107,7 +108,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                     disableModeratorIndicator: !isHost,
                     enableWelcomePage: false,
                     enableClosePage: false,
-                    lobby: { autoKnock: true, enableChat: false },
+                    // Disable lobby completely - first person joins as moderator
+                    lobbyModeEnabled: false,
+                    // Skip knock screen for everyone
+                    enableLobby: false,
                     disableDeepLinking: true,
                     hideConferenceSubject: false,
                     hideConferenceTimer: false,
@@ -279,25 +283,6 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                 </Box>
 
                 <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <Tooltip title={showWhiteboard ? "Hide Whiteboard" : "Show Whiteboard"}>
-                        <Button
-                            onClick={() => setShowWhiteboard(!showWhiteboard)}
-                            startIcon={<PencilSimple size={18} />}
-                            sx={{
-                                bgcolor: showWhiteboard ? "#8b5cf6" : "rgba(71, 85, 105, 0.5)",
-                                color: "#fff",
-                                px: 2,
-                                py: 0.75,
-                                borderRadius: "6px",
-                                fontSize: "13px",
-                                "&:hover": {
-                                    bgcolor: showWhiteboard ? "#7c3aed" : "rgba(71, 85, 105, 0.7)",
-                                },
-                            }}
-                        >
-                            Whiteboard
-                        </Button>
-                    </Tooltip>
                     <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1, color: "#94a3b8" }}>
                         <Users size={18} />
                         <Typography sx={{ fontSize: "13px" }}>
@@ -318,46 +303,11 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                     sx={{
                         position: "relative",
                         bgcolor: "#000",
-                        transition: "all 0.3s ease",
-                        width: showWhiteboard ? "50%" : "100%",
+                        width: "100%",
                     }}
                 >
                     <Box ref={jitsiContainerRef} sx={{ position: "absolute", inset: 0 }} />
                 </Box>
-
-                {/* Whiteboard Panel */}
-                {showWhiteboard && (
-                    <Box
-                        sx={{
-                            width: "50%",
-                            position: "relative",
-                            bgcolor: "#fff",
-                            borderLeft: "1px solid rgba(71, 85, 105, 0.4)",
-                        }}
-                    >
-                        <IconButton
-                            onClick={() => setShowWhiteboard(false)}
-                            sx={{
-                                position: "absolute",
-                                top: 8,
-                                right: 8,
-                                zIndex: 10,
-                                bgcolor: "#1e293b",
-                                color: "#fff",
-                                "&:hover": { bgcolor: "#334155" },
-                            }}
-                            size="small"
-                        >
-                            <X size={16} />
-                        </IconButton>
-                        <iframe
-                            src={`https://excalidraw.com/#room=SkillUp${session.roomId},SkillUpKey${session._id.substring(0, 8)}`}
-                            style={{ width: "100%", height: "100%", border: "none" }}
-                            title="Whiteboard"
-                            allow="clipboard-read; clipboard-write"
-                        />
-                    </Box>
-                )}
             </Box>
         </Box>
     );

@@ -85,6 +85,27 @@ exports.getSessions = async (req, res) => {
     }
 };
 
+// Get session history (ended sessions) - accessible by all authenticated users
+exports.getSessionHistory = async (req, res) => {
+    try {
+        const { sessionType, referenceId, limit = 50 } = req.query;
+
+        const filter = { status: "ENDED" };
+
+        if (sessionType) filter.sessionType = sessionType;
+        if (referenceId) filter.referenceId = referenceId;
+
+        const sessions = await LiveSession.find(filter)
+            .sort({ endedAt: -1, scheduledAt: -1 })
+            .limit(parseInt(limit));
+
+        res.json({ success: true, sessions });
+    } catch (error) {
+        console.error("Error getting session history:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // Get sessions for a specific reference (course/project/internship)
 exports.getSessionsByReference = async (req, res) => {
     try {
