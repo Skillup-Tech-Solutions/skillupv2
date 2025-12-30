@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['vite.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'favicon.ico', 'robots.txt'],
       manifest: {
         name: 'SkillUp - Learning Platform',
         short_name: 'SkillUp',
@@ -16,8 +16,18 @@ export default defineConfig({
         theme_color: '#020617',
         background_color: '#020617',
         display: 'standalone',
+        orientation: 'portrait',
+        dir: 'ltr',
+        lang: 'en-US',
         start_url: '/',
         shortcuts: [
+          {
+            name: 'Dashboard',
+            short_name: 'Dashboard',
+            description: 'Go to your dashboard',
+            url: '/student/dashboard',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
           {
             name: 'My Courses',
             short_name: 'Courses',
@@ -48,25 +58,32 @@ export default defineConfig({
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'maskable'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
           }
         ]
       },
       workbox: {
         // Precache these files
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,ttf,webp}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB
 
         // Runtime caching strategies
         runtimeCaching: [
           {
-            // Cache static assets from /assets/ with CacheFirst (immutable, long-lived)
+            // Cache static assets from /assets/ with CacheFirst (immutable)
             urlPattern: /\/assets\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'static-assets-cache',
               expiration: {
                 maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year (immutable assets)
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -74,11 +91,11 @@ export default defineConfig({
             }
           },
           {
-            // Cache images from uploads with CacheFirst (long-lived)
-            urlPattern: /\/uploads\/.*/i,
+            // Cache images from common paths
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|gif)$/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'uploads-cache',
+              cacheName: 'images-cache',
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
@@ -89,14 +106,14 @@ export default defineConfig({
             }
           },
           {
-            // Cache API GET requests with StaleWhileRevalidate
-            urlPattern: /\/api\/(courses|categories|offers|reviews|lessons)/i,
+            // Cache API GET requests with StaleWhileRevalidate for speed
+            urlPattern: /^\/api\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'api-cache',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutes
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 1 day
               },
               cacheableResponse: {
                 statuses: [0, 200]
@@ -105,44 +122,13 @@ export default defineConfig({
           },
           {
             // Cache Google Fonts
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'google-fonts-cache',
               expiration: {
-                maxEntries: 10,
+                maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // Cache font files
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            // NetworkFirst for auth-related API calls
-            urlPattern: /\/api\/(login|admin|student|employee)/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'auth-api-cache',
-              networkTimeoutSeconds: 10,
-              expiration: {
-                maxEntries: 20,
-                maxAgeSeconds: 60 * 2 // 2 minutes
               },
               cacheableResponse: {
                 statuses: [0, 200]

@@ -66,12 +66,13 @@ const WebsiteLayout = () => {
         sx={{
           background: "#ffffffea",
           padding: "10px 20px",
+          paddingTop: "calc(env(safe-area-inset-top) + 10px)", // Handle iOS safe area
           zIndex: "999",
           position: "relative",
           minHeight: "100vh",
-          "@media (max-width: 991px)": { padding: "10px" },
+          "@media (max-width: 991px)": { padding: "10px", paddingTop: "calc(env(safe-area-inset-top) + 10px)" },
           "@media (max-width: 600px)": { background: "#ffffffc4" },
-          "@media (max-width: 450px)": { padding: "10px 5px" },
+          "@media (max-width: 450px)": { padding: "10px 5px", paddingTop: "calc(env(safe-area-inset-top) + 5px)" },
         }}
       >
         <WebOffer />

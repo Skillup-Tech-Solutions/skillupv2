@@ -223,9 +223,8 @@ const StudentLayout = () => {
                 {/* Header */}
                 <Box
                     sx={{
-                        bgcolor: "rgba(2, 6, 23, 0.8)",
-                        backdropFilter: "blur(12px)",
-                        borderBottom: "1px solid #334155",
+                        bgcolor: "#020617", // Solid background to prevent overlap issues
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)", // Subtle border
                         position: "sticky",
                         top: 0,
                         zIndex: 40,
