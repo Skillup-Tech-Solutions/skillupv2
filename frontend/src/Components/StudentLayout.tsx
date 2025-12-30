@@ -1,5 +1,6 @@
 import { Box, useMediaQuery } from "@mui/material";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { triggerHaptic } from "../utils/pwaUtils";
 import { Outlet, useNavigate } from "react-router-dom";
 import StudentSidebar from "./StudentSidebar";
 import StudentBottomNav from "./Student/StudentBottomNav";
@@ -26,6 +27,7 @@ const StudentLayout = () => {
     const sidebarRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadFileName, setDownloadFileName] = useState("");
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
 
     // Load saved width from localStorage
     useEffect(() => {
@@ -82,6 +84,19 @@ const StudentLayout = () => {
             window.removeEventListener('mouseup', stopResizing);
         };
     }, [resize, stopResizing]);
+
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     useEffect(() => {
         const handleDownloadStart = (e: any) => {
@@ -222,6 +237,7 @@ const StudentLayout = () => {
                             {!isMobile && isHidden && (
                                 <Box
                                     onClick={() => {
+                                        triggerHaptic('light');
                                         setIsHidden(false);
                                         setSidebarWidth(DEFAULT_WIDTH);
                                     }}
@@ -414,6 +430,41 @@ const StudentLayout = () => {
                             {downloadFileName}
                         </Box>
                     </Box>
+                </Box>
+            )}
+
+            {/* Network Status Indicator */}
+            {!isOnline && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        top: { xs: 70, sm: 80 },
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 200,
+                        bgcolor: "rgba(239, 68, 68, 0.9)",
+                        backdropFilter: "blur(8px)",
+                        color: "#fff",
+                        px: 2,
+                        py: 0.5,
+                        borderRadius: "20px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.05em",
+                        textTransform: "uppercase",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)",
+                        animation: "fadeInDown 0.3s ease-out",
+                        "@keyframes fadeInDown": {
+                            from: { transform: "translateX(-50%) translateY(-10px)", opacity: 0 },
+                            to: { transform: "translateX(-50%) translateY(0)", opacity: 1 }
+                        }
+                    }}
+                >
+                    <Box sx={{ width: 6, height: 6, bgcolor: "#fff", borderRadius: "50%", animation: "pulse 1.5s infinite" }} />
+                    Offline Mode
                 </Box>
             )}
 

@@ -28,6 +28,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     const jitsiInitialized = useRef(false);
     const unmounting = useRef(false);
     const [mounted, setMounted] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(true);
     // Initialize with 1 if it's the host, or use the active count from session
     const [participantCount, setParticipantCount] = useState(
         isHost ? Math.max(1, session.activeParticipantsCount || 0) : (session.activeParticipantsCount || 1)
@@ -239,6 +240,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
 
+            jitsiApiRef.current.addListener("videoConferenceJoined", () => {
+                setIsInitializing(false);
+            });
+
             jitsiApiRef.current.addListener("participantJoined", () => {
                 setParticipantCount((prev) => prev + 1);
             });
@@ -256,6 +261,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             });
         } catch (err) {
             console.error("Failed to load Jitsi:", err);
+            setIsInitializing(false);
         }
     };
 
@@ -391,6 +397,176 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             {/* Main Content Area */}
             <Box sx={{ flex: 1, display: "flex", position: "relative", width: "100%", bgcolor: "#000" }}>
                 <Box ref={jitsiContainerRef} sx={{ position: "absolute", inset: 0 }} />
+
+                {isInitializing && (
+                    <Box
+                        className="animate-reveal"
+                        sx={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: 10,
+                            bgcolor: "#0f172a",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 5,
+                            overflow: "hidden"
+                        }}
+                    >
+                        {/* Abstract Tech Background */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                inset: 0,
+                                background: "radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.15) 0%, transparent 70%)",
+                                zIndex: 0
+                            }}
+                        />
+
+                        {/* Animated Signal Waves */}
+                        <Box sx={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <Box className="animate-signal" sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.3)" }} />
+                            <Box className="animate-signal" sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.2)", animationDelay: "0.6s" }} />
+                            <Box className="animate-signal" sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.1)", animationDelay: "1.2s" }} />
+
+                            {/* Outer Slow Ring */}
+                            <Box
+                                sx={{
+                                    width: 140,
+                                    height: 140,
+                                    borderRadius: "50%",
+                                    border: "1px dashed rgba(71, 85, 105, 0.4)",
+                                    animation: "spin 12s linear infinite",
+                                }}
+                            />
+
+                            {/* Dual Concentric Rings */}
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    width: 100,
+                                    height: 100,
+                                    borderRadius: "50%",
+                                    border: "2px solid transparent",
+                                    borderTopColor: "#3b82f6",
+                                    borderRightColor: "rgba(59, 130, 246, 0.3)",
+                                    animation: "spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+                                }}
+                            />
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    width: 70,
+                                    height: 70,
+                                    borderRadius: "50%",
+                                    border: "2px solid transparent",
+                                    borderBottomColor: "#60a5fa",
+                                    borderLeftColor: "rgba(96, 165, 250, 0.3)",
+                                    animation: "spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite reverse",
+                                }}
+                            />
+
+                            {/* Center Point */}
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    width: 12,
+                                    height: 12,
+                                    bgcolor: "#3b82f6",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 0 20px #3b82f6, 0 0 40px rgba(59, 130, 246, 0.4)",
+                                    animation: "pulse-glow 2s ease-in-out infinite",
+                                }}
+                            />
+                        </Box>
+
+                        <Box sx={{ textAlign: "center", zIndex: 2, px: 3 }}>
+                            <Typography
+                                sx={{
+                                    color: "#f8fafc",
+                                    fontWeight: 700,
+                                    fontSize: "22px",
+                                    letterSpacing: "-0.01em",
+                                    mb: 1,
+                                    fontFamily: "'Chivo', sans-serif",
+                                    textShadow: "0 0 20px rgba(59, 130, 246, 0.3)"
+                                }}
+                            >
+                                Secure Connection
+                            </Typography>
+
+                            <Typography
+                                sx={{
+                                    color: "#64748b",
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontSize: "11px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.3em",
+                                    fontWeight: 500,
+                                    opacity: 0.8
+                                }}
+                            >
+                                Initializing Pipeline
+                            </Typography>
+
+                            <Box sx={{ mt: 3, display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+                                {[0, 1, 2].map((i) => (
+                                    <Box
+                                        key={i}
+                                        sx={{
+                                            width: 6,
+                                            height: 2,
+                                            bgcolor: "#3b82f6",
+                                            borderRadius: "1px",
+                                            animation: "pulse-glow 1s infinite",
+                                            animationDelay: `${i * 0.2}s`
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+
+                        {/* HUD Meta Info */}
+                        <Box
+                            sx={{
+                                position: "absolute",
+                                bottom: { xs: 40, sm: 60 },
+                                textAlign: "center"
+                            }}
+                        >
+                            <Typography
+                                sx={{
+                                    color: "#475569",
+                                    fontSize: "10px",
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.1em",
+                                    mb: 1
+                                }}
+                            >
+                                Active Stream ID
+                            </Typography>
+                            <Box
+                                sx={{
+                                    px: 2,
+                                    py: 0.75,
+                                    borderRadius: "8px",
+                                    bgcolor: "rgba(30, 41, 59, 0.3)",
+                                    border: "1px solid rgba(71, 85, 105, 0.2)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1.5
+                                }}
+                            >
+                                <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#22c55e", animation: "pulse-glow 1s infinite" }} />
+                                <Typography sx={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>
+                                    {session.title.toUpperCase().replace(/\s/g, '_')}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                )}
             </Box>
 
             {/* Host Exit Confirmation Dialog */}

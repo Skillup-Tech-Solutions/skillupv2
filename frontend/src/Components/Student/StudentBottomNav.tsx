@@ -1,5 +1,6 @@
 import { Paper, BottomNavigation, BottomNavigationAction, Box, useMediaQuery } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
+import { triggerHaptic } from "../../utils/pwaUtils";
 import {
     Gauge,
     Books,
@@ -52,6 +53,7 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
                 showLabels
                 value={getActiveValue()}
                 onChange={(_, newValue) => {
+                    triggerHaptic('light');
                     if (newValue === 0) navigate("/student/dashboard");
                     else if (newValue === 1) navigate("/student/my-courses");
                     else if (newValue === 2) navigate("/student/live-sessions");

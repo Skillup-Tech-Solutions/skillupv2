@@ -3,6 +3,10 @@ import { Box, TextField, Button, Alert } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { usePullToRefresh } from "../../utils/usePullToRefresh";
+import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
+import { ProfileSkeleton } from "../../Components/Student/PortalSkeletons";
+import { Skeleton } from "@mui/material";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import {
     User,
@@ -35,7 +39,7 @@ const StudentProfile = () => {
     const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
     const navigate = useNavigate();
 
-    const { data, isLoading, error } = useQuery<UserProfile>({
+    const { data, isLoading, error, refetch } = useQuery<UserProfile>({
         queryKey: ["student-profile"],
         queryFn: async () => {
             const response = await axios.get(
@@ -45,6 +49,12 @@ const StudentProfile = () => {
                 }
             );
             return response.data;
+        },
+    });
+
+    const { pullDistance, isRefreshing } = usePullToRefresh({
+        onRefresh: async () => {
+            await refetch();
         },
     });
 
@@ -156,43 +166,11 @@ const StudentProfile = () => {
 
     if (isLoading) {
         return (
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "64vh",
-                    gap: 2,
-                }}
-            >
-                <Box sx={{ position: "relative" }}>
-                    <Box
-                        sx={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: "50%",
-                            border: "2px solid #334155",
-                            borderTopColor: "#3b82f6",
-                            animation: "spin 1s linear infinite",
-                            "@keyframes spin": {
-                                "0%": { transform: "rotate(0deg)" },
-                                "100%": { transform: "rotate(360deg)" },
-                            },
-                        }}
-                    />
+            <Box sx={{ maxWidth: 800, mx: "auto" }}>
+                <Box sx={{ mb: 4 }}>
+                    <Skeleton variant="text" width="30%" height={40} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "12px" }} />
                 </Box>
-                <Box
-                    sx={{
-                        color: "#64748b",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: "11px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                    }}
-                >
-                    Loading Profile...
-                </Box>
+                <ProfileSkeleton />
             </Box>
         );
     }
@@ -237,6 +215,11 @@ const StudentProfile = () => {
 
     return (
         <Box sx={{ maxWidth: 700, mx: "auto" }}>
+            <PullToRefreshIndicator
+                pullDistance={pullDistance}
+                isRefreshing={isRefreshing}
+                threshold={80}
+            />
             {/* Header */}
             <Box sx={{ mb: 4 }}>
                 <Box

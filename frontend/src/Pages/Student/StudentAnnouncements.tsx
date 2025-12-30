@@ -5,6 +5,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { usePullToRefresh } from "../../utils/usePullToRefresh";
+import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
+import { AnnouncementSkeleton } from "../../Components/Student/PortalSkeletons";
+import { Skeleton } from "@mui/material";
 import {
     Megaphone,
     CalendarBlank,
@@ -17,7 +21,7 @@ import {
 const StudentAnnouncements = () => {
     const token = Cookies.get("skToken");
 
-    const { data, isLoading, error } = useQuery({
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["student-announcements"],
         queryFn: async () => {
             const response = await axios.get(
@@ -25,6 +29,12 @@ const StudentAnnouncements = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return response.data;
+        },
+    });
+
+    const { pullDistance, isRefreshing } = usePullToRefresh({
+        onRefresh: async () => {
+            await refetch();
         },
     });
 
@@ -57,23 +67,11 @@ const StudentAnnouncements = () => {
 
     if (isLoading) {
         return (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "64vh", gap: 2 }}>
-                <Box sx={{ position: "relative" }}>
-                    <Box
-                        sx={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: "50%",
-                            border: "2px solid #334155",
-                            borderTopColor: "#f59e0b",
-                            animation: "spin 1s linear infinite",
-                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
-                        }}
-                    />
+            <Box sx={{ maxWidth: 800, mx: "auto" }}>
+                <Box sx={{ mb: 4 }}>
+                    <Skeleton variant="text" width="40%" height={40} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "12px" }} />
                 </Box>
-                <Box sx={{ color: "#64748b", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Loading Announcements...
-                </Box>
+                <AnnouncementSkeleton />
             </Box>
         );
     }
@@ -93,6 +91,11 @@ const StudentAnnouncements = () => {
 
     return (
         <Box sx={{ maxWidth: 800, mx: "auto" }}>
+            <PullToRefreshIndicator
+                pullDistance={pullDistance}
+                isRefreshing={isRefreshing}
+                threshold={80}
+            />
             {/* Header */}
             <Box sx={{ mb: 4 }}>
                 <Box

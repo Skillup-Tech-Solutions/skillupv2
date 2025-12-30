@@ -645,8 +645,66 @@ input[type=number] {
   animation: slide-in 0.4s ease-out;
 }
 
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out;
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes orbit {
+  from {
+    transform: rotate(0deg) translateX(40px) rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(40px) rotate(-360deg);
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes signal-wave {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-orbit {
+  animation: orbit 4s linear infinite;
+}
+
+.animate-reveal {
+  animation: reveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-signal {
+  animation: signal-wave 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 /* Dark Theme Gradient Cards */

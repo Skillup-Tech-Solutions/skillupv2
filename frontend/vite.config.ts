@@ -17,6 +17,22 @@ export default defineConfig({
         background_color: '#020617',
         display: 'standalone',
         start_url: '/',
+        shortcuts: [
+          {
+            name: 'My Courses',
+            short_name: 'Courses',
+            description: 'View your enrolled courses',
+            url: '/student/my-courses',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Live Sessions',
+            short_name: 'Live',
+            description: 'Join active live sessions',
+            url: '/student/live-sessions',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }]
+          }
+        ],
         icons: [
           {
             src: 'pwa-192x192.png',

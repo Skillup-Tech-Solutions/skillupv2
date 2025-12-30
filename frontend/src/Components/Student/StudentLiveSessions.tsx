@@ -38,6 +38,10 @@ import {
     type LiveSession,
 } from "../../Hooks/liveSessions";
 import VideoRoom from "../VideoRoom/VideoRoom";
+import { LiveSessionSkeleton } from "./PortalSkeletons";
+import { Skeleton } from "@mui/material";
+import { usePullToRefresh } from "../../utils/usePullToRefresh";
+import PullToRefreshIndicator from "./PullToRefreshIndicator";
 
 dayjs.extend(relativeTime);
 
@@ -53,9 +57,15 @@ const StudentLiveSessions = () => {
     const isMobile = useMediaQuery("(max-width:600px)");
 
     const { data: liveData, isLoading: liveLoading, refetch: refetchLive } = useGetLiveNowSessionsApi();
-    const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
-    const { data: historyData, isLoading: historyLoading } = useGetSessionHistoryApi();
+    const { data: upcomingData, isLoading: upcomingLoading, refetch: refetchUpcoming } = useGetUpcomingSessionsApi();
+    const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useGetSessionHistoryApi();
     const { mutate: joinSession } = useJoinSessionApi();
+
+    const { pullDistance, isRefreshing } = usePullToRefresh({
+        onRefresh: async () => {
+            await Promise.all([refetchLive(), refetchUpcoming(), refetchHistory()]);
+        },
+    });
 
     const liveSessions = liveData?.sessions || [];
     const upcomingSessions = upcomingData?.sessions || [];
@@ -115,8 +125,8 @@ const StudentLiveSessions = () => {
         return (
             <VideoRoom
                 session={activeSession}
-                userName={userName}
-                userEmail={userEmail}
+                userName={userName || ""}
+                userEmail={userEmail || ""}
                 isHost={false}
                 onExit={() => {
                     setActiveSession(null);
@@ -126,8 +136,24 @@ const StudentLiveSessions = () => {
         );
     }
 
+    if (liveLoading || upcomingLoading || historyLoading) {
+        return (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box>
+                    <Skeleton variant="text" width="60%" height={40} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "12px" }} />
+                </Box>
+                <LiveSessionSkeleton />
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <PullToRefreshIndicator
+                pullDistance={pullDistance}
+                isRefreshing={isRefreshing}
+                threshold={80}
+            />
             {/* Join Confirmation Dialog */}
             <Dialog
                 open={showJoinDialog}

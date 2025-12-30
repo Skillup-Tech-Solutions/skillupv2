@@ -5,6 +5,9 @@ import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
 import DataCard from "../../Components/Student/DataCard";
 import LiveSessionsWidget from "../../Components/LiveSessionsWidget";
+import DashboardSkeleton from "../../Components/Student/DashboardSkeleton";
+import { usePullToRefresh } from "../../utils/usePullToRefresh";
+import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
 import {
     GraduationCap,
     Books,
@@ -17,7 +20,6 @@ import {
     Clock,
     Lightning,
     ChartLineUp,
-    Pulse,
     CheckCircle,
     Trophy,
     Star,
@@ -28,7 +30,7 @@ const StudentDashboard = () => {
     const token = Cookies.get("skToken");
     const userName = Cookies.get("name");
 
-    const { data, isLoading, error } = useQuery({
+    const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["student-dashboard"],
         queryFn: async () => {
             const response = await axios.get(
@@ -41,56 +43,18 @@ const StudentDashboard = () => {
         },
     });
 
+    const { pullDistance, isRefreshing } = usePullToRefresh({
+        onRefresh: async () => {
+            await refetch();
+        },
+    });
+
     const stats = data?.stats || {};
     const announcements = data?.recentAnnouncements || [];
     const recentActivity = data?.recentActivity || [];
 
     if (isLoading) {
-        return (
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "64vh",
-                    gap: 2,
-                }}
-            >
-                <Box sx={{ position: "relative" }}>
-                    {/* w-12 h-12 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin */}
-                    <Box
-                        sx={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: "50%",
-                            border: "2px solid #334155",
-                            borderTopColor: "#3b82f6",
-                            animation: "spin 1s linear infinite",
-                            "@keyframes spin": {
-                                "0%": { transform: "rotate(0deg)" },
-                                "100%": { transform: "rotate(360deg)" },
-                            },
-                        }}
-                    />
-                    <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Pulse size={24} weight="duotone" style={{ color: "#60a5fa" }} />
-                    </Box>
-                </Box>
-                {/* text-slate-500 font-mono text-xs uppercase tracking-widest animate-pulse */}
-                <Box
-                    sx={{
-                        color: "#64748b",
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: "12px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.1em",
-                    }}
-                >
-                    Loading Dashboard...
-                </Box>
-            </Box>
-        );
+        return <DashboardSkeleton />;
     }
 
     if (error) {
@@ -173,6 +137,11 @@ const StudentDashboard = () => {
     return (
         // space-y-8
         <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <PullToRefreshIndicator
+                pullDistance={pullDistance}
+                isRefreshing={isRefreshing}
+                threshold={80}
+            />
             {/* Header - flex items-center justify-between flex-wrap gap-4 */}
             <Box
                 sx={{
