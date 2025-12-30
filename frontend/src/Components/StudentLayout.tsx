@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import StudentSidebar from "./StudentSidebar";
 import StudentBottomNav from "./Student/StudentBottomNav";
 import Cookies from "js-cookie";
-import { List } from "@phosphor-icons/react";
+import { List, SignOut } from "@phosphor-icons/react";
 
 // Sidebar width constants matching frontend-ref
 const MIN_WIDTH = 60;
@@ -193,6 +193,7 @@ const StudentLayout = () => {
                         position: "sticky",
                         top: 0,
                         zIndex: 40,
+                        pt: "env(safe-area-inset-top)", // For PWA on iOS
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
@@ -245,7 +246,49 @@ const StudentLayout = () => {
                                 </Box>
                             </Box>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+                            {/* Sign Out on Mobile */}
+                            {isMobile && (
+                                <Box
+                                    onClick={async () => {
+                                        try {
+                                            const accessToken = Cookies.get("skToken");
+                                            const refreshToken = Cookies.get("skRefreshToken");
+                                            if (accessToken) {
+                                                await fetch(`${import.meta.env.VITE_APP_BASE_URL}logout`, {
+                                                    method: "POST",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                        "Authorization": `Bearer ${accessToken}`
+                                                    },
+                                                    body: JSON.stringify({ refreshToken })
+                                                }).catch(() => { });
+                                            }
+                                        } finally {
+                                            Cookies.remove("name");
+                                            Cookies.remove("role");
+                                            Cookies.remove("skToken");
+                                            Cookies.remove("skRefreshToken");
+                                            Cookies.remove("email");
+                                            navigate("/");
+                                        }
+                                    }}
+                                    sx={{
+                                        p: 1,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: "#f87171",
+                                        cursor: "pointer",
+                                        transition: "all 0.2s",
+                                        borderRadius: "6px",
+                                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                                        "&:hover": { bgcolor: "rgba(239, 68, 68, 0.1)", borderColor: "rgba(239, 68, 68, 0.4)" },
+                                    }}
+                                >
+                                    <SignOut size={20} />
+                                </Box>
+                            )}
                             <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
                                 <Box
                                     component="p"
@@ -299,7 +342,7 @@ const StudentLayout = () => {
                 </Box>
 
                 {/* Page Content */}
-                <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, pb: { xs: 10, lg: 3 } }}>
+                <Box className="animate-slide-up" sx={{ p: { xs: 2, sm: 3 }, flex: 1, pb: { xs: 10, lg: 3 } }}>
                     <Outlet />
                 </Box>
             </Box>

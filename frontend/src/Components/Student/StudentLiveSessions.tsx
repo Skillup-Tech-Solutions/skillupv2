@@ -12,6 +12,7 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    useMediaQuery,
 } from "@mui/material";
 import {
     VideoCamera,
@@ -49,6 +50,7 @@ const StudentLiveSessions = () => {
     const [pendingSession, setPendingSession] = useState<LiveSession | null>(null);
     const [showJoinDialog, setShowJoinDialog] = useState(false);
     const [isAlreadyActive, setIsAlreadyActive] = useState(false);
+    const isMobile = useMediaQuery("(max-width:600px)");
 
     const { data: liveData, isLoading: liveLoading, refetch: refetchLive } = useGetLiveNowSessionsApi();
     const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
@@ -130,13 +132,15 @@ const StudentLiveSessions = () => {
             <Dialog
                 open={showJoinDialog}
                 onClose={() => setShowJoinDialog(false)}
+                maxWidth="sm"
+                fullWidth
+                fullScreen={isMobile}
                 PaperProps={{
                     sx: {
                         bgcolor: "#1e293b",
                         backgroundImage: "none",
-                        border: "1px solid rgba(71, 85, 105, 0.4)",
-                        borderRadius: "12px",
-                        maxWidth: "400px"
+                        border: isMobile ? "none" : "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: isMobile ? 0 : "12px",
                     }
                 }}
             >
@@ -286,24 +290,40 @@ const StudentLiveSessions = () => {
                 </Box>
             )}
 
-            <Tabs
-                value={activeTab}
-                onChange={(_, v) => setActiveTab(v)}
+            <Box
                 sx={{
-                    "& .MuiTabs-indicator": { bgcolor: "#3b82f6" },
-                    "& .MuiTab-root": {
-                        color: "#64748b",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        textTransform: "none",
-                        "&.Mui-selected": { color: "#3b82f6" },
-                    },
+                    position: "sticky",
+                    top: { xs: 58, sm: 64 }, // account for layout header
+                    zIndex: 30,
+                    bgcolor: "rgba(2, 6, 23, 0.8)",
+                    backdropFilter: "blur(12px)",
+                    mx: { xs: -2, sm: -3 },
+                    px: { xs: 2, sm: 3 },
+                    borderBottom: "1px solid rgba(51, 65, 85, 0.3)",
                 }}
             >
-                <Tab label={`Live Now (${liveSessions.length})`} />
-                <Tab label={`Upcoming (${upcomingSessions.length})`} />
-                <Tab label={`History (${historySessions.length})`} />
-            </Tabs>
+                <Tabs
+                    value={activeTab}
+                    onChange={(_, v) => setActiveTab(v)}
+                    variant={isMobile ? "fullWidth" : "standard"}
+                    sx={{
+                        "& .MuiTabs-indicator": { bgcolor: "#3b82f6", height: 3, borderRadius: "3px 3px 0 0" },
+                        "& .MuiTab-root": {
+                            color: "#94a3b8",
+                            fontWeight: 600,
+                            fontSize: { xs: "12px", sm: "13px" },
+                            textTransform: "none",
+                            minWidth: "auto",
+                            py: 2,
+                            "&.Mui-selected": { color: "#3b82f6" },
+                        },
+                    }}
+                >
+                    <Tab label={isMobile ? `Live` : `Live Now (${liveSessions.length})`} />
+                    <Tab label={isMobile ? `Upcoming` : `Upcoming (${upcomingSessions.length})`} />
+                    <Tab label={isMobile ? `History` : `History (${historySessions.length})`} />
+                </Tabs>
+            </Box>
 
             {/* Content */}
             {activeTab === 0 && (

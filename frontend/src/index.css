@@ -60,6 +60,8 @@ body {
   font-family: "Regular_M";
   max-width: 1600px;
   margin: auto;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
 }
 
 .MuiTypography-root,
@@ -138,6 +140,25 @@ body {
   opacity: 0.5;
 }
 
+/* Mobile Native optimization */
+@media (max-width: 991px) {
+  body {
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable="true"] {
+    user-select: text;
+    /* Prevent zoom on focus for iOS - needs 16px */
+    font-size: 16px !important;
+  }
+
+  .MuiButtonBase-root {
+    touch-action: manipulation;
+  }
+}
+
 /* Tooltip  */
 .MuiTooltip-popper {
   z-index: 9999999999 !important;
@@ -148,12 +169,14 @@ body {
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Table Dark Theme */

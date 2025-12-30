@@ -39,11 +39,12 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
                 left: 0,
                 right: 0,
                 zIndex: 100,
-                bgcolor: 'rgba(15, 23, 42, 0.8)',
-                backdropFilter: 'blur(12px)',
-                borderTop: '1px solid rgba(51, 65, 85, 0.5)',
+                bgcolor: 'rgba(2, 6, 23, 0.85)',
+                backdropFilter: 'blur(16px) saturate(180%)',
+                borderTop: '0.5px solid rgba(255, 255, 255, 0.1)',
                 display: { xs: 'block', lg: 'none' }, // match layout breakpoints
                 paddingBottom: 'env(safe-area-inset-bottom)', // for PWA on iOS
+                boxShadow: '0 -4px 20px -5px rgba(0, 0, 0, 0.5)',
             }}
             elevation={0}
         >
@@ -64,14 +65,25 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
                         color: '#94a3b8',
                         minWidth: 'auto',
                         padding: '6px 0',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     },
                     '& .Mui-selected': {
-                        color: '#60a5fa !important',
+                        color: '#3b82f6 !important',
+                        '& svg': {
+                            transform: 'scale(1.1) translateY(-2px)',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        },
                     },
                     '& .MuiBottomNavigationAction-label': {
-                        fontSize: '11px',
+                        fontSize: '10px',
+                        fontWeight: 500,
                         fontFamily: "'Inter', sans-serif",
-                        marginTop: '4px',
+                        marginTop: '2px',
+                        transition: 'all 0.2s ease',
+                    },
+                    '& .Mui-selected .MuiBottomNavigationAction-label': {
+                        fontSize: '11px',
+                        fontWeight: 600,
                     },
                 }}
             >

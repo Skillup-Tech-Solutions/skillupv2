@@ -14,7 +14,9 @@ import {
     CheckCircle,
     Sparkle,
     IdentificationBadge,
+    SignOut,
 } from "@phosphor-icons/react";
+import { useNavigate } from "react-router-dom";
 
 interface UserProfile {
     _id: string;
@@ -31,6 +33,7 @@ const StudentProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ name: "", mobile: "" });
     const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    const navigate = useNavigate();
 
     const { data, isLoading, error } = useQuery<UserProfile>({
         queryKey: ["student-profile"],
@@ -124,6 +127,31 @@ const StudentProfile = () => {
             currentPassword: passwordData.currentPassword,
             newPassword: passwordData.newPassword
         });
+    };
+
+    const handleLogout = async () => {
+        try {
+            const accessToken = Cookies.get("skToken");
+            const refreshToken = Cookies.get("skRefreshToken");
+
+            if (accessToken) {
+                await fetch(`${import.meta.env.VITE_APP_BASE_URL}logout`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify({ refreshToken })
+                }).catch(() => { });
+            }
+        } finally {
+            Cookies.remove("name");
+            Cookies.remove("role");
+            Cookies.remove("skToken");
+            Cookies.remove("skRefreshToken");
+            Cookies.remove("email");
+            navigate("/");
+        }
     };
 
     if (isLoading) {
@@ -598,6 +626,7 @@ const StudentProfile = () => {
                     border: "1px solid rgba(71, 85, 105, 0.6)",
                     borderRadius: "6px",
                     p: { xs: 2, md: 3 },
+                    mb: 3,
                 }}
             >
                 <Box
@@ -679,6 +708,51 @@ const StudentProfile = () => {
                         </Button>
                     </Box>
                 </Box>
+            </Box>
+
+            {/* Logout Section for Mobile/Easier Access */}
+            <Box
+                sx={{
+                    mt: 3,
+                    bgcolor: "rgba(239, 68, 68, 0.05)",
+                    border: "1px solid rgba(239, 68, 68, 0.2)",
+                    borderRadius: "6px",
+                    p: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                }}
+            >
+                <Box sx={{ textAlign: "center" }}>
+                    <Box sx={{ color: "#f87171", fontWeight: 600, fontSize: "16px", mb: 0.5 }}>
+                        Ready to leave?
+                    </Box>
+                    <Box sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                        Sign out of your account securely
+                    </Box>
+                </Box>
+                <Button
+                    onClick={handleLogout}
+                    variant="outlined"
+                    startIcon={<SignOut size={18} />}
+                    sx={{
+                        color: "#f87171",
+                        borderColor: "rgba(239, 68, 68, 0.4)",
+                        px: 4,
+                        py: 1,
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        "&:hover": {
+                            bgcolor: "rgba(239, 68, 68, 0.1)",
+                            borderColor: "#ef4444",
+                        }
+                    }}
+                >
+                    Sign Out
+                </Button>
             </Box>
         </Box>
     );

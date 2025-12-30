@@ -6,6 +6,7 @@ import {
     DialogActions,
     TextField,
     Alert,
+    useMediaQuery,
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -19,7 +20,6 @@ import {
     CreditCard,
     Clock,
     User,
-    CalendarBlank,
     FileText,
     CheckCircle,
     CaretDown,
@@ -143,6 +143,8 @@ const MyCourses = () => {
         "& .MuiSelect-icon": { color: "#64748b" },
     };
 
+    const isMobile = useMediaQuery("(max-width:600px)");
+
     if (isLoading) {
         return (
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "64vh", gap: 2 }}>
@@ -261,10 +263,12 @@ const MyCourses = () => {
                                             src={`${config.BASE_URL_MAIN}/uploads/${course.fileupload}`}
                                             alt={course?.name}
                                             sx={{
-                                                width: { xs: "100%", sm: 200 },
-                                                height: { xs: 150, sm: 180 },
+                                                width: { xs: "100%", sm: 160, md: 200 },
+                                                height: { xs: 160, sm: "auto" },
                                                 objectFit: "cover",
                                                 flexShrink: 0,
+                                                borderRight: { sm: "1px solid rgba(71, 85, 105, 0.4)" },
+                                                borderBottom: { xs: "1px solid rgba(71, 85, 105, 0.4)", sm: "none" }
                                             }}
                                         />
                                     )}
@@ -299,18 +303,19 @@ const MyCourses = () => {
                                         <Box
                                             component="h3"
                                             sx={{
-                                                fontSize: { xs: "16px", md: "18px" },
-                                                fontWeight: 600,
+                                                fontSize: { xs: "18px", md: "18px" },
+                                                fontWeight: 700,
                                                 color: "#f8fafc",
                                                 m: 0,
-                                                mb: 1,
+                                                mb: 1.5,
+                                                lineHeight: 1.3
                                             }}
                                         >
                                             {course?.name || "Untitled Course"}
                                         </Box>
 
                                         {/* Course Meta */}
-                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 1.5, sm: 2 }, mb: 2 }}>
                                             {course?.trainer && (
                                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#94a3b8", fontSize: "12px" }}>
                                                     <User size={14} weight="duotone" />
@@ -321,12 +326,6 @@ const MyCourses = () => {
                                                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#94a3b8", fontSize: "12px" }}>
                                                     <Clock size={14} weight="duotone" />
                                                     {course.duration}
-                                                </Box>
-                                            )}
-                                            {course?.startDate && (
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#94a3b8", fontSize: "12px" }}>
-                                                    <CalendarBlank size={14} weight="duotone" />
-                                                    {new Date(course.startDate).toLocaleDateString()}
                                                 </Box>
                                             )}
                                         </Box>
@@ -350,8 +349,8 @@ const MyCourses = () => {
                                 </Box>
 
                                 {/* Progress Stepper */}
-                                <Box sx={{ p: { xs: 1.5, md: 2 }, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)", position: "relative", zIndex: 1, overflowX: "auto" }}>
-                                    <Box sx={{ position: "relative", px: 2, pt: 1, pb: 1, minWidth: 400 }}>
+                                <Box sx={{ p: { xs: 2, md: 2 }, bgcolor: "rgba(15, 23, 42, 0.5)", borderTop: "1px solid rgba(71, 85, 105, 0.4)", borderBottom: "1px solid rgba(71, 85, 105, 0.4)", position: "relative", zIndex: 1, overflowX: "auto", className: "dark-scrollbar" }}>
+                                    <Box sx={{ position: "relative", px: 1, pt: 1, pb: 1, minWidth: { xs: 350, sm: 0 } }}>
                                         {/* Background Connector Lines - Absolute Positioned */}
                                         <Box sx={{ position: "absolute", top: 27, left: 0, width: "100%", height: 3, zIndex: 0 }}>
                                             {/* Line 1 */}
@@ -743,6 +742,7 @@ const MyCourses = () => {
                 onClose={() => setUploadModal(false)}
                 maxWidth="sm"
                 fullWidth
+                fullScreen={isMobile}
                 sx={{
                     "& .MuiDialog-paper": {
                         bgcolor: "#1e293b",
@@ -828,6 +828,7 @@ const MyCourses = () => {
                 onClose={() => setPaymentProofModal(false)}
                 maxWidth="sm"
                 fullWidth
+                fullScreen={isMobile}
                 sx={{
                     "& .MuiDialog-paper": {
                         bgcolor: "#1e293b",

@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'SkillUp - Learning Platform',
         short_name: 'SkillUp',
         description: 'Premium learning and skill development platform',
-        theme_color: '#1976d2',
-        background_color: '#ffffff',
+        theme_color: '#020617',
+        background_color: '#020617',
         display: 'standalone',
         start_url: '/',
         icons: [
