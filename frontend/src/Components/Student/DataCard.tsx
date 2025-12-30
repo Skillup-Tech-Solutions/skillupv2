@@ -17,7 +17,7 @@ const DataCard = ({ title, value, icon: Icon, className = "" }: DataCardProps) =
                 bgcolor: "rgba(30, 41, 59, 0.4)", // slate-800/40
                 border: "1px solid rgba(71, 85, 105, 0.6)", // slate-700/60
                 borderRadius: "5px",
-                p: "24px", // p-6 = 1.5rem = 24px
+                p: { xs: "16px", sm: "24px" },
                 transition: "all 0.2s",
                 "&:hover": {
                     borderColor: "#64748b", // slate-500

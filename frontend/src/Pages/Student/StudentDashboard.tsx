@@ -180,7 +180,7 @@ const StudentDashboard = () => {
                     alignItems: "center",
                     justifyContent: "space-between",
                     flexWrap: "wrap",
-                    gap: 2,
+                    gap: { xs: 1.5, sm: 2 },
                 }}
             >
                 <Box>
@@ -211,10 +211,10 @@ const StudentDashboard = () => {
                             color: "#64748b",
                             mt: 0.5,
                             m: 0,
-                            fontSize: "14px",
+                            fontSize: { xs: "12px", sm: "14px" },
                         }}
                     >
-                        Welcome back, <Box component="span" sx={{ color: "#cbd5e1", fontWeight: 500 }}>{userName || "Student"}</Box>! Here's your overview.
+                        Welcome back, <Box component="span" sx={{ color: "#cbd5e1", fontWeight: 500 }}>{userName || "Student"}</Box>!
                     </Box>
                 </Box>
                 {/* Status badge */}
@@ -233,7 +233,7 @@ const StudentDashboard = () => {
                     >
                         <ChartLineUp size={20} weight="duotone" style={{ color: "#4ade80" }} />
                         <Box sx={{ color: "#4ade80", fontWeight: 700, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            {stats.inProgress} In Progress
+                            {stats.inProgress} <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>In Progress</Box>
                         </Box>
                     </Box>
                 )}
@@ -243,8 +243,8 @@ const StudentDashboard = () => {
             <Box
                 sx={{
                     display: "grid",
-                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" },
-                    gap: 2,
+                    gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" },
+                    gap: { xs: 1, sm: 2 },
                 }}
             >
                 <DataCard
@@ -285,7 +285,7 @@ const StudentDashboard = () => {
                         bgcolor: "rgba(30, 41, 59, 0.4)",
                         border: "1px solid rgba(71, 85, 105, 0.6)",
                         borderRadius: "6px",
-                        p: 3,
+                        p: { xs: 2, sm: 3 },
                         position: "relative",
                         overflow: "hidden",
                     }}
@@ -385,7 +385,7 @@ const StudentDashboard = () => {
                         bgcolor: "rgba(30, 41, 59, 0.4)",
                         border: "1px solid rgba(71, 85, 105, 0.6)",
                         borderRadius: "6px",
-                        p: 3,
+                        p: { xs: 2, sm: 3 },
                         position: "relative",
                         overflow: "hidden",
                     }}

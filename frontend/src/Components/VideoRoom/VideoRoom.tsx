@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, useMediaQuery } from "@mui/material";
 import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
 import { useLeaveSessionApi } from "../../Hooks/liveSessions";
@@ -22,6 +22,7 @@ interface VideoRoomProps {
 }
 
 const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEndSession }: VideoRoomProps) => {
+    const isMobile = useMediaQuery("(max-width:600px)");
     const jitsiContainerRef = useRef<HTMLDivElement>(null);
     const jitsiApiRef = useRef<any>(null);
     const jitsiInitialized = useRef(false);
@@ -320,12 +321,12 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
                     <Button
                         onClick={handleExitClick}
-                        startIcon={<ArrowLeft size={18} />}
+                        startIcon={<ArrowLeft size={isMobile ? 20 : 18} />}
                         sx={{
                             color: "#94a3b8",
                             minWidth: "auto",
                             fontSize: { xs: "12px", sm: "14px" },
-                            px: { xs: 1, sm: 1.5 },
+                            px: { xs: 0.5, sm: 1.5 },
                             "&:hover": { color: "#f8fafc", bgcolor: "rgba(255,255,255,0.1)" },
                         }}
                     >
@@ -342,7 +343,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                                 color: "#f8fafc",
                                 fontWeight: 600,
                                 fontSize: { xs: "13px", sm: "14px" },
-                                maxWidth: { xs: 120, sm: 200, md: 300 },
+                                maxWidth: { xs: 100, sm: 160, md: 300 },
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -350,24 +351,26 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                         >
                             {session.title}
                         </Typography>
-                        <Chip
-                            label="LIVE"
-                            size="small"
-                            sx={{
-                                bgcolor: "#22c55e",
-                                color: "#fff",
-                                fontWeight: 700,
-                                fontSize: "9px",
-                                height: 18,
-                                px: 0.5,
-                                animation: "pulse 2s infinite",
-                                "@keyframes pulse": {
-                                    "0%": { opacity: 1 },
-                                    "50%": { opacity: 0.7 },
-                                    "100%": { opacity: 1 },
-                                },
-                            }}
-                        />
+                        <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                            <Chip
+                                label="LIVE"
+                                size="small"
+                                sx={{
+                                    bgcolor: "#22c55e",
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    fontSize: "9px",
+                                    height: 18,
+                                    px: 0.5,
+                                    animation: "pulse 2s infinite",
+                                    "@keyframes pulse": {
+                                        "0%": { opacity: 1 },
+                                        "50%": { opacity: 0.7 },
+                                        "100%": { opacity: 1 },
+                                    },
+                                }}
+                            />
+                        </Box>
                     </Box>
                 </Box>
 

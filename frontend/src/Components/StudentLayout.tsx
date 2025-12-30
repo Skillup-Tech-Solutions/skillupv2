@@ -2,6 +2,7 @@ import { Box, useMediaQuery } from "@mui/material";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import StudentSidebar from "./StudentSidebar";
+import StudentBottomNav from "./Student/StudentBottomNav";
 import Cookies from "js-cookie";
 import { List } from "@phosphor-icons/react";
 
@@ -80,7 +81,6 @@ const StudentLayout = () => {
         };
     }, [resize, stopResizing]);
 
-    const isCollapsed = sidebarWidth < 150;
     const showLabels = sidebarWidth >= 150 && !isHidden;
 
     return (
@@ -195,18 +195,14 @@ const StudentLayout = () => {
                         zIndex: 40,
                     }}
                 >
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            {/* Show toggle button when sidebar is hidden or on mobile */}
-                            {(isMobile || isHidden) && (
+                            {/* Show toggle button when sidebar is hidden on desktop */}
+                            {!isMobile && isHidden && (
                                 <Box
                                     onClick={() => {
-                                        if (isMobile) {
-                                            setMobileOpen(true);
-                                        } else {
-                                            setIsHidden(false);
-                                            setSidebarWidth(DEFAULT_WIDTH);
-                                        }
+                                        setIsHidden(false);
+                                        setSidebarWidth(DEFAULT_WIDTH);
                                     }}
                                     sx={{
                                         p: 1,
@@ -226,7 +222,7 @@ const StudentLayout = () => {
                                     sx={{
                                         fontFamily: "'Chivo', sans-serif",
                                         fontWeight: 700,
-                                        fontSize: { xs: "16px", md: "20px" },
+                                        fontSize: { xs: "14px", md: "20px" },
                                         textTransform: "uppercase",
                                         letterSpacing: "0.05em",
                                         color: "#f8fafc",
@@ -238,7 +234,7 @@ const StudentLayout = () => {
                                 <Box
                                     component="p"
                                     sx={{
-                                        fontSize: "12px",
+                                        fontSize: "11px",
                                         color: "#94a3b8",
                                         fontFamily: "'JetBrains Mono', monospace",
                                         mt: 0.25,
@@ -280,8 +276,8 @@ const StudentLayout = () => {
                             <Box
                                 onClick={() => navigate("/student/profile")}
                                 sx={{
-                                    width: 36,
-                                    height: 36,
+                                    width: { xs: 32, sm: 36 },
+                                    height: { xs: 32, sm: 36 },
                                     borderRadius: "50%",
                                     background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
                                     display: "flex",
@@ -303,10 +299,13 @@ const StudentLayout = () => {
                 </Box>
 
                 {/* Page Content */}
-                <Box sx={{ p: 3, flex: 1 }}>
+                <Box sx={{ p: { xs: 2, sm: 3 }, flex: 1, pb: { xs: 10, lg: 3 } }}>
                     <Outlet />
                 </Box>
             </Box>
+
+            {/* Bottom Navigation for Mobile */}
+            <StudentBottomNav onOpenSidebar={() => setMobileOpen(true)} />
 
             {/* Overlay when resizing to prevent iframe capturing mouse */}
             {isResizing && (
