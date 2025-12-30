@@ -7,7 +7,6 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SkillUp">
   <link rel="apple-touch-icon" href="./pwa-192x192.png">
   <meta name="format-detection" content="telephone=no">
@@ -94,7 +93,7 @@
           root.classList.remove('portal-theme');
         }
 
-        // Handle meta theme-color (only one tag should exist)
+        // Handle meta theme-color
         let themeMeta = document.querySelector('meta[name="theme-color"]');
         if (!themeMeta) {
           themeMeta = document.createElement('meta');
@@ -102,6 +101,16 @@
           document.head.appendChild(themeMeta);
         }
         themeMeta.content = isPortal ? "#020617" : "#ffffff";
+
+        // Handle iOS Status Bar Style dynamically
+        let statusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+        if (!statusMeta) {
+          statusMeta = document.createElement('meta');
+          statusMeta.name = "apple-mobile-web-app-status-bar-style";
+          document.head.appendChild(statusMeta);
+        }
+        // "default" gives dark text on white. "black-translucent" gives white text.
+        statusMeta.content = isPortal ? "black-translucent" : "default";
       };
 
       // Initial check

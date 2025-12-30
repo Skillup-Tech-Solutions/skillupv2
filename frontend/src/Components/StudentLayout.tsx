@@ -223,12 +223,12 @@ const StudentLayout = () => {
                 {/* Header */}
                 <Box
                     sx={{
-                        bgcolor: "#020617", // Solid background to prevent overlap issues
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)", // Subtle border
+                        bgcolor: "#020617",
+                        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
                         position: "sticky",
                         top: 0,
                         zIndex: 40,
-                        pt: "env(safe-area-inset-top)", // For PWA on iOS
+                        pt: "calc(env(safe-area-inset-top, 0px))", // Refined safe area
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
