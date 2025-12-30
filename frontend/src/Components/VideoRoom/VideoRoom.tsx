@@ -223,49 +223,55 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                 left: 0,
                 right: 0,
                 bottom: 0,
-                zIndex: 1000, // Reduced from 99999 to avoid being flagged as a malicious overlay
+                zIndex: 1000,
                 width: "100%",
-                height: "100%",
+                height: "100dvh", // Use dynamic viewport height for mobile
                 display: "flex",
                 flexDirection: "column",
                 bgcolor: "#0f172a",
                 overflow: "hidden",
-                touchAction: "none", // Help browser distinguish between UI taps and gestures
+                touchAction: "none",
             }}
         >
             {/* Header Bar */}
             <Box
                 sx={{
-                    height: 56,
+                    height: { xs: 48, sm: 56 }, // Shorter header on mobile
                     bgcolor: "#1e293b",
                     borderBottom: "1px solid rgba(71, 85, 105, 0.4)",
-                    px: 2,
+                    px: { xs: 1.5, sm: 2 },
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     flexShrink: 0,
                 }}
             >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
                     <Button
                         onClick={handleExit}
-                        startIcon={<ArrowLeft size={20} />}
+                        startIcon={<ArrowLeft size={18} />}
                         sx={{
                             color: "#94a3b8",
+                            minWidth: "auto",
+                            fontSize: { xs: "12px", sm: "14px" },
+                            px: { xs: 1, sm: 1.5 },
                             "&:hover": { color: "#f8fafc", bgcolor: "rgba(255,255,255,0.1)" },
                         }}
                     >
-                        Exit
+                        {/* Hide text on very small screens */}
+                        <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                            Exit
+                        </Box>
                     </Button>
-                    <Box sx={{ height: 24, width: 1, bgcolor: "rgba(71, 85, 105, 0.4)" }} />
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                        <VideoCamera size={20} style={{ color: "#22c55e" }} weight="fill" />
+                    <Box sx={{ height: 20, width: 1, bgcolor: "rgba(71, 85, 105, 0.4)", display: { xs: "none", sm: "block" } }} />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 1.5 } }}>
+                        <VideoCamera size={18} style={{ color: "#22c55e" }} weight="fill" />
                         <Typography
                             sx={{
                                 color: "#f8fafc",
                                 fontWeight: 600,
-                                fontSize: "14px",
-                                maxWidth: 200,
+                                fontSize: { xs: "13px", sm: "14px" },
+                                maxWidth: { xs: 120, sm: 200, md: 300 },
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
@@ -280,8 +286,9 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                                 bgcolor: "#22c55e",
                                 color: "#fff",
                                 fontWeight: 700,
-                                fontSize: "10px",
-                                height: 20,
+                                fontSize: "9px",
+                                height: 18,
+                                px: 0.5,
                                 animation: "pulse 2s infinite",
                                 "@keyframes pulse": {
                                     "0%": { opacity: 1 },
@@ -293,32 +300,23 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                     </Box>
                 </Box>
 
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                    <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1, color: "#94a3b8" }}>
-                        <Users size={18} />
-                        <Typography sx={{ fontSize: "13px" }}>
-                            {participantCount} participant{participantCount !== 1 ? "s" : ""}
+                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.5, sm: 3 } }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#94a3b8" }}>
+                        <Users size={16} />
+                        <Typography sx={{ fontSize: { xs: "11px", sm: "13px" } }}>
+                            {participantCount}
                         </Typography>
                     </Box>
-                    <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1, color: "#94a3b8" }}>
-                        <Clock size={18} />
+                    <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1, color: "#94a3b8" }}>
+                        <Clock size={16} />
                         <Typography sx={{ fontSize: "13px" }}>{session.durationMinutes} min</Typography>
                     </Box>
                 </Box>
             </Box>
 
             {/* Main Content Area */}
-            <Box sx={{ flex: 1, display: "flex", position: "relative", width: "100%" }}>
-                {/* Jitsi Container */}
-                <Box
-                    sx={{
-                        position: "relative",
-                        bgcolor: "#000",
-                        width: "100%",
-                    }}
-                >
-                    <Box ref={jitsiContainerRef} sx={{ position: "absolute", inset: 0 }} />
-                </Box>
+            <Box sx={{ flex: 1, display: "flex", position: "relative", width: "100%", bgcolor: "#000" }}>
+                <Box ref={jitsiContainerRef} sx={{ position: "absolute", inset: 0 }} />
             </Box>
         </Box>
     );
