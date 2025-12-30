@@ -78,6 +78,16 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
         jitsiInitialized.current = true;
 
         try {
+            // Explicitly request permissions before Jitsi starts - this "primes" the browser prompt
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                // Stop the tracks immediately, we just wanted to trigger the system prompt
+                stream.getTracks().forEach(track => track.stop());
+            } catch (permErr) {
+                console.warn("Pre-initialization permission request failed or denied:", permErr);
+                // We'll still try to load Jitsi as it has its own internal error handling
+            }
+
             await loadJitsiScript();
 
             // Use jitsi.riot.im (Element's Jitsi) - no lobby enforcement
@@ -108,11 +118,13 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                     disableModeratorIndicator: !isHost,
                     enableWelcomePage: false,
                     enableClosePage: false,
+                    // Mobile specific
+                    disableDeepLinking: true,
+                    mobileWebAppRequired: false,
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone
                     enableLobby: false,
-                    disableDeepLinking: true,
                     hideConferenceSubject: false,
                     hideConferenceTimer: false,
                     disableLocalVideoFlip: true,
@@ -127,8 +139,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                         disablePrivateChat: false,
                     },
                     whiteboard: {
-                        enabled: true,
-                        collabServerBaseUrl: "https://excalidraw-backend.jitsi.net",
+                        enabled: false, // Disabled as requested previously
                     },
                     toolbarButtons: [
                         "microphone",
@@ -142,7 +153,6 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                         "videoquality",
                         "tileview",
                         "participants-pane",
-                        "whiteboard",
                     ],
                 },
                 interfaceConfigOverwrite: {
