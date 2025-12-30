@@ -5,14 +5,14 @@ import {
   Typography,
   Grid,
   TextField,
+  Button,
 } from "@mui/material";
-import { IoClose } from "react-icons/io5";
+import { X, Plus, MagnifyingGlass, WarningCircle, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CourseSchema } from "../assets/Validation/Schema";
 import CustomInput from "../Custom/CustomInput";
-import CustomButton from "../Custom/CustomButton";
 import CustomFileUpload from "../Custom/CustomFileUpload";
 import CourseCard from "../Custom/CourseCard";
 import {
@@ -25,22 +25,34 @@ import {
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import config from "../Config/Config";
 import CourseSubmissionsList from "../Components/Admin/CourseSubmissionsList";
+import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
 
 const style = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
+  width: 500,
+  bgcolor: "#1e293b",
+  border: "1px solid rgba(71, 85, 105, 0.5)",
+  borderRadius: "6px",
+  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
   outline: "none",
-  borderRadius: "5px",
-  boxShadow: 24,
-  padding: "10px 20px",
   "@media (max-width: 600px)": {
     width: "90vw",
-    margin: "auto",
   },
+};
+
+const textFieldDarkStyles = {
+  "& .MuiOutlinedInput-root": {
+    bgcolor: "rgba(15, 23, 42, 0.5)",
+    color: "#f8fafc",
+    borderRadius: "6px",
+    "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" },
+    "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" },
+    "&.Mui-focused fieldset": { borderColor: "#3b82f6", borderWidth: "1px" },
+  },
+  "& .MuiInputBase-input::placeholder": { color: "#64748b", opacity: 1 },
 };
 
 const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
@@ -51,19 +63,23 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editingCourse, setEditingCourse] = useState<any>(null);
   const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
 
   const { data: courseGet } = useGetCoursesApi();
   const { mutate: courseAdd } = useCoursesAddApi();
   const { mutate: courseUpdate } = coursesUpdateApi();
-
   const { mutate: courseDelete } = coursesDeleteApi();
   const { mutate: courseToggleStatus } = useCourseStatusToggleApi();
+
   useEffect(() => {
     if (courseGet) {
-      // @ts-ignore
-      setCourses(courseGet?.courses || []);
+      setCourses((courseGet as any)?.courses || []);
     }
   }, [courseGet]);
+
+  const { register, handleSubmit, formState: { errors }, reset, control } = useForm({
+    resolver: zodResolver(CourseSchema),
+  });
 
   const handleClose = () => {
     setOpen(false);
@@ -83,560 +99,242 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
   };
 
   const handleEdit = (id: any) => {
-    const courseToEdit = courses.find((course) => course._id === id);
-    if (courseToEdit) {
-      setEditingCourse(courseToEdit);
-
+    const course = courses.find((c) => c._id === id);
+    if (course) {
+      setEditingCourse(course);
       reset({
-        courseName: courseToEdit.name || "",
-        description: courseToEdit.description || "",
-        prize: courseToEdit.price?.toString() || "",
-        duration: courseToEdit.duration || "",
-        discount: courseToEdit.discount?.toString() || "",
-        thumbnail: courseToEdit.fileupload
-          ? {
-            filename: courseToEdit.fileupload,
-            url: `/uploads/${courseToEdit.fileupload}`,
-          }
-          : "",
-        showOnLandingPage: courseToEdit.showOnLandingPage ?? true,
-        startDate: courseToEdit.startDate ? courseToEdit.startDate.split('T')[0] : "",
-        endDate: courseToEdit.endDate ? courseToEdit.endDate.split('T')[0] : "",
-        timing: courseToEdit.timing || "",
+        courseName: course.name || "",
+        description: course.description || "",
+        prize: course.price?.toString() || "",
+        duration: course.duration || "",
+        discount: course.discount?.toString() || "",
+        thumbnail: course.fileupload ? { filename: course.fileupload, url: `/uploads/${course.fileupload}` } : "",
+        showOnLandingPage: course.showOnLandingPage ?? true,
+        startDate: course.startDate?.split?.("T")[0] || course.startDate || "",
+        endDate: course.endDate?.split?.("T")[0] || course.endDate || "",
+        timing: course.timing || "",
       });
       setOpen(true);
     }
   };
 
-  const handleDeleteClick = (id: any) => {
-    setCourseToDelete(id);
-    setDeleteModalOpen(true);
-  };
+  const onsubmit = (data: any) => {
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("name", data.courseName);
+    formData.append("description", data.description);
+    formData.append("price", data.prize);
+    formData.append("duration", data.duration);
+    formData.append("discount", data.discount);
+    formData.append("showOnLandingPage", data.showOnLandingPage);
+    formData.append("startDate", data.startDate);
+    formData.append("endDate", data.endDate);
+    formData.append("timing", data.timing);
 
-  const handleDeleteConfirm = () => {
-    if (courseToDelete) {
-      courseDelete(courseToDelete, {
-        onSuccess: () => {
-          CustomSnackBar.successSnackbar("Deleted Successfully!");
-          setDeleteModalOpen(false);
-          setCourseToDelete(null);
-        },
-        onError: (error: any) => {
-          CustomSnackBar.errorSnackbar("Failed to delete user!");
-          setDeleteModalOpen(false);
-          setCourseToDelete(null);
-        },
+    if (data.thumbnail instanceof File) {
+      formData.append("image", data.thumbnail);
+    }
+
+    if (editingCourse) {
+      courseUpdate({ id: editingCourse._id, formData }, {
+        onSuccess: () => { CustomSnackBar.successSnackbar("Course Updated!"); handleClose(); },
+        onSettled: () => setLoading(false)
+      });
+    } else {
+      courseAdd(formData, {
+        onSuccess: () => { CustomSnackBar.successSnackbar("Course Added!"); handleClose(); },
+        onSettled: () => setLoading(false)
       });
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteModalOpen(false);
-    setCourseToDelete(null);
-  };
-
-  const handleToggleStatus = (id: any) => {
-    courseToggleStatus(id);
-  };
-
-  const filteredCourses = courses.filter(
-    (course) =>
-      course.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCourses = courses.filter((c) =>
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-    clearErrors,
-    setValue,
-    control,
-  } = useForm({
-    resolver: zodResolver(CourseSchema),
-  });
-  const onsubmit = (data: any) => {
-    setLoading(true)
-    if (editingCourse) {
-      const formData = new FormData();
-      console.log(data, editingCourse);
+  // If subTab is 1 (Submissions & Credentials), show submissions list
+  if (activeSubTab === 1) {
+    return <CourseSubmissionsList />;
+  }
 
-      formData.append("name", data.courseName);
-      formData.append("description", data.description);
-      formData.append("discount", data.discount);
-      formData.append("duration", data.duration);
-      formData.append("price", data.prize);
-      formData.append("showOnLandingPage", data.showOnLandingPage); // Add this line
-
-      // Handle thumbnail - only append if it's a new file (File object)
-      if (data.thumbnail && data.thumbnail instanceof File) {
-        formData.append("fileupload", data.thumbnail);
-      }
-      courseUpdate(
-        { id: editingCourse._id, formData: formData },
-        {
-          onSuccess: () => {
-            CustomSnackBar.successSnackbar("Courses Added Successfully!");
-            handleClose();
-          },
-          onError: (error) => {
-            CustomSnackBar.errorSnackbar(
-              error.message || "Error Adding Courses."
-            );
-          },
-          onSettled: () => {
-            setLoading(false);
-          }
-        }
+  // If subTab is 2 (Live Sessions), show live sessions tab
+  if (activeSubTab === 2) {
+    if (selectedCourse) {
+      return (
+        <LiveSessionsTab
+          sessionType="COURSE"
+          referenceId={selectedCourse._id}
+          referenceName={selectedCourse.name}
+          userName="Admin"
+          userEmail="admin@skillup.com"
+        />
       );
-    } else {
-      const formData = new FormData();
-
-      formData.append("name", data.courseName);
-      formData.append("description", data.description);
-      formData.append("discount", data.discount);
-      formData.append("duration", data.duration);
-      formData.append("price", data.prize);
-      formData.append("showOnLandingPage", data.showOnLandingPage); // Add this line
-      formData.append("startDate", data.startDate);
-      formData.append("endDate", data.endDate);
-      formData.append("timing", data.timing);
-      formData.append("fileupload", data.thumbnail);
-      courseAdd(formData, {
-        onSuccess: () => {
-          CustomSnackBar.successSnackbar("Courses Added Successfully!");
-          handleClose();
-        },
-        onError: (error) => {
-          CustomSnackBar.errorSnackbar(
-            error.message || "Error Adding Courses."
-          );
-        },
-        onSettled: () => {
-          setLoading(false);
-        }
-      });
     }
-  };
-  return (
-    <>
-      <Box>
-        {/* TAB 1: ALL COURSES (CRUD) */}
-        {activeSubTab === 0 && (
+    // Show course selector for live sessions
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Box>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                "@media (max-width: 600px)": {
-                  flexDirection: "column",
-                  alignItems: "start",
-                },
-              }}
-            >
-              <TextField
-                placeholder="Search courses..."
-                variant="outlined"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                sx={{
-                  minWidth: "200px",
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "var(--white)",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    fontFamily: "Regular_M",
-                    "& fieldset": {
-                      borderColor: "var(--borderColor)",
-                      borderWidth: "1px",
-                    },
-                    "&:hover fieldset": {
-                      borderColor: "var(--borderColor)",
-                      borderWidth: "1px",
-                    },
-                    "&.Mui-focused fieldset": {
-                      borderColor: "var(--borderColor)",
-                      borderWidth: "1px",
-                    },
-                  },
-                  "& .MuiInputBase-input": {
-                    padding: "10px 8px",
-                    fontSize: "12px",
-                    fontFamily: "Regular_M",
-                  },
-                }}
-              />
-              <CustomButton
-                type="button"
-                label="Add Courses"
-                variant="contained"
-                btnSx={{
-                  background: "var(--primary)",
-                  color: "var(--white)",
-                  width: "fit-content",
-                }}
-                onClick={() => setOpen(true)}
-              />
-            </Box>
-
-            {/* Course Cards Grid */}
-            <Box sx={{ marginTop: "24px" }}>
-              <Grid container spacing={3}>
-                {filteredCourses.map((course) => (
-                  <Grid
-                    size={{ xs: 12, sm: 6, md: 4, lg: 3 }}
-                    key={course._id}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      "@media (max-width: 991px)": {
-                        flexBasis: "48% !important",
-                      },
-                      "@media (max-width: 767px)": {
-                        flexBasis: "100% !important",
-                      },
-                    }}
-                  >
-                    <CourseCard
-                      id={course._id}
-                      thumbnail={`${config.BASE_URL_MAIN}/uploads/${course.fileupload}`}
-                      courseName={course.name}
-                      description={course.description}
-                      prize={parseFloat(course.price) || 0}
-                      duration={course.duration}
-                      discount={parseFloat(course.discount) || 0}
-                      onEdit={handleEdit}
-                      onDelete={handleDeleteClick}
-                      onToggleStatus={handleToggleStatus}
-                      status={course.status}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-
-              {filteredCourses.length === 0 && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    minHeight: "200px",
-                    flexDirection: "column",
-                    gap: "16px",
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: "var(--greyText)",
-                      fontSize: "16px",
-                      fontFamily: "Medium_M",
-                    }}
-                  >
-                    No courses found
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "var(--greyText)",
-                      fontSize: "12px",
-                      fontFamily: "Regular_M",
-                      textAlign: "center",
-                    }}
-                  >
-                    Try adjusting your search terms or add a new course
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            {/* Model  */}
-            <Modal
-              open={open}
-              onClose={handleClose}
-              aria-labelledby="modal-modal-title"
-              aria-describedby="modal-modal-description"
-            >
-              <Box sx={style}>
-                {/* Header  */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingBottom: "8px",
-                    borderBottom: "0.4px solid var(--greyText)",
-                  }}
-                >
-                  <Typography
-                    id="modal-modal-title"
-                    variant="h6"
-                    component="h2"
-                    sx={{ fontSize: "14px", fontFamily: "Medium_M" }}
-                  >
-                    {editingCourse ? "Edit Course" : "Add Courses"}
-                  </Typography>
-                  <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={handleClose}
-                    sx={{
-                      "& svg": {
-                        fontSize: "18px",
-                      },
-                    }}
-                  >
-                    <IoClose className="close-icon" />
-                  </IconButton>
-                </Box>
-                {/* Body */}
-                <Box
-                  component={"form"}
-                  sx={{ marginTop: "12px", maxHeight: "50vh", overflowY: "auto" }}
-                  onSubmit={handleSubmit(onsubmit)}
-                >
-                  <CustomInput
-                    name="courseName"
-                    placeholder="Enter Course Name"
-                    label="Course Name"
-                    type="text"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <CustomInput
-                    name="description"
-                    placeholder="Enter Description"
-                    label="Description"
-                    type="text"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <CustomInput
-                    name="prize"
-                    placeholder="Enter Prize"
-                    label="Prize"
-                    type="number"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <CustomInput
-                    name="duration"
-                    placeholder="Enter Duration"
-                    label="Duration"
-                    type="text"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <CustomInput
-                    name="startDate"
-                    label="Start Date"
-                    type="date"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                    placeholder=""
-                  />
-                  <CustomInput
-                    name="endDate"
-                    label="End Date"
-                    type="date"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                    placeholder=""
-                  />
-                  <CustomInput
-                    name="timing"
-                    placeholder="Enter Timing (e.g. 10:00 AM - 12:00 PM)"
-                    label="Timing"
-                    type="text"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <CustomInput
-                    name="discount"
-                    placeholder="Enter Discount"
-                    label="Discount"
-                    type="number"
-                    bgmode="dark"
-                    required={false}
-                    register={register}
-                    errors={errors}
-                  />
-                  <Controller
-                    name="thumbnail"
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <CustomFileUpload
-                        name={field.name}
-                        label="Course Thumbnail"
-                        value={field.value}
-                        onChange={(file) => field.onChange(file)}
-                        error={fieldState.error}
-                      />
-                    )}
-                  />
-
-                </Box>
-                {/* Footer */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "12px",
-                    paddingBottom: "12px",
-                    gap: "20px",
-                  }}
-                >
-                  <CustomButton
-                    type="button"
-                    variant="contained"
-                    label="cancel"
-                    btnSx={{ background: "transparent", color: "var(--title)" }}
-                    onClick={handleClose}
-                  />
-                  <CustomButton
-                    type="submit"
-                    variant="contained"
-                    label={editingCourse ? "Update Course" : "Add Course"}
-                    btnSx={{ background: "var(--primary)", color: "var(--white)" }}
-                    onClick={handleSubmit(onsubmit)}
-                    disabled={loading}
-                  />
-                </Box>
-              </Box>
-            </Modal>
-
-            {/* Delete Confirmation Modal */}
-            <Modal
-              open={deleteModalOpen}
-              onClose={handleDeleteCancel}
-              aria-labelledby="delete-modal-title"
-              aria-describedby="delete-modal-description"
-            >
-              <Box sx={style}>
-                {/* Header */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingBottom: "8px",
-                    borderBottom: "0.4px solid var(--greyText)",
-                  }}
-                >
-                  <Typography
-                    id="delete-modal-title"
-                    variant="h6"
-                    component="h2"
-                    sx={{ fontSize: "14px", fontFamily: "Medium_M" }}
-                  >
-                    Delete Course
-                  </Typography>
-                  <IconButton
-                    edge="end"
-                    aria-label="close"
-                    onClick={handleDeleteCancel}
-                    sx={{
-                      "& svg": {
-                        fontSize: "18px",
-                      },
-                    }}
-                  >
-                    <IoClose className="close-icon" />
-                  </IconButton>
-                </Box>
-
-                {/* Body */}
-                <Box sx={{ marginTop: "20px", marginBottom: "20px" }}>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontSize: "14px",
-                      fontFamily: "Regular_M",
-                      color: "var(--title)",
-                      textAlign: "center",
-                      lineHeight: "1.5",
-                    }}
-                  >
-                    Are you sure you want to delete this course?
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: "12px",
-                      fontFamily: "Regular_M",
-                      color: "var(--greyText)",
-                      textAlign: "center",
-                      marginTop: "8px",
-                    }}
-                  >
-                    This action cannot be undone.
-                  </Typography>
-                </Box>
-
-                {/* Footer */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: "12px",
-                    paddingTop: "12px",
-                  }}
-                >
-                  <CustomButton
-                    type="button"
-                    variant="outlined"
-                    label="Cancel"
-                    btnSx={{
-                      background: "transparent",
-                      color: "var(--greyText)",
-                      borderColor: "var(--borderColor)",
-                      "&:hover": {
-                        backgroundColor: "var(--toogleHover)",
-                      },
-                    }}
-                    onClick={handleDeleteCancel}
-                  />
-                  <CustomButton
-                    type="button"
-                    variant="contained"
-                    label="Delete"
-                    btnSx={{
-                      background: "#f44336",
-                      color: "var(--white)",
-                      "&:hover": {
-                        backgroundColor: "#d32f2f",
-                      },
-                    }}
-                    onClick={handleDeleteConfirm}
-                  />
-                </Box>
-              </Box>
-            </Modal>
+            <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "18px" }}>Select a Course</Typography>
+            <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>Choose a course to manage its live sessions</Typography>
           </Box>
-        )}
+        </Box>
+        <Grid container spacing={2}>
+          {courses.map((course: any) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={course._id}>
+              <Box
+                onClick={() => setSelectedCourse(course)}
+                sx={{
+                  bgcolor: "#1e293b",
+                  border: "1px solid rgba(71, 85, 105, 0.4)",
+                  borderRadius: "6px",
+                  p: 2.5,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  "&:hover": { borderColor: "#3b82f6", bgcolor: "rgba(59, 130, 246, 0.1)" },
+                }}
+              >
+                <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "15px", mb: 0.5 }}>{course.name}</Typography>
+                <Typography sx={{ color: "#64748b", fontSize: "12px" }}>{course.duration || "No duration set"}</Typography>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+    );
+  }
 
-        {/* TAB 2: SUBMISSIONS */}
-        {activeSubTab === 1 && (
-          <CourseSubmissionsList />
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Search and Add Button Row */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <TextField
+          size="small"
+          placeholder="Search courses by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{ startAdornment: <MagnifyingGlass size={18} style={{ color: "#64748b", marginRight: 12 }} /> }}
+          sx={{ minWidth: 280, maxWidth: 400, ...textFieldDarkStyles }}
+        />
+        <Button
+          variant="contained"
+          startIcon={<Plus size={18} weight="bold" />}
+          onClick={() => setOpen(true)}
+          sx={{ bgcolor: "#3b82f6", color: "#fff", borderRadius: "6px", px: 2.5, py: 1, fontWeight: 600, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.05em", "&:hover": { bgcolor: "#2563eb" } }}
+        >
+          Add Course
+        </Button>
+      </Box>
+
+      {/* Course Grid */}
+      <Grid container spacing={3}>
+        {filteredCourses.map((course) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={course._id}>
+            <CourseCard
+              id={course._id}
+              courseName={course.name}
+              description={course.description}
+              duration={course.duration}
+              prize={course.price}
+              discount={course.discount}
+              thumbnail={`${config.BASE_URL_MAIN}/uploads/${course.fileupload}`}
+              status={course.status ? "Active" : "Inactive"}
+              onEdit={handleEdit}
+              onDelete={(id: string) => { setCourseToDelete(id); setDeleteModalOpen(true); }}
+              onToggleStatus={(id: string) => courseToggleStatus(id)}
+            />
+          </Grid>
+        ))}
+        {filteredCourses.length === 0 && (
+          <Grid size={{ xs: 12 }}>
+            <Box sx={{ py: 10, textAlign: "center", border: "1px dashed rgba(71, 85, 105, 0.4)", borderRadius: "6px" }}>
+              <WarningCircle size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+              <Typography sx={{ color: "#94a3b8" }}>No courses found matching your search.</Typography>
+            </Box>
+          </Grid>
         )}
-      </Box > {/* End Main Box */}
-    </>
+      </Grid>
+
+      {/* Add/Edit Modal */}
+      <Modal open={open} onClose={handleClose}>
+        <Box sx={style}>
+          <Box sx={{ p: 2.5, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "16px", fontFamily: "'Chivo', sans-serif" }}>
+              {editingCourse ? "Edit Course" : "Add New Course"}
+            </Typography>
+            <IconButton onClick={handleClose} sx={{ color: "#94a3b8", "&:hover": { color: "#f8fafc" } }}>
+              <X size={20} />
+            </IconButton>
+          </Box>
+          <Box component="form" onSubmit={handleSubmit(onsubmit)} sx={{ p: 2.5, maxHeight: "70vh", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <CustomInput name="courseName" label="Course Name" type="text" placeholder="e.g., Full Stack Development" bgmode="dark" register={register} errors={errors} />
+            <CustomInput name="description" label="Description" type="text" placeholder="Enter course description" bgmode="dark" register={register} errors={errors} />
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="prize" label="Price (₹)" type="number" placeholder="999" bgmode="dark" register={register} errors={errors} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="discount" label="Discount (%)" type="number" placeholder="10" bgmode="dark" register={register} errors={errors} />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="duration" label="Duration" type="text" placeholder="3 Months" bgmode="dark" register={register} errors={errors} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="timing" label="Batches Timing" type="text" placeholder="Eve 6PM - 8PM" bgmode="dark" register={register} errors={errors} />
+              </Box>
+            </Box>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="startDate" label="Start Date" type="date" placeholder="YYYY-MM-DD" bgmode="dark" register={register} errors={errors} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <CustomInput name="endDate" label="End Date" type="date" placeholder="YYYY-MM-DD" bgmode="dark" register={register} errors={errors} />
+              </Box>
+            </Box>
+
+            <Controller
+              name="thumbnail"
+              control={control}
+              render={({ field: { onChange, value } }) => (
+                <CustomFileUpload
+                  label="Course Thumbnail"
+                  name="thumbnail"
+                  value={value}
+                  onChange={onChange}
+                  error={errors.thumbnail as any}
+                />
+              )}
+            />
+
+            <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button onClick={handleClose} sx={{ color: "#94a3b8", fontWeight: 600, "&:hover": { color: "#f8fafc" } }}>Cancel</Button>
+              <Button type="submit" disabled={loading} variant="contained" sx={{ bgcolor: "#3b82f6", color: "#fff", px: 4, py: 1, borderRadius: "6px", fontWeight: 700, "&:hover": { bgcolor: "#2563eb" } }}>
+                {loading ? "Saving..." : editingCourse ? "Update" : "Create"}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Delete Confirmation */}
+      <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+        <Box sx={{ ...style, width: 400, p: 4, textAlign: "center" }}>
+          <Trash size={48} weight="duotone" style={{ color: "#ef4444", marginBottom: 16 }} />
+          <Typography variant="h6" sx={{ color: "#f8fafc", fontWeight: 700, mb: 1 }}>Delete Course?</Typography>
+          <Typography sx={{ color: "#94a3b8", fontSize: "14px", mb: 3 }}>This will permanently remove the course and all associated data. This action is irreversible.</Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button fullWidth onClick={() => setDeleteModalOpen(false)} sx={{ bgcolor: "#334155", color: "#f8fafc" }}>Cancel</Button>
+            <Button fullWidth onClick={() => { courseDelete(courseToDelete!); setDeleteModalOpen(false); }} variant="contained" sx={{ bgcolor: "#ef4444", color: "#fff" }}>Delete</Button>
+          </Box>
+        </Box>
+      </Modal>
+    </Box>
   );
 };
+
 export default Courses;

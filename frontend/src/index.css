@@ -156,23 +156,44 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
-/* Table  */
+/* Table Dark Theme */
 .table_border {
   border: none !important;
+  background-color: rgba(30, 41, 59, 0.4) !important;
+  border-radius: 6px !important;
 }
 
 .table_border .css-yrdy0g-MuiDataGrid-columnHeaderRow {
-  border: solid 1px #e5e7eb;
+  border: solid 1px rgba(71, 85, 105, 0.4);
+}
+
+/* Global DataGrid header dark fix */
+.MuiDataGrid-filler {
+  background-color: #0f172a !important;
+}
+
+.MuiDataGrid-columnHeader {
+  background-color: #0f172a !important;
+}
+
+.MuiDataGrid-columnHeaders {
+  background-color: #0f172a !important;
 }
 
 .table_border .MuiDataGrid-row {
-  border-left: solid 1px #e5e7eb;
-  border-right: solid 1px #e5e7eb;
-  border-bottom: solid 1px #e5e7eb;
+  border-left: solid 1px rgba(71, 85, 105, 0.4);
+  border-right: solid 1px rgba(71, 85, 105, 0.4);
+  border-bottom: solid 1px rgba(71, 85, 105, 0.4);
+  background-color: transparent !important;
+  color: #f8fafc !important;
+}
+
+.table_border .MuiDataGrid-row:hover {
+  background-color: rgba(51, 65, 85, 0.3) !important;
 }
 
 
-/* Submitted Form  */
+/* Submitted Form Dark Theme */
 .Submitted_form_table {
   .MuiDataGrid-menuIcon {
     display: none !important;
@@ -183,44 +204,83 @@ input[type=number] {
   }
 
   .MuiDataGrid-columnHeaderTitle {
-    font-family: "Regular_M";
-    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #94a3b8 !important;
   }
 
   .MuiDataGrid-row--borderBottom {
-    background-color: #F9F9F9 !important;
+    background-color: rgba(15, 23, 42, 0.8) !important;
   }
 
   .MuiDataGrid-row {
-    background-color: var(--white);
-    font-family: "Regular_M";
-    font-size: 12px;
-    color: #1A1A1A;
+    background-color: transparent !important;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #f8fafc !important;
     font-weight: 500;
     height: 45px !important;
     min-height: 45px !important;
   }
 
+  .MuiDataGrid-row:hover {
+    background-color: rgba(51, 65, 85, 0.3) !important;
+  }
+
   .MuiDataGrid-cell {
     outline: none !important;
+    border-color: rgba(71, 85, 105, 0.4) !important;
   }
 
   .MuiDataGrid-columnHeader,
-  .MuiDataGrid-filler {
+  .MuiDataGrid-filler,
+  .MuiDataGrid-columnHeaders {
     outline: none !important;
-    background: var(--newprimary) !important;
-    color: var(--white) !important;
+    background: #0f172a !important;
+    /* slate-900 */
+    color: #94a3b8 !important;
+    /* slate-400 */
+    border-bottom: 1px solid rgba(71, 85, 105, 0.4) !important;
+  }
+
+  .MuiDataGrid-row.Mui-selected {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.25) !important;
+    }
   }
 
   .MuiDataGrid-columnHeaders {
     .MuiDataGrid-row--borderBottom {
       height: 45px !important;
+      background-color: #0f172a !important;
     }
   }
 
   .MuiDataGrid-withBorderColor {
     border: none !important;
+  }
+
+  .MuiDataGrid-footerContainer {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border-top: 1px solid rgba(71, 85, 105, 0.4) !important;
+    color: #94a3b8 !important;
+  }
+
+  .MuiTablePagination-root {
+    color: #94a3b8 !important;
+  }
+
+  .MuiTablePagination-selectIcon {
+    color: #64748b !important;
+  }
+
+  .MuiIconButton-root {
+    color: #64748b !important;
   }
 }
 
@@ -284,4 +344,353 @@ input[type=number] {
   40% {
     box-shadow: 0 2.5em 0 0;
   }
+}
+
+/* ========================================
+   DARK THEME STYLES (Student Portal)
+   Matching frontend-ref design
+   ======================================== */
+
+/* Dark Theme Colors */
+:root {
+  /* Existing variables preserved... */
+
+  /* Dark Theme Colors */
+  --dark-bg: #0f172a;
+  --dark-surface: #1e293b;
+  --dark-surface-elevated: #334155;
+  --dark-border: #475569;
+  --dark-border-light: rgba(71, 85, 105, 0.6);
+  --dark-text-primary: #f8fafc;
+  --dark-text-secondary: #94a3b8;
+  --dark-text-muted: #64748b;
+
+  /* Accent Colors */
+  --dark-blue: #3b82f6;
+  --dark-blue-light: #60a5fa;
+  --dark-purple: #a855f7;
+  --dark-green: #22c55e;
+  --dark-amber: #f59e0b;
+  --dark-red: #ef4444;
+  --dark-cyan: #22d3ee;
+  --dark-pink: #ec4899;
+}
+
+/* Dark Theme Animation Keyframes */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Dark Theme Font Utilities */
+.font-chivo {
+  font-family: 'Chivo', sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+/* Dark Theme Utility Classes */
+.dark-card {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.6);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.2s ease;
+}
+
+.dark-card:hover {
+  border-color: #64748b;
+}
+
+.dark-card-elevated {
+  background: rgba(51, 65, 85, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Dark Theme Button Styles */
+.dark-btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.dark-btn-primary:hover {
+  background: #60a5fa;
+  transform: scale(1.02);
+}
+
+.dark-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.dark-btn-secondary {
+  background: #334155;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dark-btn-secondary:hover {
+  background: #475569;
+}
+
+.dark-btn-success {
+  background: #22c55e;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.dark-btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+/* Dark Theme Input Styles */
+.dark-input {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #475569;
+  color: #f8fafc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.dark-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.dark-input::placeholder {
+  color: #64748b;
+}
+
+/* Scanlines Effect - HUD Aesthetic */
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+  background-size: 100% 2px, 3px 100%;
+  opacity: 0.15;
+}
+
+/* Dark Theme Status Badges */
+.dark-status-active {
+  color: #4ade80;
+  background: rgba(22, 101, 52, 0.3);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark-status-pending {
+  color: #fbbf24;
+  background: rgba(120, 53, 15, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark-status-error {
+  color: #f87171;
+  background: rgba(127, 29, 29, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Dark Theme Animation Utilities */
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+  background-size: 1000px 100%;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+/* Dark Theme Gradient Cards */
+.dark-gradient-blue {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 58, 138, 0.3) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.dark-gradient-purple {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(88, 28, 135, 0.3) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.dark-gradient-green {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(22, 101, 52, 0.3) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.dark-gradient-amber {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(120, 53, 15, 0.3) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.dark-gradient-red {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(127, 29, 29, 0.3) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.dark-gradient-cyan {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(22, 78, 99, 0.3) 100%);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.dark-gradient-pink {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(131, 24, 67, 0.3) 100%);
+  border: 1px solid rgba(236, 72, 153, 0.3);
+}
+
+/* Backdrop blur for modals */
+.dark-backdrop {
+  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.75);
+}
+
+/* Text gradient */
+.dark-text-gradient {
+  background: linear-gradient(135deg, #3b82f6, #22c55e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Custom Scrollbar for Dark Theme */
+.dark-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

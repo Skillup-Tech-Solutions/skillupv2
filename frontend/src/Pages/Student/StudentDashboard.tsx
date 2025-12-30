@@ -1,31 +1,27 @@
-
-import {
-    Box,
-    Grid,
-    Paper,
-    Typography,
-    CircularProgress,
-    Alert,
-    Card,
-    CardContent,
-    Chip,
-    Button,
-} from "@mui/material";
-import {
-    MdSchool,
-    MdWork,
-    MdAssignment,
-    MdCheckCircle,
-    MdPlayArrow,
-    MdArrowForward,
-    MdAnnouncement,
-    MdCalendarToday,
-    MdTrendingUp,
-} from "react-icons/md";
+import { Box, Alert } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { useNavigate } from "react-router-dom";
+import DataCard from "../../Components/Student/DataCard";
+import LiveSessionsWidget from "../../Components/LiveSessionsWidget";
+import {
+    GraduationCap,
+    Books,
+    Briefcase,
+    FolderSimple,
+    Megaphone,
+    User,
+    ArrowRight,
+    Sparkle,
+    Clock,
+    Lightning,
+    ChartLineUp,
+    Pulse,
+    CheckCircle,
+    Trophy,
+    Star,
+} from "@phosphor-icons/react";
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
@@ -48,252 +44,579 @@ const StudentDashboard = () => {
     const stats = data?.stats || {};
     const announcements = data?.recentAnnouncements || [];
     const recentActivity = data?.recentActivity || [];
-    const upcomingDeadlines = data?.upcomingDeadlines || [];
 
-    // Helper to get item name and link
-    const getItemDetails = (item: any) => {
-        const title = item.itemId?.title || item.itemId?.name || "Untitled";
-        let link = "";
-        let typeLabel = "";
+    if (isLoading) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "64vh",
+                    gap: 2,
+                }}
+            >
+                <Box sx={{ position: "relative" }}>
+                    {/* w-12 h-12 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin */}
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "2px solid #334155",
+                            borderTopColor: "#3b82f6",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": {
+                                "0%": { transform: "rotate(0deg)" },
+                                "100%": { transform: "rotate(360deg)" },
+                            },
+                        }}
+                    />
+                    <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Pulse size={24} weight="duotone" style={{ color: "#60a5fa" }} />
+                    </Box>
+                </Box>
+                {/* text-slate-500 font-mono text-xs uppercase tracking-widest animate-pulse */}
+                <Box
+                    sx={{
+                        color: "#64748b",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: "12px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                    }}
+                >
+                    Loading Dashboard...
+                </Box>
+            </Box>
+        );
+    }
 
-        if (item.itemType === "course") {
-            link = "/student/my-courses";
-            typeLabel = "Course";
-        } else if (item.itemType === "project") {
-            link = `/student/my-projects?projectId=${item._id}`;
-            typeLabel = "Project";
-        } else if (item.itemType === "internship") {
-            link = "/student/my-internships";
-            typeLabel = "Internship";
-        }
+    if (error) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Alert
+                    severity="error"
+                    sx={{
+                        bgcolor: "rgba(127, 29, 29, 0.3)",
+                        color: "#f87171",
+                        border: "1px solid rgba(239, 68, 68, 0.5)",
+                        "& .MuiAlert-icon": { color: "#f87171" },
+                    }}
+                >
+                    Failed to load dashboard data. Please refresh.
+                </Alert>
+            </Box>
+        );
+    }
 
-        return { title, link, typeLabel };
-    };
-
-    const cards = [
+    // Quick Actions - exact frontend-ref styling with subtly gradients
+    const quickActions = [
         {
-            title: "My Courses",
-            count: stats.totalCourses || 0,
-            icon: <MdSchool size={24} />,
-            color: "#3b82f6",
-            bgColor: "#eff6ff",
-            link: "/student/my-courses"
+            path: "/student/my-courses",
+            label: "My Courses",
+            description: "View & continue learning",
+            icon: Books,
+            color: "#60a5fa", // blue-400
+            iconBg: "rgba(30, 58, 138, 0.4)", // blue-900/40
+            cardBg: "linear-gradient(to bottom right, rgba(23, 37, 84, 0.3), rgba(30, 58, 138, 0.1))", // blue-950/30 to blue-900/10
+            borderColor: "rgba(29, 78, 216, 0.3)", // blue-700/30
+            hoverBorderColor: "rgba(59, 130, 246, 0.5)", // blue-500/50
         },
         {
-            title: "My Internships",
-            count: stats.totalInternships || 0,
-            icon: <MdWork size={24} />,
-            color: "#8b5cf6",
-            bgColor: "#f5f3ff",
-            link: "/student/my-internships"
+            path: "/student/my-internships",
+            label: "Internships",
+            description: "Track your internships",
+            icon: Briefcase,
+            color: "#c084fc", // purple-400
+            iconBg: "rgba(88, 28, 135, 0.4)", // purple-900/40
+            cardBg: "linear-gradient(to bottom right, rgba(59, 7, 100, 0.3), rgba(88, 28, 135, 0.1))", // purple-950/30 to purple-900/10
+            borderColor: "rgba(126, 34, 206, 0.3)", // purple-700/30
+            hoverBorderColor: "rgba(168, 85, 247, 0.5)", // purple-500/50
         },
         {
-            title: "My Projects",
-            count: stats.totalProjects || 0,
-            icon: <MdAssignment size={24} />,
-            color: "#f59e0b",
-            bgColor: "#fffbeb",
-            link: "/student/my-projects"
+            path: "/student/my-projects",
+            label: "Projects",
+            description: "Submit & review",
+            icon: FolderSimple,
+            color: "#22d3ee", // cyan-400
+            iconBg: "rgba(22, 78, 99, 0.4)", // cyan-900/40
+            cardBg: "linear-gradient(to bottom right, rgba(8, 51, 68, 0.3), rgba(22, 78, 99, 0.1))", // cyan-950/30 to cyan-900/10
+            borderColor: "rgba(14, 116, 144, 0.3)", // cyan-700/30
+            hoverBorderColor: "rgba(6, 182, 212, 0.5)", // cyan-500/50
         },
         {
-            title: "In Progress",
-            count: stats.inProgress || 0,
-            icon: <MdPlayArrow size={24} />,
-            color: "#6366f1",
-            bgColor: "#eef2ff",
+            path: "/student/announcements",
+            label: "Announcements",
+            description: "Latest updates",
+            icon: Megaphone,
+            color: "#f87171", // red-400
+            iconBg: "rgba(127, 29, 29, 0.4)", // red-900/40
+            cardBg: "linear-gradient(to bottom right, rgba(69, 10, 10, 0.3), rgba(127, 29, 29, 0.1))", // red-950/30 to red-900/10
+            borderColor: "rgba(185, 28, 28, 0.3)", // red-700/30
+            hoverBorderColor: "rgba(239, 68, 68, 0.5)", // red-500/50
+        },
+        {
+            path: "/student/profile",
+            label: "My Profile",
+            description: "View & edit details",
+            icon: User,
+            color: "#f472b6", // pink-400
+            iconBg: "rgba(131, 24, 67, 0.4)", // pink-900/40
+            cardBg: "linear-gradient(to bottom right, rgba(80, 7, 36, 0.3), rgba(131, 24, 67, 0.1))", // pink-950/30 to pink-900/10
+            borderColor: "rgba(190, 24, 93, 0.3)", // pink-700/30
+            hoverBorderColor: "rgba(236, 72, 153, 0.5)", // pink-500/50
         },
     ];
 
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case "high": return "error";
-            case "medium": return "warning";
-            default: return "info";
-        }
-    };
-
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" }}>
-            {/* Header */}
-            <Box sx={{ mb: 4, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        // space-y-8
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {/* Header - flex items-center justify-between flex-wrap gap-4 */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 2,
+                }}
+            >
                 <Box>
-                    <Typography variant="h4" fontWeight="bold" sx={{ fontFamily: "SemiBold_W", color: "var(--title)" }}>
-                        Welcome back, {userName}! 👋
-                    </Typography>
-                    <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--greyText)", mt: 0.5 }}>
-                        Here's what's happening with your learning today.
-                    </Typography>
+                    {/* text-2xl font-chivo font-bold uppercase tracking-wider flex items-center gap-3 */}
+                    <Box
+                        component="h1"
+                        sx={{
+                            fontSize: "24px",
+                            fontFamily: "'Chivo', sans-serif",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            color: "#f8fafc",
+                            m: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                        }}
+                    >
+                        <GraduationCap size={28} weight="duotone" style={{ color: "#60a5fa" }} />
+                        Student Dashboard
+                    </Box>
+                    {/* text-slate-500 mt-1 */}
+                    <Box
+                        component="p"
+                        sx={{
+                            color: "#64748b",
+                            mt: 0.5,
+                            m: 0,
+                            fontSize: "14px",
+                        }}
+                    >
+                        Welcome back, <Box component="span" sx={{ color: "#cbd5e1", fontWeight: 500 }}>{userName || "Student"}</Box>! Here's your overview.
+                    </Box>
                 </Box>
-                <Typography sx={{ fontFamily: "Medium_W", fontSize: "14px", color: "var(--webprimary)", bgcolor: "#eff6ff", px: 2, py: 1, borderRadius: "20px" }}>
-                    {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </Typography>
+                {/* Status badge */}
+                {stats.inProgress > 0 && (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            px: 2,
+                            py: 1,
+                            background: "linear-gradient(135deg, rgba(20, 83, 45, 0.4) 0%, rgba(20, 83, 45, 0.2) 100%)",
+                            border: "1px solid rgba(22, 101, 52, 0.5)",
+                            borderRadius: "6px",
+                        }}
+                    >
+                        <ChartLineUp size={20} weight="duotone" style={{ color: "#4ade80" }} />
+                        <Box sx={{ color: "#4ade80", fontWeight: 700, fontSize: "13px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            {stats.inProgress} In Progress
+                        </Box>
+                    </Box>
+                )}
             </Box>
 
-            {isLoading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-                    <CircularProgress sx={{ color: "var(--webprimary)" }} />
-                </Box>
-            ) : error ? (
-                <Alert severity="error">Failed to load dashboard data. Please refresh.</Alert>
-            ) : (
-                <Grid container spacing={4}>
-                    {/* Stats Row */}
-                    {cards.map((card, idx) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
-                            <Paper
-                                elevation={0}
-                                onClick={() => card.link && navigate(card.link)}
-                                sx={{
-                                    p: 3,
-                                    borderRadius: "12px",
-                                    bgcolor: "white",
-                                    border: "1px solid #e0e0e0",
-                                    cursor: card.link ? "pointer" : "default",
-                                    transition: "all 0.2s ease-in-out",
-                                    "&:hover": {
-                                        borderColor: card.color,
-                                        transform: "translateY(-2px)",
-                                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
-                                    }
-                                }}
-                            >
-                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-                                    <Box sx={{
-                                        p: 1.5,
-                                        borderRadius: "10px",
-                                        bgcolor: card.bgColor,
-                                        color: card.color,
+            {/* Stats Grid - grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 */}
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(4, 1fr)" },
+                    gap: 2,
+                }}
+            >
+                <DataCard
+                    title="My Courses"
+                    value={stats.totalCourses || 0}
+                    icon={Books}
+                />
+                <DataCard
+                    title="Internships"
+                    value={stats.totalInternships || 0}
+                    icon={Briefcase}
+                />
+                <DataCard
+                    title="Projects"
+                    value={stats.totalProjects || 0}
+                    icon={FolderSimple}
+                />
+                <DataCard
+                    title="Completed"
+                    value={stats.completed || 0}
+                    icon={Trophy}
+                />
+            </Box>
+
+            {/* Two Column Layout - grid grid-cols-1 lg:grid-cols-2 gap-6 */}
+            <Box
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+                    gap: 3,
+                }}
+            >
+                {/* Live Sessions Widget */}
+                <LiveSessionsWidget variant="student" maxItems={3} />
+                {/* Recent Announcements - bg-slate-800/40 border border-slate-700/60 rounded-xl p-6 relative overflow-hidden */}
+                <Box
+                    sx={{
+                        bgcolor: "rgba(30, 41, 59, 0.4)",
+                        border: "1px solid rgba(71, 85, 105, 0.6)",
+                        borderRadius: "6px",
+                        p: 3,
+                        position: "relative",
+                        overflow: "hidden",
+                    }}
+                >
+                    {/* Sparkle decoration */}
+                    <Sparkle
+                        size={80}
+                        weight="duotone"
+                        style={{
+                            position: "absolute",
+                            right: -16,
+                            top: -16,
+                            color: "rgba(71, 85, 105, 0.2)",
+                        }}
+                    />
+                    {/* text-sm font-mono text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2 */}
+                    <Box
+                        component="h3"
+                        sx={{
+                            fontSize: "14px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            color: "#94a3b8",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            mb: 2.5,
+                            m: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <Megaphone size={16} weight="duotone" />
+                        Recent Announcements
+                    </Box>
+                    {announcements.length > 0 ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, position: "relative", zIndex: 10 }}>
+                            {announcements.slice(0, 3).map((announcement: any) => (
+                                <Box
+                                    key={announcement._id}
+                                    sx={{
                                         display: "flex",
                                         alignItems: "center",
-                                        justifyContent: "center"
-                                    }}>
-                                        {card.icon}
-                                    </Box>
-                                    {card.link && <MdArrowForward color="#9ca3af" />}
-                                </Box>
-                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "28px", color: "var(--title)" }}>
-                                    {card.count}
-                                </Typography>
-                                <Typography sx={{ fontFamily: "Medium_W", fontSize: "14px", color: "var(--greyText)" }}>
-                                    {card.title}
-                                </Typography>
-                            </Paper>
-                        </Grid>
-                    ))}
-
-                    {/* Main Content Area */}
-                    <Grid size={{ xs: 12, md: 8 }}>
-                        {/* Continue Learning */}
-                        {recentActivity.length > 0 && (
-                            <Box sx={{ mb: 4 }}>
-                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "18px", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                                    <MdTrendingUp color="var(--webprimary)" /> Continue Learning
-                                </Typography>
-                                <Card sx={{ borderRadius: "12px", border: "1px solid #e0e0e0", boxShadow: "none" }}>
-                                    <CardContent sx={{ p: 3 }}>
-                                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
-                                            <Box>
-                                                <Chip
-                                                    label={getItemDetails(recentActivity[0]).typeLabel}
-                                                    size="small"
-                                                    sx={{ bgcolor: "#eff6ff", color: "var(--webprimary)", fontFamily: "Medium_W", fontSize: "11px", mb: 1 }}
-                                                />
-                                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "20px" }}>
-                                                    {getItemDetails(recentActivity[0]).title}
-                                                </Typography>
-                                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "13px", color: "var(--greyText)", mt: 0.5 }}>
-                                                    Status: <span style={{ textTransform: "capitalize" }}>{recentActivity[0].status?.replace("-", " ")}</span>
-                                                </Typography>
-                                            </Box>
-                                            <Button
-                                                variant="contained"
-                                                endIcon={<MdArrowForward />}
-                                                onClick={() => navigate(getItemDetails(recentActivity[0]).link)}
-                                                sx={{
-                                                    bgcolor: "var(--webprimary)",
-                                                    fontFamily: "Medium_W",
-                                                    textTransform: "none",
-                                                    borderRadius: "8px",
-                                                    boxShadow: "none"
-                                                }}
-                                            >
-                                                Continue
-                                            </Button>
+                                        justifyContent: "space-between",
+                                        p: 1.5,
+                                        bgcolor: "rgba(15, 23, 42, 0.5)",
+                                        border: "1px solid rgba(30, 41, 59, 0.5)",
+                                        borderRadius: "6px",
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                        {announcement.priority === "high" ? (
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f87171" }} />
+                                        ) : announcement.priority === "medium" ? (
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#fbbf24" }} />
+                                        ) : (
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#60a5fa" }} />
+                                        )}
+                                        <Box sx={{ color: "#cbd5e1", fontSize: "14px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {announcement.title}
                                         </Box>
-                                    </CardContent>
-                                </Card>
+                                    </Box>
+                                    <Box sx={{ fontSize: "11px", color: "#64748b" }}>
+                                        {new Date(announcement.createdAt).toLocaleDateString()}
+                                    </Box>
+                                </Box>
+                            ))}
+                        </Box>
+                    ) : (
+                        <Box sx={{ textAlign: "center", py: 4, position: "relative", zIndex: 10 }}>
+                            <Star size={48} weight="duotone" style={{ color: "#475569", marginBottom: 12, marginLeft: "auto", marginRight: "auto" }} />
+                            <Box sx={{ color: "#64748b", fontSize: "14px" }}>No announcements yet</Box>
+                        </Box>
+                    )}
+                    {/* Link - mt-4 flex items-center justify-center gap-2 text-sm text-blue-400 hover:text-blue-300 */}
+                    <Box
+                        onClick={() => navigate("/student/announcements")}
+                        sx={{
+                            mt: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                            fontSize: "14px",
+                            color: "#fbbf24",
+                            cursor: "pointer",
+                            transition: "color 0.2s",
+                            "&:hover": { color: "#fcd34d" },
+                        }}
+                    >
+                        View All <ArrowRight size={16} />
+                    </Box>
+                </Box>
+
+                {/* Recent Activity - bg-slate-800/40 border border-slate-700/60 rounded-xl p-6 relative overflow-hidden */}
+                <Box
+                    sx={{
+                        bgcolor: "rgba(30, 41, 59, 0.4)",
+                        border: "1px solid rgba(71, 85, 105, 0.6)",
+                        borderRadius: "6px",
+                        p: 3,
+                        position: "relative",
+                        overflow: "hidden",
+                    }}
+                >
+                    <Sparkle
+                        size={80}
+                        weight="duotone"
+                        style={{
+                            position: "absolute",
+                            right: -16,
+                            top: -16,
+                            color: "rgba(71, 85, 105, 0.2)",
+                        }}
+                    />
+                    <Box
+                        component="h3"
+                        sx={{
+                            fontSize: "14px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            color: "#94a3b8",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            mb: 2.5,
+                            m: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                        }}
+                    >
+                        <Clock size={16} weight="duotone" />
+                        Recent Activity
+                    </Box>
+                    {recentActivity.length > 0 ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, position: "relative", zIndex: 10 }}>
+                            {recentActivity.slice(0, 4).map((item: any, idx: number) => (
+                                <Box
+                                    key={idx}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        p: 1.5,
+                                        bgcolor: "rgba(15, 23, 42, 0.5)",
+                                        border: "1px solid rgba(30, 41, 59, 0.5)",
+                                        borderRadius: "6px",
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                        {item.status === "completed" ? (
+                                            <CheckCircle size={18} weight="duotone" style={{ color: "#4ade80" }} />
+                                        ) : (
+                                            <Clock size={18} weight="duotone" style={{ color: "#60a5fa" }} />
+                                        )}
+                                        <Box sx={{ color: "#cbd5e1", fontSize: "14px", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {item.itemId?.title || item.itemId?.name || "Activity"}
+                                        </Box>
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            fontSize: "11px",
+                                            fontWeight: 600,
+                                            textTransform: "uppercase",
+                                            px: 1,
+                                            py: 0.25,
+                                            borderRadius: "6px",
+                                            ...(item.status === "completed"
+                                                ? { color: "#4ade80", bgcolor: "rgba(22, 101, 52, 0.3)" }
+                                                : { color: "#60a5fa", bgcolor: "rgba(30, 58, 138, 0.3)" }),
+                                        }}
+                                    >
+                                        {item.itemType}
+                                    </Box>
+                                </Box>
+                            ))}
+                        </Box>
+                    ) : (
+                        <Box sx={{ textAlign: "center", py: 4, position: "relative", zIndex: 10 }}>
+                            <Star size={48} weight="duotone" style={{ color: "#475569", marginBottom: 12, marginLeft: "auto", marginRight: "auto" }} />
+                            <Box sx={{ color: "#64748b", fontSize: "14px" }}>No recent activity</Box>
+                        </Box>
+                    )}
+                    <Box
+                        onClick={() => navigate("/student/my-courses")}
+                        sx={{
+                            mt: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 1,
+                            fontSize: "14px",
+                            color: "#60a5fa",
+                            cursor: "pointer",
+                            transition: "color 0.2s",
+                            "&:hover": { color: "#93c5fd" },
+                        }}
+                    >
+                        View All Courses <ArrowRight size={16} />
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Quick Actions */}
+            <Box
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "6px",
+                    p: 3,
+                    position: "relative",
+                    overflow: "hidden",
+                }}
+            >
+                <Sparkle
+                    size={80}
+                    weight="duotone"
+                    style={{
+                        position: "absolute",
+                        right: -16,
+                        top: -16,
+                        color: "rgba(71, 85, 105, 0.2)",
+                    }}
+                />
+                {/* Title with glowing badge style */}
+                <Box
+                    sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1.5,
+                        py: 0.5,
+                        mb: 2.5,
+                        bgcolor: "rgba(74, 222, 128, 0.1)", // green glow bg
+                        border: "1px solid rgba(74, 222, 128, 0.3)",
+                        borderRadius: "6px",
+                    }}
+                >
+                    <Lightning size={14} weight="duotone" style={{ color: "#4ade80" }} />
+                    <Box
+                        component="span"
+                        sx={{
+                            fontSize: "11px",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            color: "#4ade80",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                            fontWeight: 600,
+                        }}
+                    >
+                        Quick Actions
+                    </Box>
+                </Box>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "repeat(3, 1fr)" },
+                        gap: 2,
+                        position: "relative",
+                        zIndex: 10,
+                    }}
+                >
+                    {quickActions.map((action) => {
+                        const Icon = action.icon;
+                        return (
+                            <Box
+                                key={action.path}
+                                onClick={() => navigate(action.path)}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    p: 2,
+                                    background: action.cardBg,
+                                    border: `1px solid ${action.borderColor}`,
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                        borderColor: action.hoverBorderColor,
+                                    },
+                                    "&:hover .action-arrow": {
+                                        color: `${action.color} !important`,
+                                        transform: "translateX(4px)",
+                                    },
+                                }}
+                            >
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                    <Box
+                                        sx={{
+                                            p: 1.25,
+                                            bgcolor: action.iconBg,
+                                            borderRadius: "6px",
+                                        }}
+                                    >
+                                        <Icon size={22} weight="duotone" style={{ color: action.color }} />
+                                    </Box>
+                                    <Box>
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                color: "#f8fafc",
+                                                fontWeight: 700,
+                                                fontSize: "14px",
+                                                display: "block",
+                                            }}
+                                        >
+                                            {action.label}
+                                        </Box>
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                color: "#94a3b8",
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            {action.description}
+                                        </Box>
+                                    </Box>
+                                </Box>
+                                <ArrowRight
+                                    size={18}
+                                    className="action-arrow"
+                                    style={{
+                                        color: "#64748b",
+                                        transition: "all 0.2s ease",
+                                        flexShrink: 0,
+                                    }}
+                                />
                             </Box>
-                        )}
-
-                        {/* Recent Announcements */}
-                        <Box>
-                            <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "18px", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                                <MdAnnouncement color="#f59e0b" /> Recent Announcements
-                            </Typography>
-                            {announcements.length === 0 ? (
-                                <Alert severity="info" sx={{ fontFamily: "Regular_W" }}>No new announcements.</Alert>
-                            ) : (
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    {announcements.map((announcement: any) => (
-                                        <Paper key={announcement._id} elevation={0} sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: "10px" }}>
-                                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "15px" }}>{announcement.title}</Typography>
-                                                <Chip
-                                                    label={announcement.priority}
-                                                    size="small"
-                                                    color={getPriorityColor(announcement.priority)}
-                                                    sx={{ height: 20, fontSize: "10px", textTransform: "capitalize" }}
-                                                />
-                                            </Box>
-                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "13px", color: "var(--greyText)", mb: 1 }}>
-                                                {announcement.content}
-                                            </Typography>
-                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "#9ca3af" }}>
-                                                {new Date(announcement.createdAt).toLocaleDateString()}
-                                            </Typography>
-                                        </Paper>
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    </Grid>
-
-                    {/* Sidebar Area */}
-                    <Grid size={{ xs: 12, md: 4 }}>
-                        {/* Upcoming Deadlines */}
-                        <Box sx={{ mb: 4 }}>
-                            <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "18px", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                                <MdCalendarToday color="#ef4444" /> Upcoming Deadlines
-                            </Typography>
-                            {upcomingDeadlines.length === 0 ? (
-                                <Paper elevation={0} sx={{ p: 3, textAlign: "center", bgcolor: "#f9fafb", borderRadius: "12px" }}>
-                                    <MdCheckCircle size={40} color="#10b981" />
-                                    <Typography sx={{ fontFamily: "Medium_W", fontSize: "14px", mt: 1 }}>All caught up!</Typography>
-                                    <Typography sx={{ fontFamily: "Regular_W", fontSize: "12px", color: "var(--greyText)" }}>No pending deadlines.</Typography>
-                                </Paper>
-                            ) : (
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                    {upcomingDeadlines.map((item: any) => (
-                                        <Paper key={item._id} elevation={0} sx={{ p: 2, border: "1px solid #fecaca", bgcolor: "#fef2f2", borderRadius: "10px" }}>
-                                            <Box sx={{ display: "flex", gap: 1.5 }}>
-                                                <Box sx={{ minWidth: 4, bgcolor: "#ef4444", borderRadius: "4px" }} />
-                                                <Box>
-                                                    <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "14px", color: "#b91c1c" }}>
-                                                        {item.itemId?.title}
-                                                    </Typography>
-                                                    <Typography sx={{ fontFamily: "Regular_W", fontSize: "12px", color: "#7f1d1d", mt: 0.5 }}>
-                                                        Due: {new Date(item.itemId.deadline).toLocaleDateString()}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        </Paper>
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    </Grid>
-                </Grid>
-            )}
+                        );
+                    })}
+                </Box>
+            </Box>
         </Box>
     );
 };

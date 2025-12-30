@@ -2,14 +2,10 @@ import { useState, useRef } from "react";
 import {
     Box,
     Typography,
-    Card,
     Chip,
     Button,
     TextField,
     Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
     IconButton,
     Table,
     TableBody,
@@ -17,13 +13,13 @@ import {
     TableHead,
     TableRow,
     TableContainer,
-    Paper,
     Tabs,
     Tab,
     CircularProgress,
     Alert,
     Tooltip,
-    MenuItem
+    MenuItem,
+    Divider,
 } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -32,18 +28,20 @@ import dayjs from "dayjs";
 import advancedFormat from "dayjs/plugin/advancedFormat";
 dayjs.extend(advancedFormat);
 import {
-    MdSchool,
-    MdUpload,
-    MdCheckCircle,
-    MdPerson,
-    MdAssignment,
-    MdAttachMoney,
-    MdPayment,
-    MdDownload,
-    MdDelete,
-    MdVisibility,
-    MdEdit
-} from "react-icons/md";
+    Student,
+    BookOpen,
+    CheckCircle,
+    DownloadSimple,
+    CurrencyInr,
+    Certificate,
+    UploadSimple,
+    Eye,
+    PencilSimple,
+    X,
+    DotsThreeCircle,
+    FileText,
+    Receipt,
+} from "@phosphor-icons/react";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -51,31 +49,44 @@ import background from "../../assets/Images/certificate_bg.jpg";
 import { useGenerateInvoice } from "../../Hooks/payment";
 import { openFileInNewTab, normalizeDownloadUrl } from "../../utils/normalizeUrl";
 
+const dialogStyle = {
+    "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" },
+    "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(8px)" },
+};
+
+const textFieldDarkStyles = {
+    "& .MuiOutlinedInput-root": {
+        bgcolor: "rgba(15, 23, 42, 0.5)",
+        color: "#f8fafc",
+        borderRadius: "2px",
+        "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" },
+        "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" },
+        "&.Mui-focused fieldset": { borderColor: "#3b82f6", borderWidth: "1px" },
+    },
+    "& .MuiInputBase-input::placeholder": { color: "#64748b", opacity: 1 },
+    "& .MuiInputLabel-root": { color: "#94a3b8", "&.Mui-focused": { color: "#3b82f6" } },
+};
+
 const CourseSubmissionsList = () => {
     const token = Cookies.get("skToken");
     const queryClient = useQueryClient();
     const [tabValue, setTabValue] = useState(0);
 
-    // Modals state
     const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
     const [uploadModal, setUploadModal] = useState(false);
     const [viewFilesModal, setViewFilesModal] = useState(false);
-    // Certificate Generation
     const [certificateModal, setCertificateModal] = useState(false);
     const [certificateFile, setCertificateFile] = useState<File | null>(null);
     const [generating, setGenerating] = useState(false);
     const certificateRef = useRef<HTMLDivElement>(null);
 
-    // Payment State
     const [paymentModal, setPaymentModal] = useState(false);
     const [paymentForm, setPaymentForm] = useState<{ amount: string | number; notes: string }>({ amount: "", notes: "" });
     const generateInvoiceMutation = useGenerateInvoice();
 
-    // Upload Form State
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
     const [fileTypes, setFileTypes] = useState<string[]>([]);
 
-    // Certificate Edit State
     const [certEditModal, setCertEditModal] = useState(false);
     const [certForm, setCertForm] = useState({
         recipientName: "",
@@ -85,204 +96,83 @@ const CourseSubmissionsList = () => {
     });
     const [regenerating, setRegenerating] = useState(false);
 
+    const { data: assignments, isLoading, error } = useQuery({
+        queryKey: ["course-assignments"],
+        queryFn: async () => {
+            const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}admin/assignments?itemType=course`, { headers: { Authorization: `Bearer ${token}` } });
+            return response.data;
+        },
+    });
+
     const handleGenerateCertificate = async () => {
         if (!certificateRef.current || !selectedAssignment) return;
         setGenerating(true);
         try {
-            // Wait a bit for images/fonts to render
             await new Promise(resolve => setTimeout(resolve, 500));
-            const canvas = await html2canvas(certificateRef.current, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-            });
+            const canvas = await html2canvas(certificateRef.current, { scale: 2, useCORS: true, allowTaint: true, logging: false });
             const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
             const height = pdf.internal.pageSize.getHeight();
             pdf.addImage(imgData, "JPEG", 0, 0, width, height);
 
-            // Convert PDF to Blob
             const pdfBlob = pdf.output("blob");
             const formData = new FormData();
             formData.append("certificate", pdfBlob, `${selectedAssignment.student.name}_Certificate.pdf`);
 
-            // Upload & Complete
-            await axios.post(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/complete`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
-            );
+            await axios.post(`${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/complete`, formData, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } });
 
             CustomSnackBar.successSnackbar("Certificate issued & Course Completed!");
             queryClient.invalidateQueries({ queryKey: ["course-assignments"] });
             setCertificateModal(false);
         } catch (err: any) {
-            console.error("Certificate Error:", err);
             CustomSnackBar.errorSnackbar("Failed to generate certificate");
-        } finally {
-            setGenerating(false);
-        }
+        } finally { setGenerating(false); }
     };
 
     const handleGenerateInvoice = async (item: any) => {
-        // Check if invoice already exists
-        if (item.invoice?.url) {
-            window.open(normalizeDownloadUrl(item.invoice.url), "_blank");
-            return;
-        }
-        // Generate new invoice via API
+        if (item.invoice?.url) { window.open(normalizeDownloadUrl(item.invoice.url), "_blank"); return; }
         generateInvoiceMutation.mutate(item._id, {
             onSuccess: (data: any) => {
                 CustomSnackBar.successSnackbar("Invoice generated!");
-                if (data.invoice?.url) {
-                    window.open(normalizeDownloadUrl(data.invoice.url), "_blank");
-                }
+                if (data.invoice?.url) window.open(normalizeDownloadUrl(data.invoice.url), "_blank");
             },
-            onError: (err: any) => {
-                CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to generate invoice");
-            }
+            onError: (err: any) => CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to generate invoice")
         });
     };
 
-    // Fetch assignments
-    const { data: assignments, isLoading, error } = useQuery({
-        queryKey: ["course-assignments"],
-        queryFn: async () => {
-            const response = await axios.get(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/assignments?itemType=course`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            return response.data;
-        },
-    });
-
-    // Upload Files Mutation (Multiple)
     const uploadFilesMutation = useMutation({
-        mutationFn: async (assignmentId: string) => {
+        mutationFn: async (id: string) => {
             const formData = new FormData();
             uploadFiles.forEach((file) => formData.append("files", file));
             formData.append("fileTypes", JSON.stringify(fileTypes));
-
-            await axios.post(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${assignmentId}/upload-files`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
-            );
+            await axios.post(`${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${id}/upload-files`, formData, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } });
         },
         onSuccess: () => {
             CustomSnackBar.successSnackbar("Files uploaded successfully!");
             queryClient.invalidateQueries({ queryKey: ["course-assignments"] });
             setUploadModal(false);
-            setUploadFiles([]);
-            setFileTypes([]);
         },
-        onError: (err: any) => {
-            CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to upload files");
-        },
-    });
-
-    const completeMutation = useMutation({
-        mutationFn: async () => {
-            const formData = new FormData();
-            if (certificateFile) formData.append("certificate", certificateFile);
-
-            await axios.post(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/complete`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
-            );
-        },
-        onSuccess: () => {
-            CustomSnackBar.successSnackbar("Course completed and certificate issued");
-            queryClient.invalidateQueries({ queryKey: ["course-assignments"] });
-            setCertificateModal(false);
-            setCertificateFile(null);
-        },
-        onError: (err: any) => CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to complete course"),
     });
 
     const requestPaymentMutation = useMutation({
         mutationFn: async () => {
-            await axios.post(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/request-payment`,
-                paymentForm,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await axios.post(`${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/request-payment`, paymentForm, { headers: { Authorization: `Bearer ${token}` } });
         },
         onSuccess: () => {
             CustomSnackBar.successSnackbar("Payment requested!");
             queryClient.invalidateQueries({ queryKey: ["course-assignments"] });
             setPaymentModal(false);
-            setPaymentForm({ amount: 0, notes: "" });
         },
-        onError: (err: any) => CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to request payment"),
     });
-
-    // Handlers
-    const handleOpenUpload = (item: any) => { setSelectedAssignment(item); setUploadModal(true); setUploadFiles([]); setFileTypes([]); };
-    const handleOpenViewFiles = (item: any) => { setSelectedAssignment(item); setViewFilesModal(true); };
-    const handleOpenCertificate = (item: any) => { setSelectedAssignment(item); setCertificateModal(true); };
-    const handleOpenPayment = (item: any) => {
-        setSelectedAssignment(item);
-
-        let initialAmount: string | number = "";
-        if (item?.itemId) {
-            const price = Number(item.itemId.price || item.itemId.prize || 0);
-            const discount = Number(item.itemId.discount || 0);
-            if (price > 0) {
-                initialAmount = discount > 0 ? Math.round(price - (price * discount) / 100) : price;
-            }
-        }
-
-        setPaymentForm({ amount: initialAmount, notes: "" });
-        setPaymentModal(true);
-    };
-
-    const handleOpenViewProof = (proof: string) => {
-        openFileInNewTab(proof);
-    };
-
-    // Certificate Edit Handlers
-    const handleOpenCertEdit = (assignment: any) => {
-        setSelectedAssignment(assignment);
-        setCertForm({
-            recipientName: assignment.certificateDetails?.recipientName || assignment.student?.name || "",
-            domain: assignment.certificateDetails?.domain || assignment.itemId?.name || "",
-            startDate: assignment.certificateDetails?.startDate
-                ? new Date(assignment.certificateDetails.startDate).toISOString().split('T')[0]
-                : assignment.itemId?.startDate
-                    ? new Date(assignment.itemId.startDate).toISOString().split('T')[0]
-                    : "",
-            endDate: assignment.certificateDetails?.endDate
-                ? new Date(assignment.certificateDetails.endDate).toISOString().split('T')[0]
-                : assignment.itemId?.endDate
-                    ? new Date(assignment.itemId.endDate).toISOString().split('T')[0]
-                    : ""
-        });
-        setCertEditModal(true);
-    };
 
     const handleRegenerateCertificate = async () => {
         if (!certificateRef.current || !selectedAssignment) return;
         setRegenerating(true);
         try {
-            // Save details first
-            await axios.put(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/certificate-details`,
-                certForm,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            // Generate certificate
+            await axios.put(`${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/certificate-details`, certForm, { headers: { Authorization: `Bearer ${token}` } });
             await new Promise(resolve => setTimeout(resolve, 500));
-            const canvas = await html2canvas(certificateRef.current, {
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                logging: false,
-            });
+            const canvas = await html2canvas(certificateRef.current, { scale: 2, useCORS: true, allowTaint: true, logging: false });
             const imgData = canvas.toDataURL("image/jpeg", 0.85);
             const pdf = new jsPDF("l", "mm", "a4");
             const width = pdf.internal.pageSize.getWidth();
@@ -293,725 +183,218 @@ const CourseSubmissionsList = () => {
             const formData = new FormData();
             formData.append("certificate", pdfBlob, `${certForm.recipientName}_Certificate.pdf`);
 
-            await axios.post(
-                `${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/regenerate-certificate`,
-                formData,
-                { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
-            );
+            await axios.post(`${import.meta.env.VITE_APP_BASE_URL}admin/course-assignments/${selectedAssignment._id}/regenerate-certificate`, formData, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } });
 
-            CustomSnackBar.successSnackbar("Certificate regenerated & sent to student!");
+            CustomSnackBar.successSnackbar("Certificate regenerated!");
             queryClient.invalidateQueries({ queryKey: ["course-assignments"] });
             setCertEditModal(false);
         } catch (err: any) {
-            console.error("Regenerate Error:", err);
             CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to regenerate certificate");
-        } finally {
-            setRegenerating(false);
+        } finally { setRegenerating(false); }
+    };
+
+    const handleOpenPayment = (item: any) => {
+        setSelectedAssignment(item);
+        let initialAmount: string | number = "";
+        if (item?.itemId) {
+            const price = Number(item.itemId.price || item.itemId.prize || 0);
+            const discount = Number(item.itemId.discount || 0);
+            if (price > 0) initialAmount = discount > 0 ? Math.round(price - (price * discount) / 100) : price;
         }
+        setPaymentForm({ amount: initialAmount, notes: "" });
+        setPaymentModal(true);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const newFiles = Array.from(e.target.files);
-            setUploadFiles([...uploadFiles, ...newFiles]);
-            setFileTypes([...fileTypes, ...newFiles.map(() => "other")]);
-        }
-    };
-
-    const handleFileTypeChange = (index: number, type: string) => {
-        const newTypes = [...fileTypes];
-        newTypes[index] = type;
-        setFileTypes(newTypes);
-    };
-
-    const handleRemoveFile = (index: number) => {
-        const newFiles = [...uploadFiles];
-        const newTypes = [...fileTypes];
-        newFiles.splice(index, 1);
-        newTypes.splice(index, 1);
-        setUploadFiles(newFiles);
-        setFileTypes(newTypes);
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "completed": return "success";
-            case "assigned": return "info";
-            default: return "default";
-        }
-    };
-
-    // Filter assignments based on tab
     const filteredAssignments = assignments?.filter((a: any) => {
-        if (tabValue === 0) return a.status !== "completed"; // Active
-        if (tabValue === 1) return a.status === "completed"; // Completed
+        if (tabValue === 0) return a.status !== "completed";
+        if (tabValue === 1) return a.status === "completed";
         return true;
     }) || [];
 
     if (isLoading) return <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}><CircularProgress /></Box>;
-    if (error) return <Alert severity="error">Error loading data</Alert>;
 
     return (
-        <Box sx={{ mt: 2 }}>
-            <Card sx={{ mb: 3 }}>
-                <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} sx={{ borderBottom: 1, borderColor: "divider" }}>
+        <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+            <Box sx={{ borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)} sx={{ "& .MuiTabs-indicator": { bgcolor: "#3b82f6" }, "& .MuiTab-root": { color: "#64748b", "&.Mui-selected": { color: "#3b82f6" } } }}>
                     <Tab label="Active Courses" />
-                    <Tab label="Completed / Certified" />
+                    <Tab label="Certified" />
                 </Tabs>
+            </Box>
 
-                <TableContainer component={Paper} elevation={0}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Student</TableCell>
-                                <TableCell>Course</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Payment</TableCell>
-                                <TableCell>Assigned At</TableCell>
-                                <TableCell>Actions</TableCell>
+            <TableContainer className="table_border" sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.6)" }}>
+                <Table>
+                    <TableHead sx={{ bgcolor: "rgba(15, 23, 42, 0.8)" }}>
+                        <TableRow>
+                            <TableCell sx={{ color: "#94a3b8", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>STUDENT</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>COURSE</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>STATUS</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>PAYMENT</TableCell>
+                            <TableCell align="center" sx={{ color: "#94a3b8", fontWeight: 700, fontSize: "11px", letterSpacing: "0.1em" }}>ACTIONS</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {filteredAssignments.map((row: any) => (
+                            <TableRow key={row._id} sx={{ "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" } }}>
+                                <TableCell>
+                                    <Box>
+                                        <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "13px" }}>{row.student?.name}</Typography>
+                                        <Typography variant="caption" sx={{ color: "#64748b" }}>{row.student?.email}</Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell sx={{ color: "#f1f5f9", fontSize: "13px" }}>{row.itemId?.name}</TableCell>
+                                <TableCell>
+                                    <Chip label={row.status} size="small" sx={{ bgcolor: row.status === "completed" ? "rgba(34, 197, 94, 0.1)" : "rgba(59, 130, 246, 0.1)", color: row.status === "completed" ? "#4ade80" : "#60a5fa", border: `1px solid ${row.status === "completed" ? "rgba(34, 197, 94, 0.2)" : "rgba(59, 130, 246, 0.2)"}`, fontSize: "10px", fontWeight: 700, textTransform: "uppercase" }} />
+                                </TableCell>
+                                <TableCell>
+                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                            <CurrencyInr size={14} color="#4ade80" weight="bold" />
+                                            <Typography sx={{ color: "#f1f5f9", fontWeight: 700, fontSize: "13px" }}>{row.payment?.amount || 0}</Typography>
+                                            <Chip label={row.payment?.status?.toUpperCase() || "N/A"} size="small" sx={{ height: 16, fontSize: "8px", fontWeight: 800, bgcolor: row.payment?.status === "paid" ? "rgba(34, 197, 94, 0.1)" : "rgba(234, 179, 8, 0.1)", color: row.payment?.status === "paid" ? "#4ade80" : "#fbbf24" }} />
+                                        </Box>
+                                        {row.payment?.proofFile && <Button size="small" startIcon={<Eye size={12} />} onClick={() => openFileInNewTab(row.payment.proofFile)} sx={{ color: "#3b82f6", textTransform: "none", fontSize: "10px", p: 0, justifyContent: "flex-start" }}>View Proof</Button>}
+                                    </Box>
+                                </TableCell>
+                                <TableCell align="center">
+                                    <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                                        {!row.payment?.required && row.status !== "completed" && (
+                                            <Tooltip title="Request Payment"><IconButton size="small" onClick={() => handleOpenPayment(row)} sx={{ color: "#fbbf24" }}><CurrencyInr size={18} /></IconButton></Tooltip>
+                                        )}
+                                        {row.payment?.status === "paid" && (
+                                            <Tooltip title="Tax Invoice"><IconButton size="small" onClick={() => handleGenerateInvoice(row)} sx={{ color: "#3b82f6" }}><Receipt size={18} /></IconButton></Tooltip>
+                                        )}
+                                        {row.status !== "completed" ? (
+                                            <>
+                                                <Tooltip title="Upload Resources"><IconButton size="small" onClick={() => { setSelectedAssignment(row); setUploadModal(true); setUploadFiles([]); setFileTypes([]); }} sx={{ color: "#3b82f6" }}><UploadSimple size={18} /></IconButton></Tooltip>
+                                                <Tooltip title="Grade & Issue Certificate"><IconButton size="small" onClick={() => { setSelectedAssignment(row); setCertificateModal(true); }} sx={{ color: "#4ade80" }}><Certificate size={18} /></IconButton></Tooltip>
+                                            </>
+                                        ) : (
+                                            <Tooltip title="Regenerate Certificate"><IconButton size="small" onClick={() => {
+                                                setSelectedAssignment(row);
+                                                setCertForm({ recipientName: row.certificateDetails?.recipientName || row.student?.name || "", domain: row.certificateDetails?.domain || row.itemId?.name || "", startDate: row.certificateDetails?.startDate ? new Date(row.certificateDetails.startDate).toISOString().split('T')[0] : "", endDate: row.certificateDetails?.endDate ? new Date(row.certificateDetails.endDate).toISOString().split('T')[0] : "" });
+                                                setCertEditModal(true);
+                                            }} sx={{ color: "#a855f7" }}><PencilSimple size={18} /></IconButton></Tooltip>
+                                        )}
+                                        <Tooltip title="Submissions"><IconButton size="small" onClick={() => { setSelectedAssignment(row); setViewFilesModal(true); }} sx={{ color: "#94a3b8" }}><FileText size={18} /></IconButton></Tooltip>
+                                    </Box>
+                                </TableCell>
                             </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredAssignments.length === 0 ? (
-                                <TableRow><TableCell colSpan={5} align="center">No courses found</TableCell></TableRow>
-                            ) : filteredAssignments.map((row: any) => (
-                                <TableRow key={row._id}>
-                                    <TableCell>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                            <MdPerson />
-                                            <Box>
-                                                <Typography variant="body2" fontWeight="bold">{row.student?.name}</Typography>
-                                                <Typography variant="caption" color="text.secondary">{row.student?.email}</Typography>
-                                            </Box>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>{row.itemId?.name}</TableCell>
-                                    <TableCell>
-                                        <Chip label={row.status} size="small" color={getStatusColor(row.status) as any} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: "flex", flexDirection: "column" }}>
-                                            <Typography variant="body2" fontWeight="bold">
-                                                {row.payment?.amount ? `₹${row.payment.amount}` : "N/A"}
-                                            </Typography>
-                                            <Chip
-                                                label={row.payment?.status?.toUpperCase() || "NOT REQ"}
-                                                size="small"
-                                                color={row.payment?.status === "paid" ? "success" : row.payment?.status === "pending" ? "warning" : "default"}
-                                                sx={{ height: 20, fontSize: "0.6rem", width: "fit-content" }}
-                                            />
-                                            {row.payment?.proofFile && (
-                                                <Button
-                                                    size="small"
-                                                    variant="text"
-                                                    startIcon={<MdVisibility />}
-                                                    onClick={() => handleOpenViewProof(row.payment.proofFile)}
-                                                    sx={{ fontSize: "10px", p: 0, minWidth: 0, justifyContent: "flex-start", color: "var(--webprimary)", mt: 0.5 }}
-                                                >
-                                                    View Proof
-                                                </Button>
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>{new Date(row.assignedAt).toLocaleDateString()}</TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", maxWidth: 250 }}>
-                                            {/* Payment Actions */}
-                                            {(!row.payment?.required && row.status !== "completed" && row.status !== "delivered") && (
-                                                <Tooltip title="Request Payment">
-                                                    <IconButton size="small" color="warning" onClick={() => handleOpenPayment(row)}>
-                                                        <MdAttachMoney />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            )}
-                                            {row.payment?.status === "paid" && (
-                                                <Tooltip title={row.invoice?.url ? "Download Invoice" : "Generate Invoice"}>
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={() => handleGenerateInvoice(row)}
-                                                        disabled={generateInvoiceMutation.isPending}
-                                                    >
-                                                        {generateInvoiceMutation.isPending ? <CircularProgress size={20} /> : <MdPayment />}
-                                                    </IconButton>
-                                                </Tooltip>
-                                            )}
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
 
-                                            {/* Upload Assignment (Files) */}
-                                            {row.status !== "completed" ? (
-                                                <>
-                                                    <Tooltip title="Upload Files">
-                                                        <IconButton size="small" color="primary" onClick={() => handleOpenUpload(row)}>
-                                                            <MdUpload />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Complete & Issue Certificate">
-                                                        <IconButton size="small" color="success" onClick={() => handleOpenCertificate(row)}>
-                                                            <MdSchool />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <IconButton size="small" color="success" disabled>
-                                                        <MdCheckCircle />
-                                                    </IconButton>
-                                                    <Tooltip title="Edit & Regenerate Certificate">
-                                                        <IconButton size="small" color="secondary" onClick={() => handleOpenCertEdit(row)}>
-                                                            <MdEdit />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                            )}
-                                            <Tooltip title="View Submissions">
-                                                <IconButton size="small" onClick={() => handleOpenViewFiles(row)}>
-                                                    <MdAssignment />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+            {/* Hidden Certificate for Generator */}
+            <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }}>
+                <div ref={certificateRef} style={{ width: "1123px", height: "794px", position: "relative", background: `url(${background})`, backgroundSize: "cover", fontFamily: "'Inter', sans-serif" }}>
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", textAlign: "center", width: "80%" }}>
+                        <div style={{ fontSize: "52px", fontWeight: 800, color: "#1e293b", marginBottom: "30px", textTransform: "uppercase" }}>{certEditModal ? certForm.recipientName : selectedAssignment?.student?.name}</div>
+                        <div style={{ fontSize: "20px", color: "#475569", lineHeight: 1.6 }}>Has successfully completed the professional development course in</div>
+                        <div style={{ fontSize: "32px", fontWeight: 700, color: "#020617", margin: "20px 0", textTransform: "capitalize" }}>{certEditModal ? certForm.domain : selectedAssignment?.itemId?.name}</div>
+                        <div style={{ fontSize: "16px", color: "#64748b", marginTop: "40px" }}>Duration: {dayjs(certEditModal ? certForm.startDate : (selectedAssignment?.certificateDetails?.startDate || selectedAssignment?.itemId?.startDate)).format("Do MMMM YYYY")} to {dayjs(certEditModal ? certForm.endDate : (selectedAssignment?.certificateDetails?.endDate || selectedAssignment?.itemId?.endDate)).format("Do MMMM YYYY")}</div>
+                    </div>
+                </div>
+            </div>
 
-            {/* Upload Modal (Multi-file) - Premium Design */}
-            <Dialog open={uploadModal} onClose={() => setUploadModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{
-                    fontFamily: "SemiBold_W",
-                    fontSize: "18px",
-                    borderBottom: "1px solid #e0e0e0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1
-                }}>
-                    <MdUpload /> Upload Course Materials
-                </DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-                        <Alert severity="info" sx={{ fontFamily: "Regular_W", fontSize: "13px" }}>
-                            Upload study materials, resources, or assignments for <strong>{selectedAssignment?.student?.name}</strong>
-                        </Alert>
-
-                        {/* Drag & Drop Area */}
-                        <Button
-                            variant="outlined"
-                            component="label"
-                            sx={{
-                                height: 120,
-                                borderStyle: "dashed",
-                                borderWidth: 2,
-                                borderColor: "var(--webprimary)",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 1,
-                                fontFamily: "Regular_W",
-                                "&:hover": {
-                                    bgcolor: "rgba(var(--webprimary-rgb), 0.05)",
-                                    borderColor: "var(--webprimary)"
-                                }
-                            }}
-                        >
-                            <MdUpload size={40} color="var(--webprimary)" />
-                            <Typography sx={{ fontFamily: "Medium_W", fontSize: "14px", color: "var(--webprimary)" }}>
-                                Click to Select Files
-                            </Typography>
-                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "var(--greyText)" }}>
-                                PDF, Documents, Videos, Source Code
-                            </Typography>
-                            <input type="file" hidden multiple onChange={handleFileChange} />
-                        </Button>
-
-                        {/* File List */}
-                        {uploadFiles.length > 0 && (
-                            <Box sx={{
-                                maxHeight: 250,
-                                overflowY: "auto",
-                                border: "1px solid #e0e0e0",
-                                borderRadius: "8px"
-                            }}>
-                                <Typography sx={{
-                                    fontFamily: "SemiBold_W",
-                                    fontSize: "12px",
-                                    p: 1.5,
-                                    bgcolor: "#f8f9fa",
-                                    borderBottom: "1px solid #e0e0e0"
-                                }}>
-                                    {uploadFiles.length} File{uploadFiles.length > 1 ? "s" : ""} Selected
-                                </Typography>
-                                {uploadFiles.map((file, index) => (
-                                    <Box
-                                        key={index}
-                                        sx={{
-                                            display: "flex",
-                                            gap: 1.5,
-                                            alignItems: "center",
-                                            p: 1.5,
-                                            borderBottom: index < uploadFiles.length - 1 ? "1px solid #f0f0f0" : "none",
-                                            "&:hover": { bgcolor: "#fafafa" }
-                                        }}
-                                    >
-                                        <MdAssignment size={20} color="var(--webprimary)" />
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Typography sx={{
-                                                fontFamily: "Medium_W",
-                                                fontSize: "13px",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap"
-                                            }}>
-                                                {file.name}
-                                            </Typography>
-                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "var(--greyText)" }}>
-                                                {(file.size / 1024).toFixed(1)} KB
-                                            </Typography>
-                                        </Box>
-                                        <TextField
-                                            select
-                                            size="small"
-                                            value={fileTypes[index] || "other"}
-                                            onChange={(e) => handleFileTypeChange(index, e.target.value)}
-                                            sx={{
-                                                width: 140,
-                                                "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "12px" }
-                                            }}
-                                        >
-                                            <MenuItem value="course-material"> Course Material</MenuItem>
-                                            <MenuItem value="assignment">📝 Assignment</MenuItem>
-                                            <MenuItem value="video">🎬 Video</MenuItem>
-                                            <MenuItem value="notes">📄 Notes</MenuItem>
-                                            <MenuItem value="presentation">📊 Presentation</MenuItem>
-                                            <MenuItem value="source-code">💻 Source Code</MenuItem>
-                                            <MenuItem value="other">📎 Other</MenuItem>
-                                        </TextField>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleRemoveFile(index)}
-                                            sx={{ color: "#ef4444" }}
-                                        >
-                                            <MdDelete />
-                                        </IconButton>
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, borderTop: "1px solid #e0e0e0", gap: 1 }}>
-                    <Button
-                        onClick={() => setUploadModal(false)}
-                        sx={{ fontFamily: "Medium_W", fontSize: "12px" }}
-                    >
-                        Cancel
+            {/* Modals */}
+            <Dialog open={uploadModal} onClose={() => setUploadModal(false)} maxWidth="sm" fullWidth sx={dialogStyle}>
+                <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700 }}>Upload Course Materials</Typography>
+                    <IconButton onClick={() => setUploadModal(false)} sx={{ color: "#94a3b8" }}><X size={20} /></IconButton>
+                </Box>
+                <Box sx={{ p: 3 }}>
+                    <Button variant="outlined" component="label" startIcon={<UploadSimple size={20} />} fullWidth sx={{ mb: 3, py: 2, borderColor: "rgba(71, 85, 105, 0.4)", color: "#94a3b8", borderStyle: "dashed" }}>
+                        Click to select files
+                        <input type="file" hidden multiple onChange={(e) => { if (e.target.files) { const files = Array.from(e.target.files); setUploadFiles([...uploadFiles, ...files]); setFileTypes([...fileTypes, ...files.map(() => "course-material")]); } }} />
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => uploadFilesMutation.mutate(selectedAssignment?._id)}
-                        disabled={uploadFiles.length === 0 || uploadFilesMutation.isPending}
-                        sx={{
-                            fontFamily: "Medium_W",
-                            fontSize: "12px",
-                            bgcolor: "var(--webprimary)",
-                            "&:hover": { bgcolor: "var(--webprimary)", opacity: 0.9 }
-                        }}
-                    >
-                        {uploadFilesMutation.isPending ? "Uploading..." : `Upload ${uploadFiles.length} File${uploadFiles.length !== 1 ? "s" : ""}`}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* View Files Modal - Premium Design */}
-            <Dialog open={viewFilesModal} onClose={() => setViewFilesModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{
-                    fontFamily: "SemiBold_W",
-                    fontSize: "18px",
-                    borderBottom: "1px solid #e0e0e0",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1
-                }}>
-                    <MdAssignment /> Files & Submissions
-                </DialogTitle>
-                <DialogContent>
-                    {/* Admin Uploaded Files */}
-                    <Box sx={{ mt: 2 }}>
-                        <Typography sx={{
-                            fontFamily: "SemiBold_W",
-                            fontSize: "14px",
-                            mb: 1.5,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1
-                        }}>
-                            <MdUpload color="var(--webprimary)" /> Course Materials
-                            <Chip
-                                label={selectedAssignment?.deliveryFiles?.length || 0}
-                                size="small"
-                                sx={{ fontFamily: "Medium_W", fontSize: "11px", height: 20 }}
-                            />
-                        </Typography>
-                        {selectedAssignment?.deliveryFiles?.length > 0 ? (
-                            <Box sx={{
-                                border: "1px solid #e0e0e0",
-                                borderRadius: "8px",
-                                maxHeight: 180,
-                                overflowY: "auto"
-                            }}>
-                                {selectedAssignment.deliveryFiles.map((file: any, index: number) => (
-                                    <Box
-                                        key={index}
-                                        sx={{
-                                            p: 1.5,
-                                            borderBottom: index < selectedAssignment.deliveryFiles.length - 1 ? "1px solid #f0f0f0" : "none",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            "&:hover": { bgcolor: "#fafafa" }
-                                        }}
-                                    >
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            <MdDownload size={18} color="var(--webprimary)" />
-                                            <Box>
-                                                <Typography sx={{ fontFamily: "Medium_W", fontSize: "13px" }}>{file.fileName}</Typography>
-                                                <Chip
-                                                    label={file.fileType?.replace("-", " ")}
-                                                    size="small"
-                                                    sx={{
-                                                        fontFamily: "Regular_W",
-                                                        fontSize: "10px",
-                                                        height: 18,
-                                                        textTransform: "capitalize"
-                                                    }}
-                                                />
-                                            </Box>
-                                        </Box>
-                                        <Button
-                                            size="small"
-                                            href={file.filePath}
-                                            target="_blank"
-                                            startIcon={<MdDownload />}
-                                            sx={{ fontFamily: "Medium_W", fontSize: "11px" }}
-                                        >
-                                            Download
-                                        </Button>
-                                    </Box>
-                                ))}
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        {uploadFiles.map((file, i) => (
+                            <Box key={i} sx={{ display: "flex", gap: 2, alignItems: "center", p: 1, bgcolor: "rgba(15, 23, 42, 0.5)", borderRadius: "1px" }}>
+                                <Typography variant="caption" sx={{ flex: 1, color: "#f1f5f9" }}>{file.name}</Typography>
+                                <TextField select size="small" value={fileTypes[i]} onChange={(e) => { const nt = [...fileTypes]; nt[i] = e.target.value; setFileTypes(nt); }} sx={{ width: 140, ...textFieldDarkStyles }}>
+                                    <MenuItem value="course-material">Material</MenuItem>
+                                    <MenuItem value="assignment">Assignment</MenuItem>
+                                    <MenuItem value="source-code">Code</MenuItem>
+                                </TextField>
+                                <IconButton size="small" onClick={() => { setUploadFiles(uploadFiles.filter((_, idx) => idx !== i)); setFileTypes(fileTypes.filter((_, idx) => idx !== i)); }} sx={{ color: "#ef4444" }}><X size={14} /></IconButton>
                             </Box>
-                        ) : (
-                            <Box sx={{ p: 3, textAlign: "center", bgcolor: "#f8f9fa", borderRadius: "8px" }}>
-                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "13px", color: "var(--greyText)" }}>
-                                    No materials uploaded yet.
-                                </Typography>
-                            </Box>
-                        )}
-                    </Box>
-
-                    {/* Student Submissions */}
-                    <Box sx={{ mt: 3 }}>
-                        <Typography sx={{
-                            fontFamily: "SemiBold_W",
-                            fontSize: "14px",
-                            mb: 1.5,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1
-                        }}>
-                            <MdPerson color="#22c55e" /> Student Submissions
-                            <Chip
-                                label={selectedAssignment?.courseSubmissions?.length || 0}
-                                size="small"
-                                color="success"
-                                sx={{ fontFamily: "Medium_W", fontSize: "11px", height: 20 }}
-                            />
-                        </Typography>
-                        {selectedAssignment?.courseSubmissions?.length > 0 ? (
-                            <Box sx={{
-                                border: "1px solid #e0e0e0",
-                                borderRadius: "8px",
-                                maxHeight: 180,
-                                overflowY: "auto"
-                            }}>
-                                {selectedAssignment.courseSubmissions.map((file: any, index: number) => (
-                                    <Box
-                                        key={index}
-                                        sx={{
-                                            p: 1.5,
-                                            borderBottom: index < selectedAssignment.courseSubmissions.length - 1 ? "1px solid #f0f0f0" : "none",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            "&:hover": { bgcolor: "#fafafa" }
-                                        }}
-                                    >
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                            <MdAssignment size={18} color="#22c55e" />
-                                            <Box>
-                                                <Typography sx={{ fontFamily: "Medium_W", fontSize: "13px" }}>{file.fileName}</Typography>
-                                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "11px", color: "var(--greyText)" }}>
-                                                    Submitted by Student
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                        <Button
-                                            size="small"
-                                            href={file.filePath}
-                                            target="_blank"
-                                            startIcon={<MdDownload />}
-                                            sx={{ fontFamily: "Medium_W", fontSize: "11px" }}
-                                        >
-                                            Download
-                                        </Button>
-                                    </Box>
-                                ))}
-                            </Box>
-                        ) : (
-                            <Box sx={{ p: 3, textAlign: "center", bgcolor: "#f8f9fa", borderRadius: "8px" }}>
-                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "13px", color: "var(--greyText)" }}>
-                                    No submissions from student yet.
-                                </Typography>
-                            </Box>
-                        )}
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
-                    <Button
-                        onClick={() => setViewFilesModal(false)}
-                        sx={{ fontFamily: "Medium_W", fontSize: "12px" }}
-                    >
-                        Close
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Complete & Certificate Modal */}
-            <Dialog open={certificateModal} onClose={() => setCertificateModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Complete Course & Issue Certificate</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-                        <Alert severity="success">This will mark the course as Completed.</Alert>
-                        <Typography variant="subtitle2">Upload Certificate (Optional but Recommended)</Typography>
-                        <Button variant="outlined" component="label" startIcon={<MdUpload />}>
-                            Select Certificate (PDF/Image)
-                            <input type="file" hidden onChange={(e) => setCertificateFile(e.target.files?.[0] || null)} />
-                        </Button>
-                        <Typography variant="caption" align="center">- OR -</Typography>
-                        <Button
-                            variant="outlined"
-                            color="secondary"
-                            onClick={handleGenerateCertificate}
-                            disabled={generating}
-                        >
-                            {generating ? "Generating..." : "Auto-Generate Certificate"}
-                        </Button>
-                        {certificateFile && <Typography variant="body2" color="success.main" fontWeight="bold">Ready: {certificateFile.name}</Typography>}
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCertificateModal(false)}>Cancel</Button>
-                    <Button variant="contained" color="success" onClick={() => completeMutation.mutate()} disabled={completeMutation.isPending}>Complete Course</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Payment Modal */}
-            <Dialog open={paymentModal} onClose={() => setPaymentModal(false)} maxWidth="xs" fullWidth>
-                <DialogTitle>Request Payment</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 1 }}>
-                        <TextField
-                            label="Amount (₹)"
-                            type="number"
-                            fullWidth
-                            value={paymentForm.amount}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
-                        />
-                        <TextField
-                            label="Notes"
-                            fullWidth
-                            multiline
-                            rows={2}
-                            sx={{ mt: 2 }}
-                            value={paymentForm.notes}
-                            onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setPaymentModal(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => requestPaymentMutation.mutate()} disabled={requestPaymentMutation.isPending}>Request</Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Certificate Edit Modal */}
-            <Dialog open={certEditModal} onClose={() => setCertEditModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ fontFamily: "SemiBold_W", fontSize: "18px" }}>
-                    Edit & Regenerate Certificate
-                </DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-                        <Alert severity="info" sx={{ fontFamily: "Regular_W", fontSize: "13px" }}>
-                            Edit the certificate details below. The regenerated certificate will be sent to the student's email.
-                        </Alert>
-                        <TextField
-                            label="Recipient Name"
-                            fullWidth
-                            value={certForm.recipientName}
-                            onChange={(e) => setCertForm({ ...certForm, recipientName: e.target.value })}
-                            sx={{ "& .MuiInputBase-input": { fontFamily: "Regular_W" } }}
-                        />
-                        <TextField
-                            label="Domain / Field of Study"
-                            fullWidth
-                            value={certForm.domain}
-                            onChange={(e) => setCertForm({ ...certForm, domain: e.target.value })}
-                            sx={{ "& .MuiInputBase-input": { fontFamily: "Regular_W" } }}
-                        />
-                        <Box sx={{ display: "flex", gap: 2 }}>
-                            <TextField
-                                label="Start Date"
-                                type="date"
-                                fullWidth
-                                InputLabelProps={{ shrink: true }}
-                                value={certForm.startDate}
-                                onChange={(e) => setCertForm({ ...certForm, startDate: e.target.value })}
-                            />
-                            <TextField
-                                label="End Date"
-                                type="date"
-                                fullWidth
-                                InputLabelProps={{ shrink: true }}
-                                value={certForm.endDate}
-                                onChange={(e) => setCertForm({ ...certForm, endDate: e.target.value })}
-                            />
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setCertEditModal(false)} sx={{ fontFamily: "Medium_W" }}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleRegenerateCertificate}
-                        disabled={regenerating}
-                        sx={{ fontFamily: "Medium_W", bgcolor: "var(--webprimary)" }}
-                    >
-                        {regenerating ? "Regenerating..." : "Regenerate & Send"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Hidden Certificate Template for Generation */}
-            <Box sx={{ position: "absolute", left: "-3000px", top: 0 }}>
-                <Box
-                    ref={certificateRef}
-                    sx={{
-                        position: "relative",
-                        width: "1000px",
-                        height: "707px",
-                        margin: "auto",
-                        overflow: "hidden",
-                        fontFamily: "'Trykker', serif",
-                        color: "#333",
-                        backgroundColor: "#fff",
-                        boxShadow: "0 0 20px rgba(0,0,0,0.1)",
-                    }}
-                >
-                    {/* Background Image */}
-                    <img
-                        src={background}
-                        alt="Background"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            zIndex: 0,
-                        }}
-                    />
-
-                    {/* Overlay Content */}
-                    <Box
-                        sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "100%",
-                            height: "100%",
-                            zIndex: 1,
-                        }}
-                    >
-                        {/* Recipient Name Container for Automatic Centering */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                top: "40%",
-                                left: 0,
-                                width: "100%",
-                                zIndex: 2,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    textAlign: "center",
-                                    fontFamily: "'Alata', sans-serif",
-                                    fontSize: "48px",
-                                    color: "#262525ff",
-                                    fontWeight: 500,
-                                    textTransform: "uppercase",
-                                    width: "100%",
-                                }}
-                            >
-                                {certForm.recipientName || selectedAssignment?.student?.name || "Student Name"}
-                            </Typography>
-                        </Box>
-
-                        {/* Domain Overlay */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                bottom: "34.2%",
-                                left: "30.5%",
-                                fontFamily: "'Trykker', serif",
-                                fontSize: "17px",
-                                color: "#333",
-                            }}
-                        >
-                            {certForm.domain || selectedAssignment?.itemId?.name || "Field of Study"}
-                        </Box>
-
-                        {/* Start Date Overlay */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                bottom: "30.6%",
-                                left: "32%",
-                                fontFamily: "'Trykker', serif",
-                                fontSize: "17px",
-                                color: "#333",
-                            }}
-                        >
-                            {certForm.startDate ? dayjs(certForm.startDate).format("Do MMMM YYYY") : selectedAssignment?.itemId?.startDate ? dayjs(selectedAssignment.itemId.startDate).format("Do MMMM YYYY") : "30th June 2025"}
-                        </Box>
-
-                        {/* End Date Overlay */}
-                        <Box
-                            sx={{
-                                position: "absolute",
-                                bottom: "27%",
-                                left: "32%",
-                                fontFamily: "'Trykker', serif",
-                                fontSize: "17px",
-                                color: "#333",
-                            }}
-                        >
-                            {certForm.endDate ? dayjs(certForm.endDate).format("Do MMMM YYYY") : selectedAssignment?.itemId?.endDate ? dayjs(selectedAssignment.itemId.endDate).format("Do MMMM YYYY") : "14th July 2025"}
-                        </Box>
+                        ))}
                     </Box>
                 </Box>
-            </Box>
-        </Box >
+                <Box sx={{ p: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                    <Button onClick={() => setUploadModal(false)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+                    <Button variant="contained" disabled={uploadFiles.length === 0} onClick={() => uploadFilesMutation.mutate(selectedAssignment?._id)} sx={{ bgcolor: "#3b82f6" }}>Upload Files</Button>
+                </Box>
+            </Dialog>
+
+            <Dialog open={certificateModal} onClose={() => setCertificateModal(false)} maxWidth="sm" fullWidth sx={dialogStyle}>
+                <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700 }}>Issue Certificate</Typography>
+                    <IconButton onClick={() => setCertificateModal(false)} sx={{ color: "#94a3b8" }}><X size={20} /></IconButton>
+                </Box>
+                <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Typography sx={{ color: "#94a3b8", mb: 3 }}>This will generate a certificate for <strong>{selectedAssignment?.student?.name}</strong> and mark the course as completed.</Typography>
+                    <Button variant="contained" fullWidth size="large" onClick={handleGenerateCertificate} disabled={generating} sx={{ bgcolor: "#22c55e", py: 2, fontSize: "16px", fontWeight: 700 }}>{generating ? "Generating Certificate..." : "Generate & Complete Course"}</Button>
+                </Box>
+            </Dialog>
+
+            <Dialog open={certEditModal} onClose={() => setCertEditModal(false)} maxWidth="sm" fullWidth sx={dialogStyle}>
+                <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700 }}>Update & Regenerate</Typography>
+                    <IconButton onClick={() => setCertEditModal(false)} sx={{ color: "#94a3b8" }}><X size={20} /></IconButton>
+                </Box>
+                <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                    <TextField label="Student Name" value={certForm.recipientName} onChange={(e) => setCertForm({ ...certForm, recipientName: e.target.value })} fullWidth sx={textFieldDarkStyles} />
+                    <TextField label="Course / Domain" value={certForm.domain} onChange={(e) => setCertForm({ ...certForm, domain: e.target.value })} fullWidth sx={textFieldDarkStyles} />
+                    <Box sx={{ display: "flex", gap: 2 }}>
+                        <TextField type="date" label="Start Date" value={certForm.startDate} onChange={(e) => setCertForm({ ...certForm, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} />
+                        <TextField type="date" label="End Date" value={certForm.endDate} onChange={(e) => setCertForm({ ...certForm, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} />
+                    </Box>
+                    <Button variant="contained" fullWidth size="large" onClick={handleRegenerateCertificate} disabled={regenerating} sx={{ bgcolor: "#a855f7", mt: 2 }}>{regenerating ? "Regenerating..." : "Regenerate Certificate"}</Button>
+                </Box>
+            </Dialog>
+
+            <Dialog open={paymentModal} onClose={() => setPaymentModal(false)} maxWidth="xs" fullWidth sx={dialogStyle}>
+                <Box sx={{ p: 2.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700 }}>Request Payment</Typography>
+                    <IconButton onClick={() => setPaymentModal(false)} sx={{ color: "#94a3b8" }}><X size={20} /></IconButton>
+                </Box>
+                <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                    <TextField label="Amount (₹)" type="number" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} fullWidth sx={textFieldDarkStyles} />
+                    <TextField label="Notes" value={paymentForm.notes} onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })} fullWidth multiline rows={2} sx={textFieldDarkStyles} />
+                    <Button variant="contained" fullWidth size="large" onClick={() => requestPaymentMutation.mutate()} sx={{ bgcolor: "#fbbf24", color: "#000", fontWeight: 700 }}>Send Payment Link</Button>
+                </Box>
+            </Dialog>
+
+            <Dialog open={viewFilesModal} onClose={() => setViewFilesModal(false)} maxWidth="sm" fullWidth sx={dialogStyle}>
+                <Box sx={{ p: 2.5, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700 }}>Course Files</Typography>
+                    <IconButton onClick={() => setViewFilesModal(false)} sx={{ color: "#94a3b8" }}><X size={20} /></IconButton>
+                </Box>
+                <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box>
+                        <Typography variant="overline" sx={{ color: "#3b82f6", fontWeight: 800 }}>Materials Uploaded</Typography>
+                        {selectedAssignment?.deliveryFiles?.map((f: any, i: number) => (
+                            <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, p: 1.5, bgcolor: "rgba(15, 23, 42, 0.5)", borderRadius: "1px" }}>
+                                <Typography sx={{ color: "#f1f5f9", fontSize: "13px" }}>{f.fileName}</Typography>
+                                <Button size="small" onClick={() => openFileInNewTab(f.filePath)} sx={{ color: "#3b82f6" }}>View</Button>
+                            </Box>
+                        )) || <Typography variant="caption" display="block" sx={{ color: "#64748b" }}>None</Typography>}
+                    </Box>
+                    <Divider sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }} />
+                    <Box>
+                        <Typography variant="overline" sx={{ color: "#22c55e", fontWeight: 800 }}>Student Submissions</Typography>
+                        {selectedAssignment?.courseSubmissions?.map((f: any, i: number) => (
+                            <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1, p: 1.5, bgcolor: "rgba(15, 23, 42, 0.5)", borderRadius: "1px" }}>
+                                <Typography sx={{ color: "#f1f5f9", fontSize: "13px" }}>{f.fileName}</Typography>
+                                <Button size="small" onClick={() => openFileInNewTab(f.filePath)} sx={{ color: "#22c55e" }}>View</Button>
+                            </Box>
+                        )) || <Typography variant="caption" display="block" sx={{ color: "#64748b" }}>None</Typography>}
+                    </Box>
+                </Box>
+            </Dialog>
+        </Box>
     );
 };
 

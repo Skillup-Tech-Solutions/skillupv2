@@ -1,6 +1,5 @@
-import { Box, Typography, keyframes, Button } from "@mui/material";
-import { MdAccessTime, MdUpload } from "react-icons/md";
-import { outlinedButtonStyle } from "../assets/Styles/ButtonStyles";
+import { Box, Button, keyframes } from "@mui/material";
+import { HourglassMedium, UploadSimple } from "@phosphor-icons/react";
 
 const pulse = keyframes`
   0% { transform: scale(1); opacity: 1; }
@@ -17,15 +16,14 @@ const PaymentVerifying = ({ onReupload }: PaymentVerifyingProps) => {
         <Box
             sx={{
                 p: 4,
-                bgcolor: "#fffbeb",
+                background: "linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(120, 53, 15, 0.1) 100%)",
                 borderRadius: "12px",
-                border: "1px solid #fcd34d",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
                 textAlign: "center",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 2,
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
             }}
         >
             <Box
@@ -33,38 +31,42 @@ const PaymentVerifying = ({ onReupload }: PaymentVerifyingProps) => {
                     width: 64,
                     height: 64,
                     borderRadius: "50%",
-                    bgcolor: "#fef3c7",
+                    bgcolor: "rgba(245, 158, 11, 0.2)",
+                    border: "1px solid rgba(245, 158, 11, 0.3)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     animation: `${pulse} 2s infinite ease-in-out`,
                 }}
             >
-                <MdAccessTime size={36} color="#f59e0b" />
+                <HourglassMedium size={36} weight="duotone" color="#f59e0b" />
             </Box>
 
             <Box>
-                <Typography
+                <Box
                     sx={{
-                        fontFamily: "SemiBold_W",
+                        fontFamily: "'Chivo', sans-serif",
                         fontSize: "18px",
-                        color: "#d97706",
+                        fontWeight: 700,
+                        color: "#f59e0b",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
                         mb: 0.5,
                     }}
                 >
-                    Payment under verification
-                </Typography>
-                <Typography
+                    Payment Under Verification
+                </Box>
+                <Box
                     sx={{
-                        fontFamily: "Regular_W",
+                        fontFamily: "'Inter', sans-serif",
                         fontSize: "14px",
-                        color: "#92400e",
+                        color: "#94a3b8",
                         maxWidth: "300px",
-                        lineHeight: 1.5,
+                        lineHeight: 1.6,
                     }}
                 >
                     We've received your payment proof. Our team is currently verifying it. This usually takes a few hours.
-                </Typography>
+                </Box>
             </Box>
 
             <Box
@@ -84,7 +86,8 @@ const PaymentVerifying = ({ onReupload }: PaymentVerifyingProps) => {
                         mt: 1,
                         px: 2,
                         py: 0.5,
-                        bgcolor: "#fef3c7",
+                        bgcolor: "rgba(245, 158, 11, 0.15)",
+                        border: "1px solid rgba(245, 158, 11, 0.3)",
                         borderRadius: "20px",
                     }}
                 >
@@ -97,35 +100,38 @@ const PaymentVerifying = ({ onReupload }: PaymentVerifyingProps) => {
                             animation: `${pulse} 1.5s infinite ease-in-out`,
                         }}
                     />
-                    <Typography
+                    <Box
                         sx={{
-                            fontFamily: "Medium_W",
-                            fontSize: "12px",
-                            color: "#b45309",
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: "11px",
+                            color: "#f59e0b",
                             textTransform: "uppercase",
-                            letterSpacing: "0.5px",
+                            letterSpacing: "0.1em",
                         }}
                     >
                         Verifying Proof
-                    </Typography>
+                    </Box>
                 </Box>
 
                 {onReupload && (
                     <Button
                         size="small"
-                        variant="outlined"
-                        startIcon={<MdUpload />}
+                        startIcon={<UploadSimple size={16} />}
                         onClick={onReupload}
                         sx={{
-                            ...outlinedButtonStyle,
                             px: 3,
                             py: 0.8,
                             fontSize: "12px",
-                            color: "#b45309",
-                            borderColor: "#fcd34d",
+                            fontWeight: 600,
+                            color: "#f59e0b",
+                            bgcolor: "rgba(51, 65, 85, 0.5)",
+                            border: "1px solid rgba(245, 158, 11, 0.3)",
+                            borderRadius: "8px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
                             "&:hover": {
+                                bgcolor: "rgba(51, 65, 85, 0.8)",
                                 borderColor: "#f59e0b",
-                                bgcolor: "#fffbeb",
                             },
                         }}
                     >

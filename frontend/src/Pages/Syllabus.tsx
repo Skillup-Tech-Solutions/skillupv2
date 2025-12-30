@@ -5,23 +5,23 @@ import {
   Button,
   IconButton,
   Modal,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Switch,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Divider,
 } from "@mui/material";
 import { DataGrid, type GridColDef } from "@mui/x-data-grid";
-import { MdEdit, MdDeleteOutline, MdExpandMore } from "react-icons/md";
-import { IoClose } from "react-icons/io5";
-import { useForm } from "react-hook-form";
+import {
+  PencilSimple,
+  Trash,
+  CaretDown,
+  X,
+  Plus,
+  BookOpen,
+  Layout
+} from "@phosphor-icons/react";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import CustomButton from "../Custom/CustomButton";
 import CustomInput from "../Custom/CustomInput";
 import CustomAutoComplete from "../Custom/CustomAutocomplete";
 import CustomSnackBar from "../Custom/CustomSnackBar";
@@ -77,26 +77,22 @@ const modalStyle = {
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: 700,
-  bgcolor: "background.paper",
-  borderRadius: "8px",
-  boxShadow: 24,
-  padding: "20px",
+  bgcolor: "#1e293b",
+  border: "1px solid rgba(71, 85, 105, 0.5)",
+  borderRadius: "6px",
+  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+  padding: "24px",
   maxHeight: "90vh",
   overflowY: "auto",
+  outline: "none",
   "@media (max-width: 768px)": {
     width: "95vw",
-    padding: "16px",
-    maxHeight: "95vh",
   },
 };
 
 const smallModalStyle = {
   ...modalStyle,
   width: 500,
-  "@media (max-width: 768px)": {
-    width: "95vw",
-    padding: "16px",
-  },
 };
 
 const Syllabus: React.FC = () => {
@@ -104,132 +100,67 @@ const Syllabus: React.FC = () => {
   const { data: lessonData } = useGetLessonApi();
   const { mutate: lessonDelete } = SyllabusDeleteApi();
   const { mutate: lessonUpdate } = lessonUpdateApi();
+  const { mutate: createSyllabus } = useSyllabusAddApi();
   const [loading, setLoading] = useState(false);
-  // Memoize transformed API data to avoid recalculation on every render
-  const transformedSyllabusData: SyllabusData[] = useMemo(() => {
-    if (!lessonData || !Array.isArray(lessonData)) return [];
-    return lessonData.map((item: any) => ({
-      id: item._id,
-      course: item.courseId._id,
-      courseName: item.courseId.name,
-      status: "Active", // You can add status field to your API response if needed
-      units: (item.units || []).map((unit: any) => ({
-        id: unit._id,
-        unitName: unit.unitName,
-        unitDescription: unit.unitDescription || "",
-        lessons: (unit.lessons || []).map((lesson: any) => ({
-          id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
-          lessonName:
-            lesson.title || lesson.lessonName || "Untitled Lesson",
-          lessonDescription:
-            lesson.description || lesson.lessonDescription || "",
-        })),
-      })),
-    }));
-  }, [lessonData]);
 
-  // Main state
-  const [syllabusData, setSyllabusData] = useState<SyllabusData[]>(
-    transformedSyllabusData
-  );
+  const [syllabusData, setSyllabusData] = useState<SyllabusData[]>([]);
 
-  // Update syllabusData when lessonData changes
   useEffect(() => {
     if (lessonData && Array.isArray(lessonData)) {
       const transformedData: SyllabusData[] = lessonData.map((item: any) => ({
         id: item._id,
-        course: item.courseId._id,
-        courseName: item.courseId.name,
-        status: "Active", // You can add status field to your API response if needed
+        course: item.courseId?._id || "",
+        courseName: item.courseId?.name || "Unknown Course",
+        status: "Active",
         units: (item.units || []).map((unit: any) => ({
           id: unit._id,
           unitName: unit.unitName,
           unitDescription: unit.unitDescription || "",
           lessons: (unit.lessons || []).map((lesson: any) => ({
-            id: lesson._id || `lesson-${Date.now()}-${Math.random()}`, // fallback if lesson doesn't have _id
+            id: lesson._id || `lesson-${Math.random()}`,
             lessonName: lesson.title || lesson.lessonName || "Untitled Lesson",
-            lessonDescription:
-              lesson.description || lesson.lessonDescription || "",
+            lessonDescription: lesson.description || lesson.lessonDescription || "",
           })),
         })),
       }));
       setSyllabusData(transformedData);
     }
   }, [lessonData]);
+
   const [mainModalOpen, setMainModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [editingSyllabus, setEditingSyllabus] = useState<SyllabusData | null>(
-    null
-  );
+  const [editingSyllabus, setEditingSyllabus] = useState<SyllabusData | null>(null);
 
-  // Form states
   const [selectedCourse, setSelectedCourse] = useState<string>("");
   const [units, setUnits] = useState<Unit[]>([]);
   const [expandedUnit, setExpandedUnit] = useState<string | false>(false);
 
-  // Unit/Lesson modal states
   const [unitModalOpen, setUnitModalOpen] = useState(false);
   const [lessonModalOpen, setLessonModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [editingLesson, setEditingLesson] = useState<{
-    lesson: Lesson;
-    unitId: string;
-  } | null>(null);
+  const [editingLesson, setEditingLesson] = useState<{ lesson: Lesson; unitId: string } | null>(null);
   const [currentUnitId, setCurrentUnitId] = useState<string>("");
 
-  // Delete modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [syllabusToDelete, setSyllabusToDelete] = useState<string | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<{
-    type: "unit" | "lesson";
-    id: string;
-    unitId?: string;
-  } | null>(null);
 
-  // Memoize course options to avoid recalculating on every render
   const courseOptions = useMemo(() => {
-    return coursesData?.courses?.map((course: any) => ({
+    return (coursesData as any)?.courses?.map((course: any) => ({
       label: course.name,
       value: course._id,
     })) || [];
   }, [coursesData]);
 
-  // Forms
-  const mainForm = useForm({
-    resolver: zodResolver(syllabusSchema),
-  });
+  const mainForm = useForm({ resolver: zodResolver(syllabusSchema) });
+  const unitForm = useForm({ resolver: zodResolver(unitSchema) });
+  const lessonForm = useForm({ resolver: zodResolver(lessonSchema) });
 
-  const unitForm = useForm({
-    resolver: zodResolver(unitSchema),
-  });
-
-  const lessonForm = useForm({
-    resolver: zodResolver(lessonSchema),
-  });
-
-  // Main modal handlers
   const handleOpenMainModal = () => {
     setMainModalOpen(true);
     setIsEditMode(false);
-    setEditingSyllabus(null);
     setSelectedCourse("");
     setUnits([]);
-    setExpandedUnit(false);
-    mainForm.reset({
-      course: "",
-    });
-  };
-
-  const handleCloseMainModal = () => {
-    setMainModalOpen(false);
-    setIsEditMode(false);
-    setEditingSyllabus(null);
-    setSelectedCourse("");
-    setUnits([]);
-    setExpandedUnit(false);
-    mainForm.reset({
-      course: "",
-    });
+    mainForm.reset({ course: "" });
   };
 
   const handleEdit = (syllabus: SyllabusData) => {
@@ -241,991 +172,264 @@ const Syllabus: React.FC = () => {
     mainForm.reset({ course: syllabus.course });
   };
 
-  const handleStatusToggle = (syllabus: SyllabusData) => {
-    setSyllabusData((prev) =>
-      prev.map((item) =>
-        item.id === syllabus.id
-          ? {
-            ...item,
-            status: item.status === "Active" ? "InActive" : "Active",
-          }
-          : item
-      )
-    );
-    CustomSnackBar.successSnackbar("Status updated successfully!");
-  };
-
-  // Unit handlers
-  const handleAddUnit = () => {
-    if (!selectedCourse) {
-      CustomSnackBar.errorSnackbar("Please select a course first!");
-      return;
-    }
-    setEditingUnit(null);
-    unitForm.reset({
-      unitName: "",
-    });
-    setUnitModalOpen(true);
-  };
-
-  const handleEditUnit = (unit: Unit) => {
-    setEditingUnit(unit);
-    unitForm.reset({
-      unitName: unit.unitName,
-    });
-    setUnitModalOpen(true);
-  };
-
   const handleUnitSubmit = (data: any) => {
-    console.log(data);
-
     if (editingUnit) {
-      // Update existing unit
-      setUnits((prev) =>
-        prev.map((unit) =>
-          unit.id === editingUnit.id
-            ? {
-              ...unit,
-              unitName: data.unitName,
-              unitDescription: data.unitDescription,
-            }
-            : unit
-        )
-      );
-      CustomSnackBar.successSnackbar("Unit updated successfully!");
+      setUnits((prev) => prev.map((u) => u.id === editingUnit.id ? { ...u, ...data } : u));
+      CustomSnackBar.successSnackbar("Unit updated!");
     } else {
-      // Add new unit
-      const newUnit: Unit = {
-        id: Date.now().toString(),
-        unitName: data.unitName,
-        unitDescription: data.unitDescription,
-        lessons: [],
-      };
-      setUnits((prev) => [...prev, newUnit]);
-      CustomSnackBar.successSnackbar("Unit added successfully!");
+      setUnits((prev) => [...prev, { id: Date.now().toString(), ...data, lessons: [] }]);
+      CustomSnackBar.successSnackbar("Unit added!");
     }
     setUnitModalOpen(false);
-    setEditingUnit(null);
-    unitForm.reset({
-      unitName: "",
-    });
-  };
-
-  // Lesson handlers
-  const handleAddLesson = (unitId: string) => {
-    setCurrentUnitId(unitId);
-    setEditingLesson(null);
-    lessonForm.reset({
-      lessonName: "",
-    });
-    setLessonModalOpen(true);
-  };
-
-  const handleEditLesson = (lesson: Lesson, unitId: string) => {
-    setCurrentUnitId(unitId);
-    setEditingLesson({ lesson, unitId });
-    lessonForm.reset({
-      lessonName: lesson.lessonName,
-      lessonDescription: lesson.lessonDescription || "",
-    });
-    setLessonModalOpen(true);
   };
 
   const handleLessonSubmit = (data: any) => {
     if (editingLesson) {
-      setUnits((prev) =>
-        prev.map((unit) =>
-          unit.id === currentUnitId
-            ? {
-              ...unit,
-              lessons: unit.lessons.map((lesson) =>
-                lesson.id === editingLesson.lesson.id
-                  ? { ...lesson, ...data }
-                  : lesson
-              ),
-            }
-            : unit
-        )
-      );
-      CustomSnackBar.successSnackbar("Lesson updated successfully!");
+      setUnits((prev) => prev.map((u) => u.id === currentUnitId ? { ...u, lessons: u.lessons.map((l) => l.id === editingLesson.lesson.id ? { ...l, ...data } : l) } : u));
+      CustomSnackBar.successSnackbar("Lesson updated!");
     } else {
-      // Add new lesson
-      const newLesson: Lesson = {
-        id: Date.now().toString(),
-        ...data,
-      };
-      setUnits((prev) =>
-        prev.map((unit) =>
-          unit.id === currentUnitId
-            ? { ...unit, lessons: [...unit.lessons, newLesson] }
-            : unit
-        )
-      );
-      CustomSnackBar.successSnackbar("Lesson added successfully!");
+      setUnits((prev) => prev.map((u) => u.id === currentUnitId ? { ...u, lessons: [...u.lessons, { id: Date.now().toString(), ...data }] } : u));
+      CustomSnackBar.successSnackbar("Lesson added!");
     }
     setLessonModalOpen(false);
-    setEditingLesson(null);
-    setCurrentUnitId("");
-    lessonForm.reset({
-      lessonName: "",
-    });
   };
 
-  // Delete handlers
-  const handleDeleteSyllabus = (id: string) => {
-    setSyllabusToDelete(id);
-    setDeleteModalOpen(true);
-    console.log(syllabusToDelete, "ddd");
-  };
-
-  const handleConfirmDeleteSyllabus = () => {
-    if (syllabusToDelete) {
-      lessonDelete(syllabusToDelete, {
-        onSuccess: () => {
-          CustomSnackBar.successSnackbar("Deleted Successfully!");
-          setDeleteModalOpen(false);
-          setSyllabusToDelete(null);
-        },
-        onError: (error: any) => {
-          CustomSnackBar.errorSnackbar("Failed to delete Syllabus!");
-          setDeleteModalOpen(false);
-          setSyllabusToDelete(null);
-        },
-      });
-    }
-  };
-
-  const handleDeleteItem = (
-    type: "unit" | "lesson",
-    id: string,
-    unitId?: string
-  ) => {
-    setItemToDelete({ type, id, unitId });
-  };
-
-  const handleConfirmDeleteItem = () => {
-    if (!itemToDelete) return;
-
-    if (itemToDelete.type === "unit") {
-      setUnits((prev) => prev.filter((unit) => unit.id !== itemToDelete.id));
-      CustomSnackBar.successSnackbar("Unit deleted successfully!");
-    } else if (itemToDelete.type === "lesson" && itemToDelete.unitId) {
-      // Check if this is the last lesson in the unit
-      const unit = units.find((u) => u.id === itemToDelete.unitId);
-      if (unit && unit.lessons.length === 1) {
-        CustomSnackBar.errorSnackbar(
-          "Cannot delete the last lesson. Each unit must have at least one lesson!"
-        );
-        setItemToDelete(null);
-        return;
-      }
-
-      setUnits((prev) =>
-        prev.map((unit) =>
-          unit.id === itemToDelete.unitId
-            ? {
-              ...unit,
-              lessons: unit.lessons.filter(
-                (lesson) => lesson.id !== itemToDelete.id
-              ),
-            }
-            : unit
-        )
-      );
-      CustomSnackBar.successSnackbar("Lesson deleted successfully!");
-    }
-
-    setItemToDelete(null);
-  };
-  const { mutate: createSyllabus } = useSyllabusAddApi();
-  // Main form submit
   const handleMainSubmit = (data: any) => {
     if (units.length === 0) {
-      CustomSnackBar.errorSnackbar("Please add at least one unit!");
+      CustomSnackBar.errorSnackbar("Add at least one unit!");
       return;
     }
-
-    // Validate that each unit has at least one lesson
-    const unitsWithoutLessons = units.filter(
-      (unit) => unit.lessons.length === 0
-    );
-    if (unitsWithoutLessons.length > 0) {
-      const unitNames = unitsWithoutLessons
-        .map((unit) => unit.unitName)
-        .join(", ");
-      CustomSnackBar.errorSnackbar(
-        `Each unit must have at least one lesson. Units without lessons: ${unitNames}`
-      );
+    const invalidUnit = units.find(u => u.lessons.length === 0);
+    if (invalidUnit) {
+      CustomSnackBar.errorSnackbar(`Unit "${invalidUnit.unitName}" has no lessons!`);
       return;
     }
     setLoading(true);
 
-    const syllabusPayload = {
-      courseId: selectedCourse,
-      units: units.map((unit) => ({
-        unitName: unit.unitName,
-        lessons: unit.lessons.map((lesson) => ({
-          title: lesson.lessonName,
-        })),
+    const payload = {
+      courseId: data.course,
+      units: units.map(u => ({
+        unitName: u.unitName,
+        lessons: u.lessons.map(l => ({ title: l.lessonName })),
       })),
     };
 
-    const selectedCourseData = coursesData?.courses?.find(
-      (course: any) => course._id === selectedCourse
-    );
-
-    const newSyllabus: SyllabusData = {
-      id: isEditMode ? editingSyllabus!.id : Date.now().toString(),
-      course: selectedCourse,
-      courseName: selectedCourseData?.name || "",
-      units: units,
-      status: isEditMode ? editingSyllabus!.status : "Active",
-    };
+    const formData = new FormData();
+    formData.append("payload", JSON.stringify(payload));
 
     if (isEditMode) {
-      lessonUpdate(
-        { id: editingSyllabus!.id, formData: syllabusPayload },
-        {
-          onSuccess: () => {
-            CustomSnackBar.successSnackbar("Syllabus Updated Successfully!");
-            handleCloseMainModal();
-          },
-          onError: (error) => {
-            CustomSnackBar.errorSnackbar(
-              error.message || "Error Updating Syllabus."
-            );
-          },
-          onSettled: () => {
-            setLoading(false);
-          },
-        }
-      );
+      lessonUpdate({ id: editingSyllabus!.id, formData: formData as any }, {
+        onSuccess: () => { CustomSnackBar.successSnackbar("Syllabus Updated!"); setMainModalOpen(false); },
+        onSettled: () => setLoading(false)
+      });
     } else {
-      createSyllabus(syllabusPayload, {
-        onSuccess: () => {
-          CustomSnackBar.successSnackbar("Syllabus Added Successfully!");
-          handleCloseMainModal();
-        },
-        onError: (error) => {
-          CustomSnackBar.errorSnackbar(
-            error.message || "Error Adding Syllabus."
-          );
-        },
-        onSettled: () => {
-          setLoading(false);
-        },
+      createSyllabus(formData, {
+        onSuccess: () => { CustomSnackBar.successSnackbar("Syllabus Created!"); setMainModalOpen(false); },
+        onSettled: () => setLoading(false)
       });
     }
   };
 
-  // DataGrid columns
   const columns: GridColDef[] = [
+    { field: "sno", headerName: "S.NO", width: 80, renderCell: (p) => syllabusData.findIndex(x => x.id === p.row.id) + 1 },
+    { field: "courseName", headerName: "COURSE NAME", flex: 1, renderCell: (p) => <Typography sx={{ fontWeight: 600, color: "#f8fafc" }}>{p.value}</Typography> },
+    { field: "unitsCount", headerName: "UNITS", width: 100, renderCell: (p) => p.row.units?.length || 0 },
+    { field: "lessonsCount", headerName: "LESSONS", width: 100, renderCell: (p) => p.row.units?.reduce((a: number, b: Unit) => a + b.lessons.length, 0) || 0 },
     {
-      field: "sno",
-      headerName: "S.No",
-      width: 80,
-      renderCell: (params) => {
-        const index = syllabusData.findIndex(
-          (item) => item.id === params.row.id
-        );
-        return index + 1;
-      },
-    },
-    {
-      field: "courseName",
-      headerName: "Course Name",
-      width: 200,
-      flex: 1,
-    },
-    {
-      field: "unitsCount",
-      headerName: "Units",
-      width: 100,
-      renderCell: (params) => params.row.units?.length || 0,
-    },
-    {
-      field: "lessonsCount",
-      headerName: "Lessons",
-      width: 100,
-      renderCell: (params) => {
-        const totalLessons =
-          params.row.units?.reduce(
-            (total: number, unit: Unit) => total + (unit.lessons?.length || 0),
-            0
-          ) || 0;
-        return totalLessons;
-      },
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 120,
-      renderCell: (params) => (
-        <Box sx={{ display: "flex", gap: "8px" }}>
-          <IconButton
-            onClick={() => handleEdit(params.row)}
-            sx={{ "& svg": { color: "var(--primary)", fontSize: "18px" } }}
-          >
-            <MdEdit />
+      field: "actions", headerName: "ACTIONS", width: 120, sortable: false,
+      renderCell: (p) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => handleEdit(p.row)} sx={{ color: "#94a3b8", "&:hover": { color: "#3b82f6", bgcolor: "rgba(59, 130, 246, 0.1)" } }}>
+            <PencilSimple size={18} weight="duotone" />
           </IconButton>
-          <IconButton
-            onClick={() => handleDeleteSyllabus(params.row.id)}
-            sx={{ "& svg": { color: "var(--red)", fontSize: "18px" } }}
-          >
-            <MdDeleteOutline />
+          <IconButton onClick={() => { setSyllabusToDelete(p.row.id); setDeleteModalOpen(true); }} sx={{ color: "#94a3b8", "&:hover": { color: "#ef4444", bgcolor: "rgba(239, 68, 68, 0.1)" } }}>
+            <Trash size={18} weight="duotone" />
           </IconButton>
         </Box>
-      ),
-    },
+      )
+    }
   ];
 
   return (
-    <Box>
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "end",
-          alignItems: "center",
-          mb: 3,
-        }}
-      >
-        <CustomButton
-          type="button"
-          label="Add Syllabus"
-          variant="contained"
-          btnSx={{
-            background: "var(--primary)",
-            color: "var(--white)",
-            width: "max-content",
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <BookOpen size={28} weight="duotone" style={{ color: "#3b82f6" }} />
+          <Typography sx={{ fontSize: "24px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Syllabus Management
+          </Typography>
+        </Box>
+        <Button variant="contained" startIcon={<Plus size={18} weight="bold" />} onClick={handleOpenMainModal}
+          sx={{ bgcolor: "#3b82f6", color: "#fff", borderRadius: "6px", px: 2.5, py: 1, fontWeight: 600, textTransform: "uppercase", "&:hover": { bgcolor: "#2563eb" } }}>
+          Add Syllabus
+        </Button>
+      </Box>
+
+      <Box>
+        <DataGrid
+          rows={syllabusData}
+          columns={columns}
+          initialState={{ pagination: { paginationModel: { page: 0, pageSize: 10 } } }}
+          pageSizeOptions={[10, 20]}
+          autoHeight
+          disableRowSelectionOnClick
+          className="table_border"
+          sx={{
+            bgcolor: "rgba(30, 41, 59, 0.4)",
+            border: "1px solid rgba(71, 85, 105, 0.6)",
+            borderRadius: "6px",
+            "& .MuiDataGrid-columnHeaders": { bgcolor: "rgba(15, 23, 42, 0.8)", borderColor: "rgba(71, 85, 105, 0.4)" },
+            "& .MuiDataGrid-cell": { borderColor: "rgba(71, 85, 105, 0.4)", color: "#f8fafc" },
+            "& .MuiDataGrid-row:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" }
           }}
-          onClick={handleOpenMainModal}
         />
       </Box>
 
-      {/* DataGrid */}
-      <Box className="Submitted_form_table">
-        {!lessonData ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "200px",
-              border: "1px solid var(--lightGrey)",
-              borderRadius: "8px",
-            }}
-          >
-            <Typography variant="body1" sx={{ color: "var(--greyText)" }}>
-              Loading syllabus data...
-            </Typography>
-          </Box>
-        ) : syllabusData.length === 0 ? (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "200px",
-              border: "1px solid var(--lightGrey)",
-              borderRadius: "8px",
-            }}
-          >
-            <Typography variant="body1" sx={{ color: "var(--greyText)" }}>
-              No syllabus data found. Click "Add Syllabus" to create one.
-            </Typography>
-          </Box>
-        ) : (
-          <DataGrid
-            rows={syllabusData}
-            columns={columns}
-            initialState={{
-              pagination: {
-                paginationModel: { page: 0, pageSize: 5 },
-              },
-            }}
-            pageSizeOptions={[5, 10, 20]}
-            checkboxSelection={false}
-            disableRowSelectionOnClick
-            className="table_border"
-            autoHeight
-          />
-        )}
-      </Box>
-
       {/* Main Syllabus Modal */}
-      <Modal open={mainModalOpen} onClose={handleCloseMainModal}>
+      <Modal open={mainModalOpen} onClose={() => setMainModalOpen(false)}>
         <Box sx={modalStyle}>
-          {/* Header */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontFamily: "SemiBold_M", fontSize: "16px" }}
-            >
-              {isEditMode ? "Edit Syllabus" : "Add Syllabus"}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2.5, pb: 2, borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+            <Typography variant="h6" sx={{ color: "#f8fafc", fontWeight: 700, fontFamily: "'Chivo', sans-serif" }}>
+              {isEditMode ? "Edit Syllabus" : "Create New Syllabus"}
             </Typography>
-            <IconButton
-              onClick={handleCloseMainModal}
-              sx={{
-                "& svg": {
-                  color: "var(--primary)",
-                  fontSize: "16px",
-                },
-              }}
-            >
-              <IoClose />
+            <IconButton onClick={() => setMainModalOpen(false)} sx={{ color: "#94a3b8", "&:hover": { color: "#f8fafc" } }}>
+              <X size={20} />
             </IconButton>
           </Box>
 
-          <Divider sx={{ mb: 3 }} />
-
-          {/* Form */}
-          <Box
-            component="form"
-            onSubmit={mainForm.handleSubmit(handleMainSubmit)}
-          >
-            {/* Course Selection */}
-            <Box sx={{ mb: 3 }}>
-              <CustomAutoComplete
-                options={courseOptions}
-                label="Select Course"
-                name="course"
-                placeholder="Choose a course"
-                multiple={false}
-                value={selectedCourse}
-                errors={mainForm.formState.errors}
-                onValueChange={(value: string | string[] | null) => {
-                  const courseValue =
-                    typeof value === "string" ? value : value?.[0] || "";
-                  setSelectedCourse(courseValue);
-                  mainForm.setValue("course", courseValue);
-                  mainForm.clearErrors("course");
-                  if (!isEditMode) {
-                    setUnits([]);
-                  }
-                }}
-                boxSx={{ width: "100%" }}
-              />
-            </Box>
-
-            <Divider sx={{ my: 3 }} />
-
-            {/* Units Section */}
-            <Box sx={{ mb: 3 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontFamily: "SemiBold_M", fontSize: "12px" }}
-                >
-                  Units ({units.length})
-                </Typography>
-                <CustomButton
-                  type="button"
-                  label="Add Unit"
-                  variant="outlined"
-                  btnSx={{
-                    borderColor: "var(--primary)",
-                    color: "var(--primary)",
-                    padding: "6px 16px",
-                    width: "max-content",
-                    fontFamily: "SemiBold_M",
-                    fontSize: "12px",
-                  }}
-                  onClick={handleAddUnit}
+          <Box component="form" onSubmit={mainForm.handleSubmit(handleMainSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <Controller
+              name="course"
+              control={mainForm.control}
+              render={() => (
+                <CustomAutoComplete
+                  options={courseOptions}
+                  label="Target Course"
+                  placeholder="Select a course to bind syllabus"
+                  value={selectedCourse}
+                  onValueChange={(val) => { setSelectedCourse(val as string); mainForm.setValue("course", val as string); }}
+                  errors={mainForm.formState.errors}
+                  name="course"
+                  register={mainForm.register}
                 />
+              )}
+            />
+
+            <Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Typography sx={{ color: "#94a3b8", fontWeight: 600, fontSize: "14px", fontFamily: "'JetBrains Mono', monospace" }}>
+                  UNITS ({units.length})
+                </Typography>
+                <Button size="small" startIcon={<Plus size={14} />} onClick={() => { setEditingUnit(null); unitForm.reset({ unitName: "" }); setUnitModalOpen(true); }}
+                  sx={{ color: "#3b82f6", textTransform: "none", fontWeight: 700 }}>
+                  Add Unit
+                </Button>
               </Box>
 
-              {units.length === 0 ? (
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    padding: "40px",
-                    color: "var(--greyText)",
-                    border: "1px dashed var(--greyText)",
-                    borderRadius: "8px",
-                  }}
-                >
-                  <Typography variant="body1">No units added yet</Typography>
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {selectedCourse
-                      ? "Click 'Add Unit' to get started"
-                      : "Please select a course first"}
-                  </Typography>
-                </Box>
-              ) : (
-                <Box sx={{ maxHeight: "400px", overflowY: "auto" }}>
-                  {units.map((unit) => (
-                    <Accordion
-                      key={unit.id}
-                      expanded={expandedUnit === unit.id}
-                      onChange={(_, isExpanded) =>
-                        setExpandedUnit(isExpanded ? unit.id : false)
-                      }
-                      sx={{
-                        mb: 1,
-                        border: "1px solid var(--lightGrey)",
-                        borderRadius: "8px !important",
-                        "&:before": { display: "none" },
-                      }}
-                    >
-                      <AccordionSummary
-                        expandIcon={<MdExpandMore />}
-                        sx={{
-                          backgroundColor: "var(--lightGrey)",
-                          borderRadius: "8px",
-                          "& .MuiAccordionSummary-content": {
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            flex: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle1"
-                            sx={{ fontWeight: "600" }}
-                          >
-                            {unit.unitName}
-                          </Typography>
-                          {unit.unitDescription && (
-                            <Typography
-                              variant="body2"
-                              sx={{ color: "var(--greyText)" }}
-                            >
-                              - {unit.unitDescription}
-                            </Typography>
-                          )}
-                        </Box>
-                        <Box
-                          sx={{ display: "flex", gap: 1 }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditUnit(unit)}
-                            sx={{
-                              "& svg": {
-                                color: "var(--primary)",
-                                fontSize: "16px",
-                              },
-                            }}
-                          >
-                            <MdEdit />
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {units.map((unit) => (
+                  <Accordion
+                    key={unit.id}
+                    expanded={expandedUnit === unit.id}
+                    onChange={(_, ex) => setExpandedUnit(ex ? unit.id : false)}
+                    sx={{
+                      bgcolor: "rgba(15, 23, 42, 0.5)",
+                      border: "1px solid rgba(71, 85, 105, 0.4)",
+                      borderRadius: "6px !important",
+                      "&::before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<CaretDown color="#94a3b8" />}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", pr: 2 }}>
+                        <Typography sx={{ color: "#f8fafc", fontWeight: 600 }}>{unit.unitName}</Typography>
+                        <Box sx={{ display: "flex", gap: 0.5 }}>
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setEditingUnit(unit); unitForm.reset({ unitName: unit.unitName }); setUnitModalOpen(true); }} sx={{ color: "#94a3b8" }}>
+                            <PencilSimple size={16} />
                           </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteItem("unit", unit.id)}
-                            sx={{
-                              "& svg": {
-                                color: "var(--red)",
-                                fontSize: "16px",
-                              },
-                            }}
-                          >
-                            <MdDeleteOutline />
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setUnits(prev => prev.filter(u => u.id !== unit.id)); }} sx={{ color: "#f87171" }}>
+                            <Trash size={16} />
                           </IconButton>
                         </Box>
-                      </AccordionSummary>
-                      <AccordionDetails sx={{ p: 2 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 2,
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontFamily: "SemiBold_M", fontSize: "12px" }}
-                          >
-                            Lessons ({unit.lessons.length})
-                          </Typography>
-                          <CustomButton
-                            type="button"
-                            label="Add Lesson"
-                            variant="outlined"
-                            btnSx={{
-                              borderColor: "var(--primary)",
-                              color: "var(--primary)",
-                              fontSize: "11px",
-                              padding: "4px 12px",
-                              width: "max-content",
-                            }}
-                            onClick={() => handleAddLesson(unit.id)}
-                          />
-                        </Box>
-
-                        {unit.lessons.length === 0 ? (
-                          <Box
-                            sx={{
-                              textAlign: "center",
-                              padding: "20px",
-                              color: "var(--greyText)",
-                              border: "1px dashed var(--greyText)",
-                              borderRadius: "4px",
-                            }}
-                          >
-                            <Typography variant="body2">
-                              No lessons added yet
-                            </Typography>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ borderTop: "1px solid rgba(71, 85, 105, 0.4)", bgcolor: "rgba(2, 6, 23, 0.3)", p: 2 }}>
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        {unit.lessons.map((lesson) => (
+                          <Box key={lesson.id} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 1.5, bgcolor: "rgba(30, 41, 59, 0.4)", border: "1px solid rgba(71, 85, 105, 0.3)", borderRadius: "4px" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                              <Layout size={18} weight="duotone" style={{ color: "#60a5fa" }} />
+                              <Typography sx={{ color: "#f1f5f9", fontSize: "13px" }}>{lesson.lessonName}</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", gap: 0.5 }}>
+                              <IconButton size="small" onClick={() => { setCurrentUnitId(unit.id); setEditingLesson({ lesson, unitId: unit.id }); lessonForm.reset({ lessonName: lesson.lessonName }); setLessonModalOpen(true); }} sx={{ color: "#94a3b8" }}>
+                                <PencilSimple size={14} />
+                              </IconButton>
+                              <IconButton size="small" onClick={() => setUnits(units.map(u => u.id === unit.id ? { ...u, lessons: u.lessons.filter(l => l.id !== lesson.id) } : u))} sx={{ color: "#f87171" }}>
+                                <Trash size={14} />
+                              </IconButton>
+                            </Box>
                           </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 1,
-                            }}
-                          >
-                            {unit.lessons.map((lesson, index) => (
-                              <Box
-                                key={lesson.id}
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  padding: "12px",
-                                  border: "1px solid var(--lightGrey)",
-                                  borderRadius: "4px",
-                                  backgroundColor: "var(--white)",
-                                }}
-                              >
-                                <Box>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ fontWeight: "500" }}
-                                  >
-                                    {index + 1}. {lesson.lessonName}
-                                  </Typography>
-                                  {lesson.lessonDescription && (
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "var(--greyText)",
-                                        display: "block",
-                                      }}
-                                    >
-                                      {lesson.lessonDescription}
-                                    </Typography>
-                                  )}
-                                </Box>
-                                <Box sx={{ display: "flex", gap: 0.5 }}>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleEditLesson(lesson, unit.id)
-                                    }
-                                    sx={{
-                                      "& svg": {
-                                        color: "var(--primary)",
-                                        fontSize: "14px",
-                                      },
-                                    }}
-                                  >
-                                    <MdEdit />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                      handleDeleteItem(
-                                        "lesson",
-                                        lesson.id,
-                                        unit.id
-                                      )
-                                    }
-                                    sx={{
-                                      "& svg": {
-                                        color: "var(--red)",
-                                        fontSize: "14px",
-                                      },
-                                    }}
-                                  >
-                                    <MdDeleteOutline />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                            ))}
-                          </Box>
-                        )}
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
-                </Box>
-              )}
+                        ))}
+                        <Button fullWidth variant="outlined" startIcon={<Plus />} onClick={() => { setCurrentUnitId(unit.id); setEditingLesson(null); lessonForm.reset({ lessonName: "" }); setLessonModalOpen(true); }}
+                          sx={{ borderColor: "rgba(71, 85, 105, 0.4)", color: "#94a3b8", textTransform: "none", py: 1 }}>
+                          Add Lesson to {unit.unitName}
+                        </Button>
+                      </Box>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Box>
             </Box>
 
-            {/* Footer */}
-            <Divider sx={{ my: 3 }} />
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-              <CustomButton
-                type="button"
-                label="Cancel"
-                variant="outlined"
-                btnSx={{
-                  color: "var(--greyText)",
-                  borderColor: "var(--greyText)",
-                }}
-                onClick={handleCloseMainModal}
-              />
-              <CustomButton
-                type="submit"
-                label={isEditMode ? "Update Syllabus" : "Add Syllabus"}
-                variant="contained"
-                btnSx={{ background: "var(--primary)", color: "var(--white)" }}
-                disabled={loading}
-              />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2, pt: 3, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+              <Button onClick={() => setMainModalOpen(false)} sx={{ color: "#94a3b8", fontWeight: 600 }}>Cancel</Button>
+              <Button type="submit" disabled={loading} variant="contained" sx={{ bgcolor: "#3b82f6", color: "#fff", px: 4, py: 1, borderRadius: "6px", fontWeight: 700, "&:hover": { bgcolor: "#2563eb" } }}>
+                {loading ? "Saving..." : isEditMode ? "Update Syllabus" : "Create Syllabus"}
+              </Button>
             </Box>
           </Box>
         </Box>
       </Modal>
 
-      {/* Unit Modal */}
+      {/* Small Modals for Unit/Lesson */}
       <Modal open={unitModalOpen} onClose={() => setUnitModalOpen(false)}>
         <Box sx={smallModalStyle}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontFamily: "SemiBold_M", fontSize: "14px" }}
-            >
-              {editingUnit ? "Edit Unit" : "Add Unit"}
-            </Typography>
-            <IconButton
-              onClick={() => setUnitModalOpen(false)}
-              sx={{
-                "&   svg": {
-                  color: "var(--primary)",
-                  fontSize: "15px",
-                  width: "max-content",
-                },
-              }}
-            >
-              <IoClose />
-            </IconButton>
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Box
-            component="form"
-            onSubmit={unitForm.handleSubmit(handleUnitSubmit)}
-          >
-            <CustomInput
-              name="unitName"
-              placeholder="Enter unit name"
-              label="Unit Name"
-              type="text"
-              bgmode="dark"
-              register={unitForm.register}
-              errors={unitForm.formState.errors}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 2,
-                mt: 3,
-              }}
-            >
-              <CustomButton
-                type="button"
-                label="Cancel"
-                variant="outlined"
-                btnSx={{
-                  color: "var(--greyText)",
-                  borderColor: "var(--greyText)",
-                }}
-                onClick={() => setUnitModalOpen(false)}
-              />
-              <CustomButton
-                type="submit"
-                label={editingUnit ? "Update Unit" : "Add Unit"}
-                variant="contained"
-                btnSx={{ background: "var(--primary)", color: "var(--white)" }}
-              />
+          <Typography variant="h6" sx={{ color: "#f8fafc", mb: 3 }}>{editingUnit ? "Edit Unit" : "New Unit"}</Typography>
+          <Box component="form" onSubmit={unitForm.handleSubmit(handleUnitSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <CustomInput name="unitName" label="Unit Name" type="text" placeholder="e.g., Introduction to React" bgmode="dark" register={unitForm.register} errors={unitForm.formState.errors} />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button onClick={() => setUnitModalOpen(false)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+              <Button type="submit" variant="contained" sx={{ bgcolor: "#3b82f6", color: "#fff" }}>Save Unit</Button>
             </Box>
           </Box>
         </Box>
       </Modal>
 
-      {/* Lesson Modal */}
       <Modal open={lessonModalOpen} onClose={() => setLessonModalOpen(false)}>
         <Box sx={smallModalStyle}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontFamily: "SemiBold_M", fontSize: "14px" }}
-            >
-              {editingLesson ? "Edit Lesson" : "Add Lesson"}
-            </Typography>
-            <IconButton
-              onClick={() => setLessonModalOpen(false)}
-              sx={{
-                "& svg": {
-                  color: "var(--primary)",
-                  fontSize: "16px",
-                },
-              }}
-            >
-              <IoClose />
-            </IconButton>
-          </Box>
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Box
-            component="form"
-            onSubmit={lessonForm.handleSubmit(handleLessonSubmit)}
-          >
-            <CustomInput
-              name="lessonName"
-              placeholder="Enter lesson name"
-              label="Lesson Name"
-              type="text"
-              bgmode="dark"
-              register={lessonForm.register}
-              errors={lessonForm.formState.errors}
-            />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 2,
-                mt: 3,
-              }}
-            >
-              <CustomButton
-                type="button"
-                label="Cancel"
-                variant="outlined"
-                btnSx={{
-                  color: "var(--greyText)",
-                  borderColor: "var(--greyText)",
-                }}
-                onClick={() => setLessonModalOpen(false)}
-              />
-              <CustomButton
-                type="submit"
-                label={editingLesson ? "Update Lesson" : "Add Lesson"}
-                variant="contained"
-                btnSx={{ background: "var(--primary)", color: "var(--white)" }}
-              />
+          <Typography variant="h6" sx={{ color: "#f8fafc", mb: 3 }}>{editingLesson ? "Edit Lesson" : "New Lesson"}</Typography>
+          <Box component="form" onSubmit={lessonForm.handleSubmit(handleLessonSubmit)} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            <CustomInput name="lessonName" label="Lesson Title" type="text" placeholder="e.g., Setting up Environment" bgmode="dark" register={lessonForm.register} errors={lessonForm.formState.errors} />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button onClick={() => setLessonModalOpen(false)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+              <Button type="submit" variant="contained" sx={{ bgcolor: "#3b82f6", color: "#fff" }}>Save Lesson</Button>
             </Box>
           </Box>
         </Box>
       </Modal>
 
-      {/* Delete Syllabus Confirmation Dialog */}
-      <Dialog
-        open={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle
-          sx={{ textAlign: "center", color: "var(--red)", fontWeight: "600" }}
-        >
-          Delete Syllabus
-        </DialogTitle>
-        <DialogContent sx={{ textAlign: "center" }}>
-          <Typography sx={{ color: "#666", mb: 1 }}>
-            Are you sure you want to delete this syllabus?
-          </Typography>
-          <Typography sx={{ color: "#999", fontSize: "0.875rem" }}>
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
-          <Button
-            onClick={() => setDeleteModalOpen(false)}
-            variant="outlined"
-            sx={{ color: "#666", borderColor: "#ddd" }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmDeleteSyllabus}
-            variant="contained"
-            sx={{ backgroundColor: "var(--red)" }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Unit/Lesson Confirmation Dialog */}
-      {itemToDelete && (
-        <Dialog
-          open={!!itemToDelete}
-          onClose={() => setItemToDelete(null)}
-          maxWidth="xs"
-          fullWidth
-        >
-          <DialogTitle
-            sx={{ textAlign: "center", color: "var(--red)", fontWeight: "600" }}
-          >
-            Delete {itemToDelete.type === "unit" ? "Unit" : "Lesson"}
-          </DialogTitle>
-          <DialogContent sx={{ textAlign: "center" }}>
-            <Typography sx={{ color: "#666", mb: 1 }}>
-              Are you sure you want to delete this {itemToDelete.type}?
-            </Typography>
-            <Typography sx={{ color: "#999", fontSize: "0.875rem" }}>
-              This action cannot be undone.
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 3 }}>
-            <Button
-              onClick={() => setItemToDelete(null)}
-              variant="outlined"
-              sx={{ color: "#666", borderColor: "#ddd" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmDeleteItem}
-              variant="contained"
-              sx={{ backgroundColor: "var(--red)" }}
-            >
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
-      )}
+      {/* Delete Confirmation */}
+      <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)}>
+        <Box sx={{ ...modalStyle, width: 400, p: 4, textAlign: "center" }}>
+          <Trash size={48} weight="duotone" style={{ color: "#ef4444", marginBottom: 16 }} />
+          <Typography variant="h6" sx={{ color: "#f8fafc", fontWeight: 700, mb: 1 }}>Delete Syllabus?</Typography>
+          <Typography sx={{ color: "#94a3b8", fontSize: "14px", mb: 3 }}>Are you sure you want to remove this course syllabus? This cannot be undone.</Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button fullWidth onClick={() => setDeleteModalOpen(false)} sx={{ bgcolor: "#334155", color: "#f8fafc" }}>Cancel</Button>
+            <Button fullWidth onClick={() => { lessonDelete(syllabusToDelete!); setDeleteModalOpen(false); }} variant="contained" sx={{ bgcolor: "#ef4444", color: "#fff" }}>Delete</Button>
+          </Box>
+        </Box>
+      </Modal>
     </Box>
   );
 };

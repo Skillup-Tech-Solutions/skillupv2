@@ -132,7 +132,7 @@ const generateInvoicePDF = async (invoiceData) => {
 
             // --- PAYMENT INFO ---
             if (invoiceData.paymentStatus === "paid") {
-                doc.font("Helvetica-Bold").fontSize(10).fillColor("#22c55e").text("✓ PAID", 40, currentY);
+                doc.font("Helvetica-Bold").fontSize(10).fillColor("#22c55e").text(" PAID", 40, currentY);
                 if (invoiceData.paidAt) {
                     doc.font("Helvetica").fontSize(9).fillColor(grey).text(
                         `on ${moment(invoiceData.paidAt).format("DD MMM YYYY")}`, 75, currentY

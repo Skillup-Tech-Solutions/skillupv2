@@ -6,23 +6,27 @@ import {
     IconButton,
     TextField,
     MenuItem,
-    Card,
-    CardContent,
-    Chip,
     Dialog,
     DialogTitle,
     DialogContent,
     DialogActions,
     Divider,
     Tooltip,
-    Grid
+    CircularProgress,
+    InputAdornment,
 } from "@mui/material";
-import { MdDownload, MdEmail, MdVisibility, MdReceipt, MdAttachMoney, MdCheckCircle, MdPending } from "react-icons/md";
+import { MdDownload, MdEmail, MdVisibility, MdReceipt, MdAttachMoney, MdCheckCircle, MdPending, MdFilterList } from "react-icons/md";
 import { useGetPayslipHistory, useSendPayslipEmail, useGetEmployees } from "../../../Hooks/employee";
 import { useState, useMemo } from "react";
 import CustomSnackBar from "../../../Custom/CustomSnackBar";
 import Cookies from "js-cookie";
 import axios from "axios";
+import {
+    dataGridDarkStyles,
+    textFieldDarkStyles,
+    dialogDarkStyles,
+    cancelButtonDarkStyles,
+} from "../../../assets/Styles/AdminDarkTheme";
 
 const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
 
@@ -33,30 +37,18 @@ const MONTHS = [
 
 const STATUS_OPTIONS = ["All", "Draft", "Published", "Emailed"];
 
-// Stats Card Component
-const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) => (
-    <Card sx={{ height: "100%", background: `linear-gradient(135deg, ${color}15 0%, ${color}05 100%)`, border: `1px solid ${color}30` }}>
-        <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-            <Box display="flex" alignItems="center" gap={2}>
-                <Box sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: `${color}20`,
-                    color: color
-                }}>
-                    {icon}
-                </Box>
-                <Box>
-                    <Typography variant="h5" fontWeight="bold" color={color}>{value}</Typography>
-                    <Typography variant="body2" color="text.secondary">{label}</Typography>
-                </Box>
-            </Box>
-        </CardContent>
-    </Card>
+// Stats Card Component - Matching User Management
+const StatsCard = ({ icon, label, value, color, bgColor }: { icon: React.ReactNode; label: string; value: string | number; color: string; bgColor: string }) => (
+    <Box sx={{
+        display: "flex", alignItems: "center", gap: 2.5, px: 3, py: 2.5,
+        bgcolor: bgColor, border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px", flex: 1, minWidth: 200
+    }}>
+        <Box sx={{ color: color }}>{icon}</Box>
+        <Box>
+            <Typography sx={{ fontSize: "22px", fontWeight: 700, color: color, lineHeight: 1.2 }}>{value}</Typography>
+            <Typography sx={{ fontSize: "12px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</Typography>
+        </Box>
+    </Box>
 );
 
 // Payslip Detail Modal Component
@@ -70,107 +62,95 @@ const PayslipDetailModal = ({ open, onClose, payslip }: { open: boolean; onClose
     ];
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ bgcolor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={dialogDarkStyles}>
+            <DialogTitle sx={{ bgcolor: "#1e293b", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
                 <Box display="flex" alignItems="center" gap={1}>
                     <MdReceipt size={24} color="#6366f1" />
-                    <Typography variant="h6" fontWeight="bold">Payslip Details</Typography>
+                    <Typography sx={{ fontSize: "16px", fontWeight: 700, color: "#f8fafc" }}>Payslip Details</Typography>
                 </Box>
             </DialogTitle>
-            <DialogContent sx={{ mt: 2 }}>
+            <DialogContent sx={{ mt: 2, bgcolor: "#1e293b" }}>
                 {/* Employee Info */}
-                <Box sx={{ mb: 3, p: 2, bgcolor: "#f8fafc", borderRadius: 2 }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>Employee Information</Typography>
-                    <Grid container spacing={2}>
-                        <Grid item xs={6} md={3}>
-                            <Typography variant="caption" color="text.secondary">Name</Typography>
-                            <Typography fontWeight="500">{payslip.employee?.user?.name || "-"}</Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                            <Typography variant="caption" color="text.secondary">Employee ID</Typography>
-                            <Typography fontWeight="500">{payslip.employee?.employeeId || "-"}</Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                            <Typography variant="caption" color="text.secondary">Month/Year</Typography>
-                            <Typography fontWeight="500">{payslip.month} {payslip.year}</Typography>
-                        </Grid>
-                        <Grid item xs={6} md={3}>
-                            <Typography variant="caption" color="text.secondary">Status</Typography>
-                            <Chip
-                                label={payslip.status}
-                                size="small"
-                                color={payslip.status === "Emailed" ? "success" : payslip.status === "Published" ? "primary" : "default"}
-                            />
-                        </Grid>
-                    </Grid>
+                <Box sx={{ mb: 3, p: 2, bgcolor: "rgba(30, 41, 59, 0.6)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Typography sx={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", mb: 1 }}>Employee Information</Typography>
+                    <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                        <Box>
+                            <Typography sx={{ fontSize: "11px", color: "#64748b" }}>Name</Typography>
+                            <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#f8fafc" }}>{payslip.employee?.user?.name || "-"}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography sx={{ fontSize: "11px", color: "#64748b" }}>Employee ID</Typography>
+                            <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#f8fafc" }}>{payslip.employee?.employeeId || "-"}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography sx={{ fontSize: "11px", color: "#64748b" }}>Month/Year</Typography>
+                            <Typography sx={{ fontSize: "14px", fontWeight: 500, color: "#f8fafc" }}>{payslip.month} {payslip.year}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography sx={{ fontSize: "11px", color: "#64748b" }}>Status</Typography>
+                            <Typography sx={{ fontSize: "14px", fontWeight: 600, color: payslip.status === "Emailed" ? "#4ade80" : payslip.status === "Published" ? "#60a5fa" : "#94a3b8" }}>{payslip.status}</Typography>
+                        </Box>
+                    </Box>
                 </Box>
 
                 {/* Earnings & Deductions */}
-                <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: "#10b981" }}>
-                            Earnings
-                        </Typography>
-                        <Card variant="outlined">
-                            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                                {earnings.map((item, idx) => (
+                <Box sx={{ display: "flex", gap: 3 }}>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#4ade80", mb: 1.5 }}>Earnings</Typography>
+                        <Box sx={{ bgcolor: "rgba(30, 41, 59, 0.6)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.4)", p: 2 }}>
+                            {earnings.map((item, idx) => (
+                                <Box key={idx} display="flex" justifyContent="space-between" py={0.5}>
+                                    <Typography sx={{ fontSize: "13px", color: "#f8fafc" }}>{item.name}</Typography>
+                                    <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#f8fafc" }}>Rs. {item.amount?.toLocaleString()}</Typography>
+                                </Box>
+                            ))}
+                            <Divider sx={{ my: 1, borderColor: "rgba(71, 85, 105, 0.4)" }} />
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography sx={{ fontWeight: 700, color: "#f8fafc" }}>Gross Earnings</Typography>
+                                <Typography sx={{ fontWeight: 700, color: "#4ade80" }}>Rs. {payslip.grossEarnings?.toLocaleString()}</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#f87171", mb: 1.5 }}>Deductions</Typography>
+                        <Box sx={{ bgcolor: "rgba(30, 41, 59, 0.6)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.4)", p: 2 }}>
+                            {(payslip.deductions || []).length > 0 ? (
+                                payslip.deductions.map((item: any, idx: number) => (
                                     <Box key={idx} display="flex" justifyContent="space-between" py={0.5}>
-                                        <Typography variant="body2">{item.name}</Typography>
-                                        <Typography variant="body2" fontWeight="500">Rs. {item.amount?.toLocaleString()}</Typography>
+                                        <Typography sx={{ fontSize: "13px", color: "#f8fafc" }}>{item.name}</Typography>
+                                        <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#f8fafc" }}>Rs. {item.amount?.toLocaleString()}</Typography>
                                     </Box>
-                                ))}
-                                <Divider sx={{ my: 1 }} />
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography fontWeight="bold">Gross Earnings</Typography>
-                                    <Typography fontWeight="bold" color="success.main">Rs. {payslip.grossEarnings?.toLocaleString()}</Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                        <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ color: "#ef4444" }}>
-                            Deductions
-                        </Typography>
-                        <Card variant="outlined">
-                            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                                {(payslip.deductions || []).length > 0 ? (
-                                    payslip.deductions.map((item: any, idx: number) => (
-                                        <Box key={idx} display="flex" justifyContent="space-between" py={0.5}>
-                                            <Typography variant="body2">{item.name}</Typography>
-                                            <Typography variant="body2" fontWeight="500">Rs. {item.amount?.toLocaleString()}</Typography>
-                                        </Box>
-                                    ))
-                                ) : (
-                                    <Typography variant="body2" color="text.secondary">No deductions</Typography>
-                                )}
-                                <Divider sx={{ my: 1 }} />
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography fontWeight="bold">Total Deductions</Typography>
-                                    <Typography fontWeight="bold" color="error.main">Rs. {payslip.totalDeductions?.toLocaleString()}</Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                </Grid>
+                                ))
+                            ) : (
+                                <Typography sx={{ fontSize: "13px", color: "#64748b" }}>No deductions</Typography>
+                            )}
+                            <Divider sx={{ my: 1, borderColor: "rgba(71, 85, 105, 0.4)" }} />
+                            <Box display="flex" justifyContent="space-between">
+                                <Typography sx={{ fontWeight: 700, color: "#f8fafc" }}>Total Deductions</Typography>
+                                <Typography sx={{ fontWeight: 700, color: "#f87171" }}>Rs. {payslip.totalDeductions?.toLocaleString()}</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
 
                 {/* Net Pay */}
-                <Box sx={{ mt: 3, p: 2, bgcolor: "#6366f1", borderRadius: 2, color: "white", textAlign: "center" }}>
-                    <Typography variant="body2">Net Pay</Typography>
-                    <Typography variant="h4" fontWeight="bold">Rs. {payslip.netPay?.toLocaleString()}</Typography>
+                <Box sx={{ mt: 3, p: 2, bgcolor: "#6366f1", borderRadius: "6px", textAlign: "center" }}>
+                    <Typography sx={{ fontSize: "12px", color: "rgba(255,255,255,0.8)" }}>Net Pay</Typography>
+                    <Typography sx={{ fontSize: "28px", fontWeight: 700, color: "#fff" }}>Rs. {payslip.netPay?.toLocaleString()}</Typography>
                 </Box>
 
                 {/* Additional Info */}
-                <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", color: "text.secondary" }}>
-                    <Typography variant="caption">
+                <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between" }}>
+                    <Typography sx={{ fontSize: "11px", color: "#64748b" }}>
                         Generated: {payslip.generatedAt ? new Date(payslip.generatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "-"}
                     </Typography>
-                    <Typography variant="caption">
+                    <Typography sx={{ fontSize: "11px", color: "#64748b" }}>
                         Attendance Days: {payslip.attendanceDays || 30}
                     </Typography>
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ p: 2, bgcolor: "#f8fafc" }}>
-                <Button onClick={onClose} variant="outlined">Close</Button>
+            <DialogActions sx={{ p: 2, bgcolor: "#1e293b", borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                <Button onClick={onClose} sx={cancelButtonDarkStyles}>Close</Button>
             </DialogActions>
         </Dialog>
     );
@@ -247,26 +227,18 @@ const PayslipHistory = () => {
         setDetailModalOpen(true);
     };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "Emailed": return "success";
-            case "Published": return "primary";
-            default: return "default";
-        }
-    };
-
     const columns: GridColDef[] = [
         {
             field: "employeeId",
             headerName: "Emp ID",
             width: 100,
-            valueGetter: (value, row) => row.employee?.employeeId || "-"
+            valueGetter: (_value, row) => row.employee?.employeeId || "-"
         },
         {
             field: "employeeName",
             headerName: "Employee",
             width: 160,
-            valueGetter: (value, row) => row.employee?.user?.name || "-"
+            valueGetter: (_value, row) => row.employee?.user?.name || "-"
         },
         { field: "month", headerName: "Month", width: 100 },
         { field: "year", headerName: "Year", width: 80 },
@@ -275,7 +247,7 @@ const PayslipHistory = () => {
             headerName: "Gross",
             width: 110,
             renderCell: (params) => (
-                <Typography variant="body2" color="success.main" fontWeight="500">
+                <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#4ade80" }}>
                     Rs. {params.value?.toLocaleString() || 0}
                 </Typography>
             )
@@ -285,7 +257,7 @@ const PayslipHistory = () => {
             headerName: "Deductions",
             width: 110,
             renderCell: (params) => (
-                <Typography variant="body2" color="error.main" fontWeight="500">
+                <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#f87171" }}>
                     Rs. {params.value?.toLocaleString() || 0}
                 </Typography>
             )
@@ -295,7 +267,7 @@ const PayslipHistory = () => {
             headerName: "Net Pay",
             width: 120,
             renderCell: (params) => (
-                <Typography variant="body2" fontWeight="bold" color="#6366f1">
+                <Typography sx={{ fontSize: "13px", fontWeight: 700, color: "#6366f1" }}>
                     Rs. {params.value?.toLocaleString() || 0}
                 </Typography>
             )
@@ -303,15 +275,11 @@ const PayslipHistory = () => {
         {
             field: "status",
             headerName: "Status",
-            width: 110,
-            renderCell: (params) => (
-                <Chip
-                    label={params.value}
-                    size="small"
-                    color={getStatusColor(params.value)}
-                    sx={{ fontWeight: 500 }}
-                />
-            )
+            width: 100,
+            renderCell: (params) => {
+                const color = params.value === "Emailed" ? "#4ade80" : params.value === "Published" ? "#60a5fa" : "#94a3b8";
+                return <Typography sx={{ fontSize: "12px", fontWeight: 600, color }}>{params.value}</Typography>;
+            }
         },
         {
             field: "generatedAt",
@@ -322,7 +290,7 @@ const PayslipHistory = () => {
         {
             field: "actions",
             headerName: "Actions",
-            width: 180,
+            width: 140,
             renderCell: (params: any) => (
                 <Box display="flex" gap={0.5}>
                     <Tooltip title="View Details">
@@ -346,135 +314,126 @@ const PayslipHistory = () => {
     ];
 
     return (
-        <Box className="Submitted_form_table" sx={{ p: 3 }}>
-            <Typography variant="h6" fontWeight="bold" mb={3}> Payslip History</Typography>
+        <Box className="Submitted_form_table" sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Stats Row */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <StatsCard icon={<MdReceipt size={28} />} label="Total Payslips" value={stats.total} color="#6366f1" bgColor="rgba(99, 102, 241, 0.15)" />
+                <StatsCard icon={<MdAttachMoney size={28} />} label="Total Disbursed" value={`Rs. ${stats.totalNetPay.toLocaleString()}`} color="#10b981" bgColor="rgba(16, 185, 129, 0.15)" />
+                <StatsCard icon={<MdCheckCircle size={28} />} label="Emails Sent" value={stats.emailed} color="#3b82f6" bgColor="rgba(59, 130, 246, 0.15)" />
+                <StatsCard icon={<MdPending size={28} />} label="Pending (Draft)" value={stats.pending} color="#f59e0b" bgColor="rgba(245, 158, 11, 0.15)" />
+            </Box>
 
-            {/* Summary Stats Cards */}
-            <Grid container spacing={2} mb={3}>
-                <Grid item xs={6} md={3}>
-                    <StatCard
-                        icon={<MdReceipt size={24} />}
-                        label="Total Payslips"
-                        value={stats.total}
-                        color="#6366f1"
-                    />
-                </Grid>
-                <Grid item xs={6} md={3}>
-                    <StatCard
-                        icon={<MdAttachMoney size={24} />}
-                        label="Total Disbursed"
-                        value={`Rs. ${stats.totalNetPay.toLocaleString()}`}
-                        color="#10b981"
-                    />
-                </Grid>
-                <Grid item xs={6} md={3}>
-                    <StatCard
-                        icon={<MdCheckCircle size={24} />}
-                        label="Emails Sent"
-                        value={stats.emailed}
-                        color="#3b82f6"
-                    />
-                </Grid>
-                <Grid item xs={6} md={3}>
-                    <StatCard
-                        icon={<MdPending size={24} />}
-                        label="Pending (Draft)"
-                        value={stats.pending}
-                        color="#f59e0b"
-                    />
-                </Grid>
-            </Grid>
+            {/* Filters Row */}
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <TextField
+                    select
+                    label="Month"
+                    size="small"
+                    value={filter.month}
+                    onChange={e => setFilter({ ...filter, month: e.target.value })}
+                    sx={{ minWidth: 140, ...textFieldDarkStyles }}
+                    InputProps={{ startAdornment: <InputAdornment position="start"><MdFilterList size={16} style={{ color: "#64748b" }} /></InputAdornment> }}
+                >
+                    <MenuItem value="">All Months</MenuItem>
+                    {MONTHS.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+                </TextField>
 
-            {/* Filters */}
-            <Card sx={{ mb: 3 }}>
-                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                    <Typography variant="subtitle2" fontWeight="600" mb={2}>🔍 Filters</Typography>
-                    <Box display="flex" gap={2} flexWrap="wrap">
-                        <TextField
-                            select
-                            label="Month"
-                            size="small"
-                            value={filter.month}
-                            onChange={e => setFilter({ ...filter, month: e.target.value })}
-                            sx={{ width: 140 }}
-                        >
-                            <MenuItem value="">All Months</MenuItem>
-                            {MONTHS.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-                        </TextField>
+                <TextField
+                    label="Year"
+                    size="small"
+                    type="number"
+                    value={filter.year}
+                    onChange={e => setFilter({ ...filter, year: e.target.value })}
+                    sx={{ width: 120, ...textFieldDarkStyles }}
+                    placeholder="2025"
+                />
 
-                        <TextField
-                            label="Year"
-                            size="small"
-                            type="number"
-                            value={filter.year}
-                            onChange={e => setFilter({ ...filter, year: e.target.value })}
-                            sx={{ width: 100 }}
-                            placeholder="2025"
-                        />
+                <TextField
+                    select
+                    label="Employee"
+                    size="small"
+                    value={filter.employeeId}
+                    onChange={e => setFilter({ ...filter, employeeId: e.target.value })}
+                    sx={{ minWidth: 200, ...textFieldDarkStyles }}
+                >
+                    <MenuItem value="">All Employees</MenuItem>
+                    {employees?.map((emp: any) => (
+                        <MenuItem key={emp._id} value={emp._id}>
+                            {emp.user?.name} ({emp.employeeId})
+                        </MenuItem>
+                    ))}
+                </TextField>
 
-                        <TextField
-                            select
-                            label="Employee"
-                            size="small"
-                            value={filter.employeeId}
-                            onChange={e => setFilter({ ...filter, employeeId: e.target.value })}
-                            sx={{ width: 200 }}
-                        >
-                            <MenuItem value="">All Employees</MenuItem>
-                            {employees?.map((emp: any) => (
-                                <MenuItem key={emp._id} value={emp._id}>
-                                    {emp.user?.name} ({emp.employeeId})
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                <TextField
+                    select
+                    label="Status"
+                    size="small"
+                    value={filter.status}
+                    onChange={e => setFilter({ ...filter, status: e.target.value })}
+                    sx={{ minWidth: 130, ...textFieldDarkStyles }}
+                >
+                    {STATUS_OPTIONS.map(s => <MenuItem key={s} value={s === "All" ? "" : s}>{s}</MenuItem>)}
+                </TextField>
 
-                        <TextField
-                            select
-                            label="Status"
-                            size="small"
-                            value={filter.status}
-                            onChange={e => setFilter({ ...filter, status: e.target.value })}
-                            sx={{ width: 130 }}
-                        >
-                            {STATUS_OPTIONS.map(s => <MenuItem key={s} value={s === "All" ? "" : s}>{s}</MenuItem>)}
-                        </TextField>
-
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => setFilter({ month: "", year: "", employeeId: "", status: "" })}
-                        >
-                            Clear Filters
-                        </Button>
-                    </Box>
-                </CardContent>
-            </Card>
+                <Button
+                    size="small"
+                    onClick={() => setFilter({ month: "", year: "", employeeId: "", status: "" })}
+                    sx={{ ...cancelButtonDarkStyles, py: 0.75 }}
+                >
+                    Clear Filters
+                </Button>
+            </Box>
 
             {/* Data Table */}
-            <Card>
+            {isLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress sx={{ color: "#60a5fa" }} /></Box>
+            ) : (
                 <DataGrid
                     rows={filteredPayslips || []}
                     columns={columns}
-                    loading={isLoading}
                     autoHeight
+                    rowHeight={52}
+                    getRowHeight={() => 52}
                     getRowId={(row) => row._id}
                     initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
                     pageSizeOptions={[10, 20, 50]}
                     sx={{
-                        border: "none",
+                        ...dataGridDarkStyles,
+                        border: "1px solid rgba(71, 85, 105, 0.4) !important",
+                        "& .MuiDataGrid-main": { borderRadius: "6px", overflow: "hidden" },
                         "& .MuiDataGrid-columnHeaders": {
-                            bgcolor: "#f8fafc",
-                            fontWeight: 600
+                            bgcolor: "#0f172a !important",
+                            color: "#94a3b8 !important",
+                            borderBottom: "1px solid rgba(71, 85, 105, 0.4) !important",
+                            minHeight: "48px !important",
+                            maxHeight: "48px !important",
                         },
-                        "& .MuiDataGrid-row:nth-of-type(even)": {
-                            bgcolor: "#fafafa"
+                        "& .MuiDataGrid-columnHeader": { bgcolor: "#0f172a !important", outline: "none !important" },
+                        "& .MuiDataGrid-columnHeaderTitle": {
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
                         },
-                        "& .MuiDataGrid-row:hover": {
-                            bgcolor: "#f1f5f9"
-                        }
+                        "& .MuiDataGrid-row": {
+                            minHeight: "52px !important",
+                            maxHeight: "52px !important",
+                            bgcolor: "transparent !important",
+                            borderBottom: "1px solid rgba(71, 85, 105, 0.4) !important",
+                            "&:hover": { bgcolor: "rgba(51, 65, 85, 0.4) !important" },
+                        },
+                        "& .MuiDataGrid-cell": {
+                            display: "flex !important",
+                            alignItems: "center !important",
+                            borderColor: "rgba(71, 85, 105, 0.4) !important",
+                            "&:focus": { outline: "none !important" },
+                        },
+                        "& .MuiDataGrid-virtualScroller": { bgcolor: "rgba(30, 41, 59, 0.4) !important" },
+                        "& .MuiDataGrid-filler": { bgcolor: "#0f172a !important" },
                     }}
                 />
-            </Card>
+            )}
 
             {/* Detail Modal */}
             <PayslipDetailModal

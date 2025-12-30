@@ -1,43 +1,30 @@
 import {
   Box,
-  Typography,
-  Dialog,
-  Button,
   Tooltip,
+  Dialog,
+  DialogActions,
+  Button,
 } from "@mui/material";
-import { cancelButtonStyle, dangerButtonStyle } from "../assets/Styles/ButtonStyles";
-import {
-  LogoutBox,
-  SidebarBottom,
-  SidebarBottomLeft,
-  SidebarBox,
-  SidebarBoxOne,
-  SidebarBoxTwo,
-  SidebarLinks,
-} from "../assets/Styles/SidebarStyle";
-import { images } from "../assets/Images/Images";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { HiOutlineLogout } from "react-icons/hi";
 import Cookies from "js-cookie";
-import { FaUsers } from "react-icons/fa";
-import { TbLayoutDashboard } from "react-icons/tb";
-import { FiBook } from "react-icons/fi";
-
-import { MdOutlineCategory, MdOutlineLocalOffer, MdOutlineAnnouncement, MdAttachMoney, MdSchool } from "react-icons/md";
+import { images } from "../assets/Images/Images";
 import {
-  CarreerRoutes,
-  CategoryRoutes,
-  CertificateRoutes,
+  Gauge,
+  Users,
+  GraduationCap,
+  Books,
+  FolderSimple,
+  Tag,
+  Percent,
+  Briefcase,
+  Certificate,
+  Megaphone,
+  CurrencyDollar,
+  Gear,
+  SignOut,
+} from "@phosphor-icons/react";
 
-  DashboardRoutes,
-  OffersRoutes,
-  SyllabusRoutes,
-  UsersRoutes,
-} from "./RoutesActive";
-import { ProgramsRoutes, PayrollRoutes } from "./RoutesActive";
-import { GrUserWorker } from "react-icons/gr";
-import { PiCertificate } from "react-icons/pi";
 interface SidebarProps {
   isOpen: boolean;
   isMobile?: boolean;
@@ -49,13 +36,6 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-
-  const displayUsername =
-    username && username.length > 10
-      ? `${username.substring(0, 10)}...`
-      : username;
-  const displayrole =
-    role && role.length > 10 ? `${role.substring(0, 10)}...` : role;
 
   const HandleLogoutClick = () => {
     setLogoutModalOpen(true);
@@ -73,369 +53,265 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
   const HandleLogoutCancel = () => {
     setLogoutModalOpen(false);
   };
+
+  const isActive = (paths: string[]) => paths.some(p => location.pathname.startsWith(p));
+  const isExactActive = (path: string) => location.pathname === path;
+
+  const menuItems = role === "admin" ? [
+    { paths: ["/dashboard"], label: "Dashboard", icon: Gauge },
+    { paths: ["/users"], label: "People", icon: Users },
+    { paths: ["/courses", "/internships", "/projects"], label: "Programs", icon: GraduationCap },
+    { paths: ["/syllabus"], label: "Syllabus", icon: Books },
+    { paths: ["/category"], label: "Category", icon: Tag },
+    { paths: ["/offers"], label: "Offers", icon: Percent },
+    { paths: ["/admincareers"], label: "Careers", icon: Briefcase },
+    { paths: ["/certificate"], label: "Certificates", icon: Certificate },
+    { paths: ["/announcements"], label: "Announcements", icon: Megaphone },
+    { paths: ["/payroll"], label: "Payroll", icon: CurrencyDollar },
+    { paths: ["/payment/settings"], label: "Payment Settings", icon: Gear },
+    { paths: ["/payment-management"], label: "Payments", icon: CurrencyDollar },
+  ] : [
+    { paths: ["/employee/portal"], label: "My Payslips", icon: CurrencyDollar },
+  ];
+
+  // Collapsed = narrow sidebar, Expanded = wide sidebar
+  const isCollapsed = !isOpen && !isMobile;
+  const showLabels = isOpen || isMobile;
+
   return (
     <>
       <Box
         sx={{
-          ...SidebarBox,
-          // On mobile, always show content when sidebar is rendered
-          // On desktop, use opacity/visibility transitions
-          ...(isMobile
-            ? {
-              opacity: 1,
-              visibility: "visible",
-            }
-            : {
-              opacity: isOpen ? 1 : 0,
-              visibility: isOpen ? "visible" : "hidden",
-              transition:
-                "opacity 0.3s ease-in-out, visibility 0.3s ease-in-out",
-            }),
+          // bg-slate-900 border-r border-slate-800
+          bgcolor: "#0f172a", // slate-900
+          borderRight: "1px solid #1e293b", // slate-800
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          position: "sticky",
+          top: 0,
+          transition: "all 0.2s ease",
+          zIndex: 50,
         }}
       >
-        <Box>
-          <Box sx={{ ...SidebarBoxOne }}>
-            <Box component={"img"} src={images.logo} />
-          </Box>
-          <Box sx={{ ...SidebarBoxTwo }}>
-            {(isOpen || isMobile) && (
-              <Typography variant="h4">Main Menu</Typography>
-            )}
-            <Box sx={{ ...SidebarLinks }}>
-              {role === "admin" && (
-                <>
-                  <Link to={"/dashboard"}>
-                    <Box sx={{
-                      backgroundColor: DashboardRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: DashboardRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <TbLayoutDashboard />
-                      {(isOpen || isMobile) && "Dashboard"}
-                    </Box>
-                  </Link>
-                  <Link to={"/users"}>
-                    <Box sx={{
-                      backgroundColor: UsersRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: UsersRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <FaUsers />
-                      {(isOpen || isMobile) && "People Management"}
-                    </Box>
-                  </Link>
-                  <Link to={"/courses"}>
-                    <Box sx={{
-                      backgroundColor: ProgramsRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: ProgramsRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <MdSchool />
-                      {(isOpen || isMobile) && "Program Management"}
-                    </Box>
-                  </Link>
-                  <Link to={"/syllabus"}>
-                    <Box sx={{
-                      backgroundColor: SyllabusRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: SyllabusRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <FiBook />
-                      {(isOpen || isMobile) && "Syllabus"}
-                    </Box>
-                  </Link>
-                  <Link to={"/category"}>
-                    <Box sx={{
-                      backgroundColor: CategoryRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: CategoryRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <MdOutlineCategory />
-                      {(isOpen || isMobile) && "Category"}
-                    </Box>
-                  </Link>
-                  <Link to={"/offers"}>
-                    <Box sx={{
-                      backgroundColor: OffersRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: OffersRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <MdOutlineLocalOffer />
-                      {(isOpen || isMobile) && "Offers"}
-                    </Box>
-                  </Link>
-                  <Link to={"/admincareers"}>
-                    <Box sx={{
-                      backgroundColor: CarreerRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: CarreerRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <GrUserWorker />
-                      {(isOpen || isMobile) && "Careers"}
-                    </Box>
-                  </Link>
-                  <Link to={"/certificate"}>
-                    <Box sx={{
-                      backgroundColor: CertificateRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: CertificateRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <PiCertificate />
-                      {(isOpen || isMobile) && "Certificate"}
-                    </Box>
-                  </Link>
-                  <Link to={"/announcements"}>
-                    <Box sx={{
-                      backgroundColor: location.pathname === "/announcements" ? "var(--buttonPrimary)" : "transparent",
-                      color: location.pathname === "/announcements" ? "var(--white)" : "inherit",
-                      transition: "background-color 0.3s ease, color 0.3s ease",
-                    }}>
-                      <MdOutlineAnnouncement />
-                      {(isOpen || isMobile) && "Announcements"}
-                    </Box>
-                  </Link>
-
-
-
-                  <Link to={"/payroll/generate"}>
-                    <Box sx={{
-                      backgroundColor: PayrollRoutes.includes(location.pathname) ? "var(--buttonPrimary)" : "transparent",
-                      color: PayrollRoutes.includes(location.pathname) ? "var(--white)" : "inherit",
-                      transition: "all 0.3s ease"
-                    }}>
-                      <MdAttachMoney />
-                      {(isOpen || isMobile) && "Payroll Management"}
-                    </Box>
-                  </Link>
-
-                  <Link to={"/payment/settings"}>
-                    <Box sx={{
-                      backgroundColor: location.pathname.includes("/payment/settings") ? "var(--buttonPrimary)" : "transparent",
-                      color: location.pathname.includes("/payment/settings") ? "var(--white)" : "inherit",
-                      transition: "all 0.3s ease"
-                    }}>
-                      <MdAttachMoney />
-                      {(isOpen || isMobile) && "Payment Settings"}
-                    </Box>
-                  </Link>
-
-                  <Link to={"/payment-management"}>
-                    <Box sx={{
-                      backgroundColor: location.pathname === "/payment-management" ? "var(--buttonPrimary)" : "transparent",
-                      color: location.pathname === "/payment-management" ? "var(--white)" : "inherit",
-                      transition: "all 0.3s ease"
-                    }}>
-                      <MdAttachMoney />
-                      {(isOpen || isMobile) && "Payment Management"}
-                    </Box>
-                  </Link>
-
-
-                </>
-              )}
-
-              {role === "employee" && (
-                <Link to={"/employee/portal"}>
-                  <Box sx={{
-                    backgroundColor: location.pathname.includes("/employee/portal") ? "var(--buttonPrimary)" : "transparent",
-                    color: location.pathname.includes("/employee/portal") ? "var(--white)" : "inherit",
-                    transition: "all 0.3s ease"
-                  }}>
-                    <MdAttachMoney />
-                    {(isOpen || isMobile) && "My Payslips"}
-                  </Box>
-                </Link>
-              )}
+        {/* Header - p-4 border-b border-slate-800 */}
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: "1px solid #1e293b",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: isCollapsed ? "center" : "flex-start",
+            gap: 1.5,
+          }}
+        >
+          <Box
+            component="img"
+            src={images.logo}
+            sx={{ width: 32, height: 32, flexShrink: 0 }}
+          />
+          {showLabels && (
+            <Box sx={{ overflow: "hidden" }}>
+              {/* font-chivo font-bold text-sm uppercase tracking-wider */}
+              <Box
+                component="h1"
+                sx={{
+                  fontFamily: "'Chivo', sans-serif",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  whiteSpace: "nowrap",
+                  color: "#f8fafc",
+                  m: 0,
+                }}
+              >
+                Skill Up
+              </Box>
+              {/* text-xs text-slate-500 font-mono */}
+              <Box
+                sx={{
+                  fontSize: "12px",
+                  color: "#64748b",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textTransform: "uppercase",
+                }}
+              >
+                {role || "ADMIN"}
+              </Box>
             </Box>
-            {/* <Box sx={{ ...SidebarBoxThree }}>
-            {(isOpen || isMobile) && (
-              <Typography variant="h4">Advance Menu</Typography>
-            )}
-            <Box sx={{ ...SidebarLinks }}>
-              <Link to={"/"}>
-                <Box>
-                  <PiCertificateLight />
-                  {(isOpen || isMobile) && "Certificate"}
+          )}
+        </Box>
+
+        {/* Navigation - flex-1 p-2 overflow-y-auto */}
+        <Box
+          component="nav"
+          sx={{
+            flex: 1,
+            p: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        >
+          <Box component="ul" sx={{ m: 0, p: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 0.5 }}>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.paths);
+              return (
+                <Box component="li" key={item.paths[0]}>
+                  <Tooltip title={isCollapsed ? item.label : ""} placement="right" arrow>
+                    <Box
+                      onClick={() => navigate(item.paths[0])}
+                      sx={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        px: 1.5,
+                        py: 1.25,
+                        borderRadius: "2px", // rounded-sm
+                        transition: "all 0.15s ease",
+                        fontSize: "14px",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        justifyContent: isCollapsed ? "center" : "flex-start",
+                        // Active: text-blue-400 bg-blue-950/50 border-l-2 border-blue-400
+                        // Inactive: text-slate-400 hover:text-slate-100 hover:bg-slate-800
+                        ...(active
+                          ? {
+                            color: "#60a5fa", // blue-400
+                            bgcolor: "rgba(23, 37, 84, 0.5)", // blue-950/50
+                            borderLeft: "2px solid #60a5fa",
+                          }
+                          : {
+                            color: "#94a3b8", // slate-400
+                            "&:hover": {
+                              color: "#f1f5f9", // slate-100
+                              bgcolor: "#1e293b", // slate-800
+                            },
+                          }),
+                      }}
+                    >
+                      <Icon size={20} weight="duotone" style={{ flexShrink: 0 }} />
+                      {showLabels && (
+                        <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {item.label}
+                        </Box>
+                      )}
+                    </Box>
+                  </Tooltip>
                 </Box>
-              </Link>
-              <Link to={"/"}>
-                <Box>
-                  <GoMail />
-                  {(isOpen || isMobile) && "Mail"}
-                </Box>
-              </Link>
-            </Box>
-          </Box> */}
+              );
+            })}
           </Box>
         </Box>
-        <Box sx={{ ...SidebarBottom }}>
-          <Box sx={{ ...SidebarBottomLeft }}>
+
+        {/* User Info + Logout - p-2 border-t border-slate-800 */}
+        <Box sx={{ p: 1, borderTop: "1px solid #1e293b" }}>
+          {/* User Info */}
+          {showLabels && (
+            <Box sx={{ px: 1.5, py: 1, mb: 0.5 }}>
+              <Box sx={{ fontSize: "13px", fontWeight: 600, color: "#f8fafc" }}>
+                {username || "Admin"}
+              </Box>
+              <Box sx={{ fontSize: "11px", color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>
+                {role || "admin"}
+              </Box>
+            </Box>
+          )}
+          <Tooltip title={isCollapsed ? "Sign Out" : ""} placement="right" arrow>
             <Box
+              onClick={HandleLogoutClick}
               sx={{
-                width: "35px",
-                height: "35px",
-                borderRadius: "50%",
-                backgroundColor: "var(--buttonPrimary)",
+                width: "100%",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                color: "var(--white)",
-                fontFamily: "Medium_M",
-                fontSize: "16px",
+                gap: 1.5,
+                px: 1.5,
+                py: 1.25,
+                borderRadius: "2px",
+                transition: "all 0.15s ease",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer",
+                justifyContent: isCollapsed ? "center" : "flex-start",
+                color: "#f87171", // red-400
+                "&:hover": {
+                  color: "#fca5a5", // red-300
+                  bgcolor: "#1e293b",
+                },
               }}
             >
-              {(displayUsername || "User").charAt(0).toUpperCase()}
+              <SignOut size={20} style={{ flexShrink: 0 }} />
+              {showLabels && "Sign Out"}
             </Box>
-            {(isOpen || isMobile) && (
-              <Box>
-                <Typography variant="h2">
-                  {displayUsername || "User"}
-                </Typography>
-                <Typography variant="h3">
-                  <Tooltip title={role}>
-                    <span>{displayrole || "role"}</span>
-                  </Tooltip>
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          <Box sx={{ ...LogoutBox }} onClick={HandleLogoutClick}>
-            <HiOutlineLogout />
-          </Box>
+          </Tooltip>
         </Box>
       </Box>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Modal */}
       <Dialog
         open={logoutModalOpen}
         onClose={HandleLogoutCancel}
-        aria-labelledby="logout-dialog-title"
-        aria-describedby="logout-dialog-description"
-        maxWidth="sm"
-        fullWidth
         sx={{
           "& .MuiDialog-paper": {
-            borderRadius: "24px",
-            padding: 0,
-            margin: { xs: "20px", sm: "32px" },
-            maxWidth: { xs: "calc(100vw - 40px)", sm: "450px" },
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            background:
-              "linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.8)",
-            overflow: "hidden",
-            position: "relative",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "4px",
-              background:
-                "linear-gradient(90deg, #3b82f6, #8b5cf6, #ef4444, #f59e0b)",
-            },
+            bgcolor: "#1e293b",
+            border: "1px solid rgba(71, 85, 105, 0.5)",
+            borderRadius: "6px",
+            p: 2,
           },
           "& .MuiBackdrop-root": {
-            backgroundColor: "rgba(15, 23, 42, 0.7)",
-            backdropFilter: "blur(12px)",
+            bgcolor: "rgba(15, 23, 42, 0.8)",
+            backdropFilter: "blur(8px)",
           },
         }}
-        TransitionProps={{
-          timeout: 500,
-        }}
       >
-        <Box
-          sx={{
-            textAlign: "center",
-            padding: { xs: "32px 24px", sm: "40px 32px" },
-            background: "transparent",
-          }}
-        >
-          {/* Icon */}
-          <Box
-            sx={{
-              width: "80px",
-              height: "80px",
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 24px",
-              boxShadow: "0 8px 32px rgba(239, 68, 68, 0.2)",
-            }}
-          >
-            <HiOutlineLogout
-              style={{
-                fontSize: "32px",
-                color: "#ef4444",
-              }}
-            />
+        <Box sx={{ p: 2, textAlign: "center" }}>
+          <SignOut size={48} weight="duotone" style={{ color: "#f87171", marginBottom: 16 }} />
+          <Box sx={{ fontSize: "18px", fontWeight: 600, color: "#f8fafc", mb: 1 }}>
+            Sign Out?
           </Box>
-
-          {/* Title */}
-          <Typography
-            id="logout-dialog-title"
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              fontSize: { xs: "18px", sm: "20px" },
-              color: "#1e293b",
-              marginBottom: "12px",
-              background: "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Confirm Logout
-          </Typography>
-
-          {/* Message */}
-          <Typography
-            variant="body1"
-            sx={{
-              color: "#64748b",
-              fontSize: { xs: "12px", sm: "14px" },
-              lineHeight: 1.6,
-              fontWeight: 400,
-              marginBottom: "32px",
-              maxWidth: "300px",
-              margin: "0 auto 32px",
-            }}
-          >
-            Are you sure you want to sign out of your account? You'll need to
-            sign in again to access your dashboard.
-          </Typography>
-
-          {/* Buttons */}
-          <Box
-            sx={{
-              display: "flex",
-              gap: { xs: "12px", sm: "16px" },
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "center",
-            }}
-          >
-            <Button
-              onClick={HandleLogoutCancel}
-              variant="outlined"
-              sx={{ ...cancelButtonStyle, minWidth: { xs: "100%", sm: "120px" }, height: "max-content", borderRadius: "8px" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={HandleLogoutConfirm}
-              variant="contained"
-              sx={{ ...dangerButtonStyle, minWidth: { xs: "100%", sm: "120px" }, height: "max-content", borderRadius: "8px" }}
-            >
-              Sign Out
-            </Button>
+          <Box sx={{ fontSize: "14px", color: "#94a3b8", mb: 2 }}>
+            Are you sure you want to sign out of your account?
           </Box>
         </Box>
+        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 2 }}>
+          <Button
+            onClick={HandleLogoutCancel}
+            sx={{
+              bgcolor: "#334155",
+              color: "#f8fafc",
+              px: 3,
+              py: 1,
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "13px",
+              textTransform: "uppercase",
+              "&:hover": { bgcolor: "#475569" },
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={HandleLogoutConfirm}
+            sx={{
+              bgcolor: "#ef4444",
+              color: "#fff",
+              px: 3,
+              py: 1,
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "13px",
+              textTransform: "uppercase",
+              "&:hover": { bgcolor: "#dc2626" },
+            }}
+          >
+            Sign Out
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );
 };
+
 export default Sidebar;

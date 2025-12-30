@@ -1,23 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Box,
-  Grid,
-  Paper,
-  Typography,
   CircularProgress,
   Alert,
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
 } from "@mui/material";
 import {
-  People,
-  School,
-  Work,
-  BusinessCenter,
-  Category,
-} from "@mui/icons-material";
+  Briefcase,
+  GraduationCap,
+  Users,
+  Buildings,
+  Tag,
+  ChartLineUp,
+  CalendarBlank,
+} from "@phosphor-icons/react";
 import { useGetDashboardCountsApi } from "../Hooks/dashboard";
 import {
   Chart as ChartJS,
@@ -61,27 +59,47 @@ const AdminDashboard = () => {
     {
       title: "Careers",
       count: data?.carrierCount || 0,
-      icon: <BusinessCenter />,
+      icon: Briefcase,
+      color: "#60a5fa", // blue-400
+      iconBg: "rgba(30, 58, 138, 0.4)",
+      cardBg: "linear-gradient(to bottom right, rgba(23, 37, 84, 0.3), rgba(30, 58, 138, 0.1))",
+      borderColor: "rgba(29, 78, 216, 0.3)",
     },
     {
       title: "Courses",
       count: data?.courseCount || 0,
-      icon: <School />,
+      icon: GraduationCap,
+      color: "#4ade80", // green-400
+      iconBg: "rgba(22, 101, 52, 0.4)",
+      cardBg: "linear-gradient(to bottom right, rgba(20, 83, 45, 0.3), rgba(22, 101, 52, 0.1))",
+      borderColor: "rgba(22, 163, 74, 0.3)",
     },
     {
       title: "Users",
       count: data?.userCount || 0,
-      icon: <People />,
+      icon: Users,
+      color: "#c084fc", // purple-400
+      iconBg: "rgba(88, 28, 135, 0.4)",
+      cardBg: "linear-gradient(to bottom right, rgba(59, 7, 100, 0.3), rgba(88, 28, 135, 0.1))",
+      borderColor: "rgba(126, 34, 206, 0.3)",
     },
     {
       title: "Internships",
       count: data?.categoryInternshipCount || 0,
-      icon: <Work />,
+      icon: Buildings,
+      color: "#22d3ee", // cyan-400
+      iconBg: "rgba(22, 78, 99, 0.4)",
+      cardBg: "linear-gradient(to bottom right, rgba(8, 51, 68, 0.3), rgba(22, 78, 99, 0.1))",
+      borderColor: "rgba(14, 116, 144, 0.3)",
     },
     {
       title: "Workshops",
       count: data?.categoryWorkshopCount || 0,
-      icon: <Category />,
+      icon: Tag,
+      color: "#fbbf24", // amber-400
+      iconBg: "rgba(120, 53, 15, 0.4)",
+      cardBg: "linear-gradient(to bottom right, rgba(69, 26, 3, 0.3), rgba(120, 53, 15, 0.1))",
+      borderColor: "rgba(180, 83, 9, 0.3)",
     },
   ];
 
@@ -91,9 +109,9 @@ const AdminDashboard = () => {
       {
         label: "Count",
         data: cards.map((card) => card.count),
-        backgroundColor: "#90caf9",
-        borderRadius: 8,
-        barThickness: 35,
+        backgroundColor: ["#60a5fa", "#4ade80", "#c084fc", "#22d3ee", "#fbbf24"],
+        borderRadius: 6,
+        barThickness: 40,
       },
     ],
   };
@@ -105,48 +123,124 @@ const AdminDashboard = () => {
       legend: { display: false },
       tooltip: {
         enabled: true,
+        backgroundColor: "#1e293b",
+        titleColor: "#f8fafc",
+        bodyColor: "#94a3b8",
+        borderColor: "rgba(71, 85, 105, 0.5)",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 6,
         callbacks: {
           label: function (context: TooltipItem<"bar">) {
             return `Count: ${context.raw}`;
           },
         },
       },
-
     },
     scales: {
       x: {
         grid: { display: false, drawBorder: false },
-        ticks: { color: "#888", font: { size: 12 } },
+        ticks: {
+          color: "#64748b",
+          font: { size: 11, family: "'JetBrains Mono', monospace" }
+        },
       },
       y: {
-        grid: { display: false, drawBorder: false },
-        ticks: { display: false },
+        grid: {
+          display: true,
+          color: "rgba(71, 85, 105, 0.2)",
+          drawBorder: false
+        },
+        ticks: {
+          color: "#64748b",
+          font: { size: 11, family: "'JetBrains Mono', monospace" }
+        },
       },
     },
   };
 
-  return (
-    <Box sx={{ p: 3, "@media (max-width: 600px)": { p: 1 } }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-          flexWrap: "wrap",
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold">
-          Admin Dashboard
-        </Typography>
+  if (isLoading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 400 }}>
+        <CircularProgress sx={{ color: "#60a5fa" }} />
+      </Box>
+    );
+  }
 
-        <FormControl size="small" sx={{ minWidth: 140, mt: { xs: 2, sm: 0 } }}>
-          <InputLabel id="month-year-select-label">Month</InputLabel>
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert
+          severity="error"
+          sx={{
+            bgcolor: "rgba(127, 29, 29, 0.3)",
+            color: "#f87171",
+            border: "1px solid rgba(239, 68, 68, 0.5)",
+            borderRadius: "6px",
+            "& .MuiAlert-icon": { color: "#f87171" },
+          }}
+        >
+          Failed to load dashboard data. Please refresh.
+        </Alert>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <ChartLineUp size={28} weight="duotone" style={{ color: "#60a5fa" }} />
+          <Box
+            component="h1"
+            sx={{
+              fontSize: "24px",
+              fontFamily: "'Chivo', sans-serif",
+              fontWeight: 700,
+              color: "#f8fafc",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              m: 0,
+            }}
+          >
+            Admin Dashboard
+          </Box>
+        </Box>
+
+        <FormControl size="small">
           <Select
-            labelId="month-year-select-label"
             value={monthYear}
-            label="Month"
             onChange={(e) => setMonthYear(e.target.value)}
+            startAdornment={<CalendarBlank size={16} weight="duotone" style={{ color: "#64748b", marginRight: 8 }} />}
+            sx={{
+              minWidth: 150,
+              color: "#f8fafc",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "13px",
+              bgcolor: "rgba(30, 41, 59, 0.4)",
+              border: "1px solid rgba(71, 85, 105, 0.6)",
+              borderRadius: "6px",
+              "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+              "& .MuiSelect-icon": { color: "#64748b" },
+              "&:hover": { borderColor: "#64748b" },
+            }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  bgcolor: "#1e293b",
+                  border: "1px solid rgba(71, 85, 105, 0.5)",
+                  borderRadius: "6px",
+                  "& .MuiMenuItem-root": {
+                    color: "#f8fafc",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: "12px",
+                    "&:hover": { bgcolor: "rgba(51, 65, 85, 0.5)" },
+                    "&.Mui-selected": { bgcolor: "rgba(59, 130, 246, 0.2)", color: "#60a5fa" },
+                  },
+                },
+              },
+            }}
           >
             {getLast12Months().map((month) => (
               <MenuItem key={month} value={month}>
@@ -157,89 +251,113 @@ const AdminDashboard = () => {
         </FormControl>
       </Box>
 
-      {isLoading ? (
-        <CircularProgress />
-      ) : error ? (
-        <Alert severity="error">Failed to load dashboard data.</Alert>
-      ) : (
-        <>
-          {/* Cards */}
-          <Grid
-            container
-            sx={{
-              flexBasis: "100%",
-              gap: 2,
-              justifyContent: "space-between",
-              mb: 4,
-            }}
-          >
-            {cards.map((card, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  flexBasis: "18%",
-                  flexGrow: 1,
-                  "@media (max-width: 600px)": { flexBasis: "100%" },
-                }}
-              >
-                <Paper
-                  elevation={2}
-                  sx={{
-                    p: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {card.title}
-                    </Typography>
-                    <Typography variant="h5" fontWeight="bold">
-                      {card.count}
-                    </Typography>
+      {/* Stats Cards */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "repeat(5, 1fr)" },
+          gap: 2,
+        }}
+      >
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Box
+              key={card.title}
+              sx={{
+                background: card.cardBg,
+                border: `1px solid ${card.borderColor}`,
+                borderRadius: "6px",
+                p: 3,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  borderColor: card.color,
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <Box>
+                  <Box
+                    sx={{
+                      color: "#64748b",
+                      fontSize: "11px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      mb: 1,
+                    }}
+                  >
+                    {card.title}
                   </Box>
                   <Box
                     sx={{
-                      bgcolor: "#f5f5f5",
-                      borderRadius: "50%",
-                      p: 1.2,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      fontSize: "28px",
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: "#f8fafc",
                     }}
                   >
-                    {card.icon}
+                    {card.count}
                   </Box>
-                </Paper>
+                </Box>
+                <Box
+                  sx={{
+                    p: 1.25,
+                    bgcolor: card.iconBg,
+                    borderRadius: "6px",
+                  }}
+                >
+                  <Icon size={24} weight="duotone" style={{ color: card.color }} />
+                </Box>
               </Box>
-            ))}
-          </Grid>
+            </Box>
+          );
+        })}
+      </Box>
 
-          {/* Chart */}
-          <Paper elevation={1} sx={{ p: 2, borderRadius: 2, height: 300 }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 2,
-              }}
-            >
-              <Typography variant="subtitle1" fontWeight="bold">
-                Overview Chart
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {monthYear}
-              </Typography>
-            </Box>
-            <Box sx={{ height: "100%" }}>
-              <Bar data={chartData} options={chartOptions} />
-            </Box>
-          </Paper>
-        </>
-      )}
+      {/* Chart */}
+      <Box
+        sx={{
+          bgcolor: "rgba(30, 41, 59, 0.4)",
+          border: "1px solid rgba(71, 85, 105, 0.6)",
+          borderRadius: "6px",
+          p: 3,
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box
+            sx={{
+              fontSize: "14px",
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#94a3b8",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <ChartLineUp size={16} weight="duotone" />
+            Overview Chart
+          </Box>
+          <Box
+            sx={{
+              fontSize: "12px",
+              fontFamily: "'JetBrains Mono', monospace",
+              color: "#64748b",
+              px: 1.5,
+              py: 0.5,
+              bgcolor: "rgba(51, 65, 85, 0.5)",
+              borderRadius: "4px",
+            }}
+          >
+            {monthYear}
+          </Box>
+        </Box>
+        <Box sx={{ height: 280 }}>
+          <Bar data={chartData} options={chartOptions} />
+        </Box>
+      </Box>
     </Box>
   );
 };

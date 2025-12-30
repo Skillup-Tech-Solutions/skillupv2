@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-    Box,
-    Typography,
-    Tabs,
-    Tab,
-    Paper,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { MdAttachMoney, MdHistory, MdSettings } from "react-icons/md";
 import GeneratePayslip from "./GeneratePayslip";
@@ -27,71 +21,59 @@ const PayrollManagement = () => {
         }
     }, [location.pathname]);
 
-    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-        setTabValue(newValue);
-    };
-
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {/* Header */}
-            <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-                Payroll Management
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <MdAttachMoney size={28} style={{ color: "#4ade80" }} />
+                <Box component="h1" sx={{ fontSize: "24px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em", m: 0 }}>
+                    Payroll Management
+                </Box>
+            </Box>
 
-            {/* Main Tabs */}
-            <Paper sx={{ mb: 3 }}>
-                <Tabs
-                    value={tabValue}
-                    onChange={handleTabChange}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    sx={{
-                        "& .MuiTab-root": {
-                            fontWeight: 600,
-                            textTransform: "none",
-                            fontSize: "0.95rem",
-                            minHeight: 56,
-                        }
-                    }}
-                >
-                    <Tab
-                        label="Generate Payslip"
-                        icon={<MdAttachMoney size={20} />}
-                        iconPosition="start"
-                        sx={{ gap: 1 }}
-                    />
-                    <Tab
-                        label="Payslip History"
-                        icon={<MdHistory size={20} />}
-                        iconPosition="start"
-                        sx={{ gap: 1 }}
-                    />
-                    <Tab
-                        label="Payroll Settings"
-                        icon={<MdSettings size={20} />}
-                        iconPosition="start"
-                        sx={{ gap: 1 }}
-                    />
-                </Tabs>
-            </Paper>
+            {/* Tabs */}
+            <Box sx={{ display: "flex", gap: 1, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", pb: 0 }}>
+                {[
+                    { label: "Generate Payslip", icon: <MdAttachMoney size={18} /> },
+                    { label: "Payslip History", icon: <MdHistory size={18} /> },
+                    { label: "Payroll Settings", icon: <MdSettings size={18} /> },
+                ].map((tab, index) => {
+                    const isActive = tabValue === index;
+                    return (
+                        <Box key={index} onClick={() => setTabValue(index)}
+                            sx={{
+                                display: "flex", alignItems: "center", gap: 1, px: 2, py: 1.5, cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                borderBottom: isActive ? "2px solid #60a5fa" : "2px solid transparent",
+                                color: isActive ? "#60a5fa" : "#94a3b8",
+                                "&:hover": { color: isActive ? "#60a5fa" : "#f8fafc" },
+                            }}>
+                            {tab.icon}
+                            <Box sx={{ fontSize: "13px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                {tab.label}
+                            </Box>
+                        </Box>
+                    );
+                })}
+            </Box>
 
             {/* TAB 0: GENERATE PAYSLIP */}
             {tabValue === 0 && (
-                <Box sx={{ mx: -3 }}>
+                <Box>
                     <GeneratePayslip />
                 </Box>
             )}
 
             {/* TAB 1: HISTORY */}
             {tabValue === 1 && (
-                <Box sx={{ mx: -3 }}>
+                <Box>
                     <PayslipHistory />
                 </Box>
             )}
 
             {/* TAB 2: SETTINGS */}
             {tabValue === 2 && (
-                <Box sx={{ mx: -3 }}>
+                <Box>
                     <PayslipSettings />
                 </Box>
             )}

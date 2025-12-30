@@ -1,11 +1,17 @@
-import { Box, Typography, Card, CardContent, Button, Divider, CircularProgress, Alert } from "@mui/material";
+import { Box, Button, Alert } from "@mui/material";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { useGetPaymentSettings } from "../../Hooks/payment";
-import { MdPayment, MdAccountBalance, MdQrCode2, MdArrowBack, MdContentCopy } from "react-icons/md";
-import { primaryButtonStyle, outlinedButtonStyle } from "../../assets/Styles/ButtonStyles";
+import {
+    CreditCard,
+    Bank,
+    QrCode,
+    ArrowLeft,
+    Copy,
+    Sparkle,
+} from "@phosphor-icons/react";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 
 const Pay = () => {
@@ -33,16 +39,36 @@ const Pay = () => {
 
     if (!assignmentId) {
         return (
-            <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 600, mx: "auto", textAlign: "center" }}>
-                <Alert severity="error" sx={{ fontFamily: "Regular_W" }}>Invalid payment link</Alert>
+            <Box sx={{ p: 3, maxWidth: 600, mx: "auto" }}>
+                <Alert
+                    severity="error"
+                    sx={{ bgcolor: "rgba(127, 29, 29, 0.3)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.5)", "& .MuiAlert-icon": { color: "#ef4444" } }}
+                >
+                    Invalid payment link
+                </Alert>
             </Box>
         );
     }
 
     if (isLoading) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress sx={{ color: "var(--webprimary)" }} />
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "64vh", gap: 2 }}>
+                <Box sx={{ position: "relative" }}>
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "2px solid #334155",
+                            borderTopColor: "#3b82f6",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                        }}
+                    />
+                </Box>
+                <Box sx={{ color: "#64748b", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Loading Payment...
+                </Box>
             </Box>
         );
     }
@@ -51,14 +77,22 @@ const Pay = () => {
 
     if (!assignment) {
         return (
-            <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 600, mx: "auto" }}>
-                <Alert severity="error" sx={{ fontFamily: "Regular_W" }}>
+            <Box sx={{ p: 3, maxWidth: 600, mx: "auto" }}>
+                <Alert
+                    severity="error"
+                    sx={{ bgcolor: "rgba(127, 29, 29, 0.3)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.5)", "& .MuiAlert-icon": { color: "#ef4444" } }}
+                >
                     Assignment not found or you are not authorized to view it.
                 </Alert>
                 <Button
-                    startIcon={<MdArrowBack />}
+                    startIcon={<ArrowLeft size={18} />}
                     onClick={() => navigate('/student/my-projects')}
-                    sx={{ mt: 2, fontFamily: "Medium_W", textTransform: "none" }}
+                    sx={{
+                        mt: 2,
+                        color: "#94a3b8",
+                        fontSize: "13px",
+                        "&:hover": { bgcolor: "rgba(51, 65, 85, 0.5)" }
+                    }}
                 >
                     Back to Projects
                 </Button>
@@ -70,147 +104,163 @@ const Pay = () => {
     const itemName = assignment.itemId?.title || assignment.itemId?.name || "Item";
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 600, mx: "auto" }}>
-            {/* Page Header */}
+        <Box sx={{ maxWidth: 600, mx: "auto" }}>
+            {/* Back Button */}
+            <Button
+                startIcon={<ArrowLeft size={18} />}
+                onClick={() => navigate(-1)}
+                sx={{
+                    mb: 3,
+                    color: "#94a3b8",
+                    fontSize: "13px",
+                    "&:hover": { bgcolor: "rgba(51, 65, 85, 0.5)" }
+                }}
+            >
+                Go Back
+            </Button>
+
+            {/* Header */}
             <Box sx={{ mb: 4 }}>
-                <Button
-                    startIcon={<MdArrowBack />}
-                    onClick={() => navigate(-1)}
+                <Box
+                    component="h1"
                     sx={{
-                        fontFamily: "Medium_W",
-                        fontSize: "13px",
-                        textTransform: "none",
-                        color: "var(--greyText)",
-                        mb: 2,
-                        "&:hover": { bgcolor: "#f5f5f5" },
+                        fontSize: { xs: "20px", md: "24px" },
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
                     }}
                 >
-                    Go Back
-                </Button>
-                <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    gutterBottom
-                    sx={{
-                        fontFamily: "SemiBold_W",
-                        fontSize: "24px",
-                        color: "var(--title)",
-                        "@media (max-width: 768px)": { fontSize: "22px" },
-                    }}
-                >
+                    <CreditCard size={28} weight="duotone" color="#3b82f6" />
                     Complete Payment
-                </Typography>
-                <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--greyText)" }}>
-                    Pay for: <strong>{itemName}</strong>
-                </Typography>
+                </Box>
+                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: "14px" }}>
+                    Pay for: <Box component="span" sx={{ color: "#f8fafc", fontWeight: 500 }}>{itemName}</Box>
+                </Box>
             </Box>
 
             {/* Amount Card */}
-            <Card sx={{
-                border: "1px solid #e0e0e0",
-                borderRadius: "10px",
-                overflow: "hidden",
-                mb: 3,
-            }}>
-                <Box sx={{
-                    background: "linear-gradient(135deg, var(--webprimary), #8b5cf6)",
-                    p: 3,
+            <Box
+                sx={{
+                    background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                    borderRadius: "16px",
+                    p: 4,
                     textAlign: "center",
-                }}>
-                    <Typography sx={{ fontFamily: "Medium_W", fontSize: "12px", color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1 }}>
-                        Amount Due
-                    </Typography>
-                    <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "42px", color: "#fff", mt: 1 }}>
-                        ₹{amount.toLocaleString()}
-                    </Typography>
+                    mb: 3,
+                    position: "relative",
+                    overflow: "hidden",
+                }}
+            >
+                <Sparkle
+                    size={100}
+                    weight="duotone"
+                    style={{
+                        position: "absolute",
+                        right: -20,
+                        top: -20,
+                        color: "rgba(255,255,255,0.1)",
+                    }}
+                />
+                <Box sx={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Amount Due
                 </Box>
-            </Card>
+                <Box sx={{ fontFamily: "'Chivo', sans-serif", fontSize: "48px", fontWeight: 900, color: "#fff", mt: 1 }}>
+                    ₹{amount.toLocaleString()}
+                </Box>
+            </Box>
 
             {/* Payment Options */}
-            <Card sx={{
-                border: "1px solid #e0e0e0",
-                borderRadius: "10px",
-                overflow: "hidden",
-            }}>
-                <CardContent sx={{ p: 3 }}>
+            <Box
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                <Box sx={{ p: 3 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
                         <Box
                             sx={{
                                 width: 40,
                                 height: 40,
                                 borderRadius: "10px",
-                                bgcolor: "#eff6ff",
+                                bgcolor: "rgba(59, 130, 246, 0.2)",
+                                border: "1px solid rgba(59, 130, 246, 0.3)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
                         >
-                            <MdPayment size={20} color="var(--webprimary)" />
+                            <CreditCard size={20} weight="duotone" color="#3b82f6" />
                         </Box>
-                        <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "16px", color: "var(--title)" }}>
+                        <Box sx={{ fontFamily: "'Chivo', sans-serif", fontSize: "16px", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                             Payment Options
-                        </Typography>
+                        </Box>
                     </Box>
 
                     {/* Bank Transfer */}
                     {paymentSettings?.enableBankTransfer && (
                         <Box sx={{ mb: 3 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                                <MdAccountBalance size={18} color="var(--webprimary)" />
-                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "14px", color: "var(--title)" }}>
-                                    Bank Transfer
-                                </Typography>
+                                <Bank size={18} weight="duotone" color="#3b82f6" />
+                                <Box sx={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc" }}>Bank Transfer</Box>
                             </Box>
-                            <Box sx={{
-                                bgcolor: "#f8fafc",
-                                borderRadius: "8px",
-                                p: 2,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 1.5,
-                            }}>
-                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
-                                            Account Holder
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--title)" }}>
-                                            {paymentSettings.bankDetails?.accountHolderName || "-"}
-                                        </Typography>
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.5)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                }}
+                            >
+                                <Box>
+                                    <Box sx={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.5 }}>
+                                        Account Holder
+                                    </Box>
+                                    <Box sx={{ fontSize: "14px", color: "#f8fafc" }}>
+                                        {paymentSettings.bankDetails?.accountHolderName || "-"}
                                     </Box>
                                 </Box>
                                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
+                                        <Box sx={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.5 }}>
                                             Account Number
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--title)" }}>
+                                        </Box>
+                                        <Box sx={{ fontSize: "14px", color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
                                             {paymentSettings.bankDetails?.accountNumber || "-"}
-                                        </Typography>
+                                        </Box>
                                     </Box>
                                     <Button
                                         size="small"
-                                        startIcon={<MdContentCopy size={14} />}
+                                        startIcon={<Copy size={14} />}
                                         onClick={() => copyToClipboard(paymentSettings.bankDetails?.accountNumber || "", "Account number")}
-                                        sx={{ fontFamily: "Medium_W", fontSize: "11px", textTransform: "none" }}
+                                        sx={{ color: "#60a5fa", fontSize: "11px", fontWeight: 500 }}
                                     >
                                         Copy
                                     </Button>
                                 </Box>
                                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                     <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
+                                        <Box sx={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.5 }}>
                                             Bank & IFSC
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--title)" }}>
-                                            {paymentSettings.bankDetails?.bankName || "-"} | {paymentSettings.bankDetails?.ifsc || "-"}
-                                        </Typography>
+                                        </Box>
+                                        <Box sx={{ fontSize: "14px", color: "#f8fafc" }}>
+                                            {paymentSettings.bankDetails?.bankName || "-"} | <Box component="span" sx={{ fontFamily: "'JetBrains Mono', monospace" }}>{paymentSettings.bankDetails?.ifsc || "-"}</Box>
+                                        </Box>
                                     </Box>
                                     <Button
                                         size="small"
-                                        startIcon={<MdContentCopy size={14} />}
+                                        startIcon={<Copy size={14} />}
                                         onClick={() => copyToClipboard(paymentSettings.bankDetails?.ifsc || "", "IFSC code")}
-                                        sx={{ fontFamily: "Medium_W", fontSize: "11px", textTransform: "none" }}
+                                        sx={{ color: "#60a5fa", fontSize: "11px", fontWeight: 500 }}
                                     >
                                         Copy
                                     </Button>
@@ -219,39 +269,41 @@ const Pay = () => {
                         </Box>
                     )}
 
-                    {paymentSettings?.enableBankTransfer && paymentSettings?.enableUPI && <Divider sx={{ my: 2 }} />}
+                    {paymentSettings?.enableBankTransfer && paymentSettings?.enableUPI && (
+                        <Box sx={{ height: 1, bgcolor: "rgba(71, 85, 105, 0.4)", my: 3 }} />
+                    )}
 
                     {/* UPI */}
                     {paymentSettings?.enableUPI && (
                         <Box>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                                <MdQrCode2 size={18} color="#8b5cf6" />
-                                <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "14px", color: "var(--title)" }}>
-                                    UPI Payment
-                                </Typography>
+                                <QrCode size={18} weight="duotone" color="#a855f7" />
+                                <Box sx={{ fontSize: "14px", fontWeight: 600, color: "#f8fafc" }}>UPI Payment</Box>
                             </Box>
-                            <Box sx={{
-                                bgcolor: "#f8fafc",
-                                borderRadius: "8px",
-                                p: 2,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 3,
-                                flexWrap: "wrap",
-                            }}>
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.5)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 3,
+                                    flexWrap: "wrap",
+                                }}
+                            >
                                 <Box sx={{ flex: 1, minWidth: 150 }}>
-                                    <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase", mb: 0.5 }}>
+                                    <Box sx={{ fontSize: "10px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", mb: 0.5 }}>
                                         UPI ID
-                                    </Typography>
+                                    </Box>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--title)" }}>
+                                        <Box sx={{ fontSize: "14px", color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
                                             {paymentSettings.upiId || "-"}
-                                        </Typography>
+                                        </Box>
                                         <Button
                                             size="small"
-                                            startIcon={<MdContentCopy size={14} />}
+                                            startIcon={<Copy size={14} />}
                                             onClick={() => copyToClipboard(paymentSettings.upiId || "", "UPI ID")}
-                                            sx={{ fontFamily: "Medium_W", fontSize: "11px", textTransform: "none" }}
+                                            sx={{ color: "#c084fc", fontSize: "11px", fontWeight: 500 }}
                                         >
                                             Copy
                                         </Button>
@@ -265,33 +317,54 @@ const Pay = () => {
                                         sx={{
                                             width: 120,
                                             height: 120,
-                                            borderRadius: "8px",
-                                            border: "1px solid #e0e0e0",
+                                            borderRadius: "12px",
+                                            border: "1px solid rgba(71, 85, 105, 0.6)",
+                                            bgcolor: "#fff",
+                                            p: 1,
                                         }}
                                     />
                                 )}
                             </Box>
                         </Box>
                     )}
-                </CardContent>
-            </Card>
+                </Box>
+            </Box>
 
             {/* Actions */}
             <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: "wrap" }}>
                 {paymentSettings?.qrUrl && (
                     <Button
-                        variant="contained"
                         onClick={() => window.open(paymentSettings.qrUrl, '_blank')}
-                        sx={{ ...primaryButtonStyle }}
+                        startIcon={<QrCode size={18} />}
+                        sx={{
+                            bgcolor: "#3b82f6",
+                            color: "#fff",
+                            px: 3,
+                            py: 1,
+                            borderRadius: "8px",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            textTransform: "uppercase",
+                            "&:hover": { bgcolor: "#2563eb" },
+                        }}
                     >
                         Open QR in New Tab
                     </Button>
                 )}
                 <Button
-                    variant="outlined"
-                    startIcon={<MdArrowBack />}
+                    startIcon={<ArrowLeft size={18} />}
                     onClick={() => navigate('/student/my-projects')}
-                    sx={{ ...outlinedButtonStyle }}
+                    sx={{
+                        bgcolor: "#334155",
+                        color: "#f8fafc",
+                        px: 3,
+                        py: 1,
+                        borderRadius: "8px",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        textTransform: "uppercase",
+                        "&:hover": { bgcolor: "#475569" },
+                    }}
                 >
                     Back to Projects
                 </Button>

@@ -1,22 +1,21 @@
 import { useState, useEffect } from "react";
-import {
-    Box,
-    Typography,
-    CircularProgress,
-    Alert,
-    Card,
-    CardContent,
-    TextField,
-    Button,
-    Avatar,
-    Divider,
-} from "@mui/material";
+import { Box, TextField, Button, CircularProgress, Alert } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
-import { MdPerson, MdEmail, MdPhone, MdCalendarToday, MdSecurity, MdEdit } from "react-icons/md";
-import { primaryButtonStyle, outlinedButtonStyle } from "../../assets/Styles/ButtonStyles";
+import {
+    User,
+    Envelope,
+    Phone,
+    CalendarBlank,
+    Lock,
+    PencilSimple,
+    CheckCircle,
+    XCircle,
+    Sparkle,
+    IdentificationBadge,
+} from "@phosphor-icons/react";
 
 interface UserProfile {
     _id: string;
@@ -47,7 +46,6 @@ const StudentProfile = () => {
         },
     });
 
-    // Set form data when data loads
     useEffect(() => {
         if (data) {
             setFormData({ name: data.name, mobile: data.mobile });
@@ -69,7 +67,6 @@ const StudentProfile = () => {
             queryClient.invalidateQueries({ queryKey: ["student-profile"] });
             CustomSnackBar.successSnackbar("Profile updated successfully!");
             setIsEditing(false);
-            // Update cookie
             Cookies.set("name", formData.name, { path: "/" });
         },
         onError: (error: any) => {
@@ -132,8 +129,43 @@ const StudentProfile = () => {
 
     if (isLoading) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress sx={{ color: "var(--webprimary)" }} />
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "64vh",
+                    gap: 2,
+                }}
+            >
+                <Box sx={{ position: "relative" }}>
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "2px solid #334155",
+                            borderTopColor: "#3b82f6",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": {
+                                "0%": { transform: "rotate(0deg)" },
+                                "100%": { transform: "rotate(360deg)" },
+                            },
+                        }}
+                    />
+                </Box>
+                <Box
+                    sx={{
+                        color: "#64748b",
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: "11px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.1em",
+                    }}
+                >
+                    Loading Profile...
+                </Box>
             </Box>
         );
     }
@@ -141,375 +173,514 @@ const StudentProfile = () => {
     if (error) {
         return (
             <Box sx={{ p: 3 }}>
-                <Alert severity="error">Failed to load profile. Please try again.</Alert>
+                <Alert
+                    severity="error"
+                    sx={{
+                        bgcolor: "rgba(127, 29, 29, 0.3)",
+                        color: "#f87171",
+                        border: "1px solid rgba(239, 68, 68, 0.5)",
+                        "& .MuiAlert-icon": { color: "#f87171" },
+                    }}
+                >
+                    Failed to load profile. Please try again.
+                </Alert>
             </Box>
         );
     }
 
-    return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 700, mx: "auto" }}>
-            {/* Page Header */}
-            <Box sx={{ mb: 4 }}>
-                <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    gutterBottom
-                    sx={{
-                        fontFamily: "SemiBold_W",
-                        fontSize: "24px",
-                        color: "var(--title)",
-                        "@media (max-width: 768px)": { fontSize: "22px" },
-                    }}
-                >
-                    My Profile
-                </Typography>
-                <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--greyText)" }}>
-                    Manage your account information and security settings
-                </Typography>
-            </Box>
+    const inputStyles = {
+        "& .MuiOutlinedInput-root": {
+            bgcolor: "#0f172a",
+            color: "#f8fafc",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "14px",
+            borderRadius: "8px",
+            "& fieldset": { borderColor: "#475569" },
+            "&:hover fieldset": { borderColor: "#64748b" },
+            "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
+        },
+        "& .MuiInputLabel-root": {
+            color: "#64748b",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "14px",
+        },
+        "& .MuiInputLabel-root.Mui-focused": { color: "#3b82f6" },
+        "& .MuiFormHelperText-root": { color: "#64748b", fontFamily: "'Inter', sans-serif" },
+    };
 
-            {/* Profile Card */}
-            <Card
-                sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "10px",
-                    overflow: "hidden",
-                    mb: 3,
-                }}
-            >
-                {/* Profile Header */}
+    return (
+        <Box sx={{ maxWidth: 700, mx: "auto" }}>
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
                 <Box
+                    component="h1"
                     sx={{
-                        background: "linear-gradient(135deg, var(--webprimary), #8b5cf6)",
-                        p: 3,
+                        fontSize: { xs: "20px", md: "24px" },
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
                         display: "flex",
                         alignItems: "center",
-                        gap: 3,
+                        gap: 1.5,
                     }}
                 >
-                    <Avatar
+                    <User size={28} weight="duotone" color="#60a5fa" />
+                    My Profile
+                </Box>
+                <Box
+                    component="p"
+                    sx={{
+                        color: "#64748b",
+                        mt: 1,
+                        fontSize: "14px",
+                    }}
+                >
+                    Manage your account and identity verification
+                </Box>
+            </Box>
+
+            {/* Profile Photo Section */}
+            <Box
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "12px",
+                    p: 3,
+                    mb: 3,
+                    position: "relative",
+                    overflow: "hidden",
+                }}
+            >
+                <Sparkle
+                    size={100}
+                    weight="duotone"
+                    style={{
+                        position: "absolute",
+                        right: -16,
+                        top: -16,
+                        color: "rgba(71, 85, 105, 0.2)",
+                    }}
+                />
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 3, position: "relative", zIndex: 10 }}>
+                    {/* Avatar */}
+                    <Box
                         sx={{
                             width: 80,
                             height: 80,
-                            fontSize: 32,
-                            bgcolor: "rgba(255,255,255,0.2)",
-                            border: "3px solid rgba(255,255,255,0.3)",
-                            fontFamily: "SemiBold_W",
+                            borderRadius: "12px",
+                            background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#fff",
+                            fontSize: "32px",
+                            fontWeight: 700,
+                            fontFamily: "'Chivo', sans-serif",
+                            flexShrink: 0,
                         }}
                     >
                         {data?.name?.charAt(0).toUpperCase()}
-                    </Avatar>
+                    </Box>
+
+                    {/* Name & Status */}
                     <Box>
-                        <Typography
+                        <Box
+                            component="h2"
                             sx={{
-                                fontFamily: "SemiBold_W",
                                 fontSize: "22px",
-                                color: "#fff",
+                                fontWeight: 700,
+                                color: "#f8fafc",
+                                m: 0,
+                                mb: 0.5,
                             }}
                         >
                             {data?.name}
-                        </Typography>
-                        <Typography
+                        </Box>
+                        <Box
+                            component="p"
                             sx={{
-                                fontFamily: "Regular_W",
+                                color: "#94a3b8",
                                 fontSize: "14px",
-                                color: "rgba(255,255,255,0.8)",
+                                m: 0,
+                                mb: 1,
                             }}
                         >
                             {data?.email}
-                        </Typography>
+                        </Box>
                         <Box
                             sx={{
-                                mt: 1,
-                                px: 2,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                px: 1.5,
                                 py: 0.5,
-                                display: "inline-block",
-                                borderRadius: "20px",
-                                backgroundColor:
-                                    data?.status === "Active" || data?.status === "Self-Signed"
-                                        ? "rgba(34, 197, 94, 0.2)"
-                                        : "rgba(245, 158, 11, 0.2)",
-                                border:
-                                    data?.status === "Active" || data?.status === "Self-Signed"
-                                        ? "1px solid rgba(34, 197, 94, 0.4)"
-                                        : "1px solid rgba(245, 158, 11, 0.4)",
+                                borderRadius: "8px",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                ...(data?.status === "Active" || data?.status === "Self-Signed"
+                                    ? {
+                                        bgcolor: "rgba(22, 101, 52, 0.3)",
+                                        color: "#4ade80",
+                                        border: "1px solid rgba(34, 197, 94, 0.5)",
+                                    }
+                                    : {
+                                        bgcolor: "rgba(120, 53, 15, 0.3)",
+                                        color: "#fbbf24",
+                                        border: "1px solid rgba(245, 158, 11, 0.5)",
+                                    }),
                             }}
                         >
-                            <Typography
-                                sx={{
-                                    fontFamily: "Medium_W",
-                                    fontSize: "12px",
-                                    color: "#fff",
-                                }}
-                            >
-                                {data?.status}
-                            </Typography>
+                            {data?.status === "Active" || data?.status === "Self-Signed" ? (
+                                <CheckCircle size={14} weight="fill" />
+                            ) : null}
+                            {data?.status}
                         </Box>
                     </Box>
                 </Box>
+            </Box>
 
-                {/* Profile Details */}
-                <CardContent sx={{ p: 3 }}>
-                    {isEditing ? (
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <TextField
-                                label="Full Name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                fullWidth
-                                size="small"
-                                sx={{
-                                    "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                    "& .MuiInputLabel-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                }}
-                            />
-                            <TextField
-                                label="Mobile Number"
-                                value={formData.mobile}
-                                onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                                fullWidth
-                                size="small"
-                                sx={{
-                                    "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                    "& .MuiInputLabel-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                }}
-                            />
-                            <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleSave}
-                                    disabled={updateMutation.isPending}
-                                    sx={{ ...primaryButtonStyle }}
-                                >
-                                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    onClick={() => {
-                                        setIsEditing(false);
-                                        setFormData({ name: data?.name || "", mobile: data?.mobile || "" });
-                                    }}
-                                    sx={{ ...outlinedButtonStyle }}
-                                >
-                                    Cancel
-                                </Button>
-                            </Box>
-                        </Box>
-                    ) : (
-                        <Box>
-                            {/* Info Items */}
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "10px",
-                                            bgcolor: "#eff6ff",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <MdPerson size={20} color="var(--webprimary)" />
-                                    </Box>
-                                    <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
-                                            Full Name
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "15px", color: "var(--title)" }}>
-                                            {data?.name}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "10px",
-                                            bgcolor: "#f5f3ff",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <MdEmail size={20} color="#8b5cf6" />
-                                    </Box>
-                                    <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
-                                            Email Address
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "15px", color: "var(--title)" }}>
-                                            {data?.email}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "10px",
-                                            bgcolor: "#f0fdf4",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <MdPhone size={20} color="#22c55e" />
-                                    </Box>
-                                    <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
-                                            Mobile Number
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "15px", color: "var(--title)" }}>
-                                            {data?.mobile || "Not provided"}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                    <Box
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: "10px",
-                                            bgcolor: "#fffbeb",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                        }}
-                                    >
-                                        <MdCalendarToday size={20} color="#f59e0b" />
-                                    </Box>
-                                    <Box>
-                                        <Typography sx={{ fontFamily: "Medium_W", fontSize: "11px", color: "var(--greyText)", textTransform: "uppercase" }}>
-                                            Member Since
-                                        </Typography>
-                                        <Typography sx={{ fontFamily: "Regular_W", fontSize: "15px", color: "var(--title)" }}>
-                                            {data?.createdAt
-                                                ? new Date(data.createdAt).toLocaleDateString("en-US", {
-                                                    year: "numeric",
-                                                    month: "long",
-                                                    day: "numeric",
-                                                })
-                                                : "N/A"}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-
-                            <Divider sx={{ my: 3 }} />
-
-                            <Button
-                                variant="contained"
-                                startIcon={<MdEdit />}
-                                onClick={() => setIsEditing(true)}
-                                sx={{ ...primaryButtonStyle }}
-                            >
-                                Edit Profile
-                            </Button>
-                        </Box>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Security Card */}
-            <Card
+            {/* Account Info Section */}
+            <Box
                 sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "10px",
-                    overflow: "hidden",
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "12px",
+                    p: 3,
+                    mb: 3,
                 }}
             >
-                <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
-                        <Box
-                            sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "10px",
-                                bgcolor: "#fef2f2",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                            }}
-                        >
-                            <MdSecurity size={20} color="#ef4444" />
-                        </Box>
-                        <Box>
-                            <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "16px", color: "var(--title)" }}>
-                                Security Settings
-                            </Typography>
-                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "12px", color: "var(--greyText)" }}>
-                                Update your password to keep your account secure
-                            </Typography>
-                        </Box>
-                    </Box>
+                <Box
+                    component="h2"
+                    sx={{
+                        fontSize: "16px",
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
+                        mb: 2.5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                    }}
+                >
+                    <IdentificationBadge size={20} weight="duotone" color="#a855f7" />
+                    Account Information
+                </Box>
 
+                {isEditing ? (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                         <TextField
-                            label="Current Password"
-                            type="password"
-                            value={passwordData.currentPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            label="Full Name"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             fullWidth
-                            size="small"
-                            sx={{
-                                "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                "& .MuiInputLabel-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                            }}
+                            sx={inputStyles}
                         />
                         <TextField
-                            label="New Password"
-                            type="password"
-                            value={passwordData.newPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            label="Mobile Number"
+                            value={formData.mobile}
+                            onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                             fullWidth
-                            size="small"
-                            helperText="Minimum 6 characters"
-                            sx={{
-                                "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                "& .MuiInputLabel-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                "& .MuiFormHelperText-root": { fontFamily: "Regular_W", fontSize: "11px" },
-                            }}
+                            sx={inputStyles}
                         />
-                        <TextField
-                            label="Confirm New Password"
-                            type="password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                            fullWidth
-                            size="small"
-                            sx={{
-                                "& .MuiInputBase-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                                "& .MuiInputLabel-root": { fontFamily: "Regular_W", fontSize: "14px" },
-                            }}
-                        />
-                        <Box sx={{ mt: 1 }}>
+                        <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
                             <Button
-                                variant="contained"
-                                onClick={handleChangePassword}
-                                disabled={passwordMutation.isPending}
+                                onClick={handleSave}
+                                disabled={updateMutation.isPending}
                                 sx={{
-                                    bgcolor: "#ef4444",
-                                    fontFamily: "Medium_W",
-                                    fontSize: "13px",
-                                    textTransform: "none",
+                                    bgcolor: "#3b82f6",
+                                    color: "#fff",
+                                    px: 3,
+                                    py: 1,
                                     borderRadius: "8px",
-                                    px: 4,
-                                    "&:hover": { bgcolor: "#dc2626" },
+                                    fontWeight: 600,
+                                    fontSize: "13px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    "&:hover": { bgcolor: "#2563eb" },
+                                    "&:disabled": { opacity: 0.5 },
                                 }}
                             >
-                                {passwordMutation.isPending ? "Updating..." : "Update Password"}
+                                {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                            </Button>
+                            <Button
+                                onClick={() => {
+                                    setIsEditing(false);
+                                    setFormData({ name: data?.name || "", mobile: data?.mobile || "" });
+                                }}
+                                sx={{
+                                    bgcolor: "#334155",
+                                    color: "#f8fafc",
+                                    px: 3,
+                                    py: 1,
+                                    borderRadius: "8px",
+                                    fontWeight: 600,
+                                    fontSize: "13px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.05em",
+                                    "&:hover": { bgcolor: "#475569" },
+                                }}
+                            >
+                                Cancel
                             </Button>
                         </Box>
                     </Box>
-                </CardContent>
-            </Card>
+                ) : (
+                    <Box>
+                        <Box
+                            sx={{
+                                display: "grid",
+                                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                                gap: 2,
+                            }}
+                        >
+                            {/* Full Name */}
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.4)",
+                                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                }}
+                            >
+                                <Box
+                                    component="label"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        fontSize: "10px",
+                                        color: "#64748b",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.1em",
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    <User size={12} /> Full Name
+                                </Box>
+                                <Box sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "16px" }}>
+                                    {data?.name}
+                                </Box>
+                            </Box>
+
+                            {/* Email */}
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.4)",
+                                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                }}
+                            >
+                                <Box
+                                    component="label"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        fontSize: "10px",
+                                        color: "#64748b",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.1em",
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    <Envelope size={12} /> Email
+                                </Box>
+                                <Box sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "14px", wordBreak: "break-all" }}>
+                                    {data?.email}
+                                </Box>
+                            </Box>
+
+                            {/* Mobile */}
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.4)",
+                                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                }}
+                            >
+                                <Box
+                                    component="label"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        fontSize: "10px",
+                                        color: "#64748b",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.1em",
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    <Phone size={12} /> Mobile
+                                </Box>
+                                <Box sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "16px" }}>
+                                    {data?.mobile || "Not provided"}
+                                </Box>
+                            </Box>
+
+                            {/* Member Since */}
+                            <Box
+                                sx={{
+                                    bgcolor: "rgba(15, 23, 42, 0.4)",
+                                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                                    borderRadius: "12px",
+                                    p: 2,
+                                }}
+                            >
+                                <Box
+                                    component="label"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        fontSize: "10px",
+                                        color: "#64748b",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.1em",
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    <CalendarBlank size={12} /> Member Since
+                                </Box>
+                                <Box sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "14px" }}>
+                                    {data?.createdAt
+                                        ? new Date(data.createdAt).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                        })
+                                        : "N/A"}
+                                </Box>
+                            </Box>
+                        </Box>
+
+                        <Button
+                            onClick={() => setIsEditing(true)}
+                            startIcon={<PencilSimple size={16} />}
+                            sx={{
+                                mt: 3,
+                                bgcolor: "#3b82f6",
+                                color: "#fff",
+                                px: 3,
+                                py: 1,
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                fontSize: "13px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                "&:hover": { bgcolor: "#2563eb" },
+                            }}
+                        >
+                            Edit Profile
+                        </Button>
+                    </Box>
+                )}
+            </Box>
+
+            {/* Security Section */}
+            <Box
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "12px",
+                    p: 3,
+                }}
+            >
+                <Box
+                    component="h2"
+                    sx={{
+                        fontSize: "16px",
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
+                        mb: 0.5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                    }}
+                >
+                    <Lock size={20} weight="duotone" color="#ef4444" />
+                    Security Settings
+                </Box>
+                <Box
+                    component="p"
+                    sx={{
+                        color: "#64748b",
+                        fontSize: "13px",
+                        m: 0,
+                        mb: 3,
+                    }}
+                >
+                    Update your password to keep your account secure
+                </Box>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <TextField
+                        label="Current Password"
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        fullWidth
+                        sx={inputStyles}
+                    />
+                    <TextField
+                        label="New Password"
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        fullWidth
+                        helperText="Minimum 6 characters"
+                        sx={inputStyles}
+                    />
+                    <TextField
+                        label="Confirm New Password"
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        fullWidth
+                        sx={inputStyles}
+                    />
+                    <Box sx={{ mt: 1 }}>
+                        <Button
+                            onClick={handleChangePassword}
+                            disabled={passwordMutation.isPending}
+                            sx={{
+                                bgcolor: "#ef4444",
+                                color: "#fff",
+                                px: 3,
+                                py: 1,
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                fontSize: "13px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                "&:hover": { bgcolor: "#dc2626" },
+                                "&:disabled": { opacity: 0.5 },
+                            }}
+                        >
+                            {passwordMutation.isPending ? "Updating..." : "Update Password"}
+                        </Button>
+                    </Box>
+                </Box>
+            </Box>
         </Box>
     );
 };

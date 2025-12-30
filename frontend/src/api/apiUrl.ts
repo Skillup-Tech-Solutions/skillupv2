@@ -20,4 +20,5 @@ export const apiUrls = {
   coursesMail: "course-mail",
   carrerMail: "career-mail",
   categoryMail: "category-mail",
+  liveSessions: "live-sessions",
 };

@@ -1,48 +1,85 @@
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, type GridColDef } from "@mui/x-data-grid";
 import {
   Box,
   IconButton,
   Switch,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
   Button,
-  Typography,
-  Modal,
+  CircularProgress,
 } from "@mui/material";
-import { MdDeleteOutline, MdEdit } from "react-icons/md";
+import { PencilSimple, Trash, Percent, Plus, X } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import CustomSnackBar from "../Custom/CustomSnackBar";
-import { cancelButtonStyle, dangerButtonStyle } from "../assets/Styles/ButtonStyles";
 import CustomInput from "../Custom/CustomInput";
 import CustomButton from "../Custom/CustomButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { OffersDescriptionSchema } from "../assets/Validation/Schema";
-import { IoClose } from "react-icons/io5";
 import {
   offerDeleteApi,
   offerUpdateApi,
   useGetOffers,
   useOfferAddApi,
 } from "../Hooks/offer";
-const style = {
+
+// Dark modal style
+const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
-  width: 400,
-  bgcolor: "background.paper",
+  width: 450,
+  bgcolor: "#1e293b",
   outline: "none",
-  borderRadius: "5px",
-  boxShadow: 24,
-  padding: "10px 20px",
+  borderRadius: "6px",
+  border: "1px solid rgba(71, 85, 105, 0.5)",
+  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+  padding: "20px 24px",
   "@media (max-width: 600px)": {
     width: "90vw",
     margin: "auto",
   },
 };
+
+// DataGrid dark styling
+const dataGridStyles = {
+  bgcolor: "rgba(30, 41, 59, 0.4)",
+  border: "1px solid rgba(71, 85, 105, 0.6)",
+  borderRadius: "6px",
+  "& .MuiDataGrid-columnHeaders": {
+    bgcolor: "rgba(15, 23, 42, 0.8)",
+    color: "#94a3b8",
+    fontSize: "11px",
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    fontFamily: "'JetBrains Mono', monospace",
+    borderBottom: "1px solid rgba(71, 85, 105, 0.4)",
+  },
+  "& .MuiDataGrid-columnHeader": {
+    "&:focus, &:focus-within": { outline: "none" },
+  },
+  "& .MuiDataGrid-row": {
+    bgcolor: "transparent",
+    color: "#f8fafc",
+    "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" },
+  },
+  "& .MuiDataGrid-cell": {
+    borderColor: "rgba(71, 85, 105, 0.4)",
+    fontSize: "13px",
+    fontFamily: "'Inter', sans-serif",
+    "&:focus, &:focus-within": { outline: "none" },
+  },
+  "& .MuiDataGrid-footerContainer": {
+    bgcolor: "rgba(15, 23, 42, 0.5)",
+    borderTop: "1px solid rgba(71, 85, 105, 0.4)",
+    color: "#94a3b8",
+  },
+  "& .MuiTablePagination-root": { color: "#94a3b8" },
+  "& .MuiTablePagination-selectIcon": { color: "#64748b" },
+  "& .MuiIconButton-root": { color: "#64748b" },
+};
+
 const Offers = () => {
   const [loading, setLoading] = useState(false);
   const { data: getUsersResponse, isLoading, error } = useGetOffers();
@@ -52,7 +89,6 @@ const Offers = () => {
   const [rows, setRows] = useState<any>();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState("");
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -66,15 +102,15 @@ const Offers = () => {
   } = useForm({
     resolver: zodResolver(OffersDescriptionSchema),
   });
+
   const handleClose = () => {
     setOpen(false);
     setIsEditMode(false);
     setEditingItem(null);
-    reset({
-      description: "",
-    });
+    reset({ description: "" });
     clearErrors();
   };
+
   useEffect(() => {
     if (getUsersResponse) {
       setRows(getUsersResponse);
@@ -82,12 +118,11 @@ const Offers = () => {
   }, [getUsersResponse]);
 
   const handleAction = (id: string) => {
-    console.log("Action clicked for ID:", id);
     if (id) {
       setUserToDelete(id);
       setDeleteModalOpen(true);
     } else {
-      CustomSnackBar.errorSnackbar("SomeThing Went Wrong!");
+      CustomSnackBar.errorSnackbar("Something Went Wrong!");
     }
   };
 
@@ -99,8 +134,8 @@ const Offers = () => {
           setDeleteModalOpen(false);
           setUserToDelete(null);
         },
-        onError: (error: any) => {
-          CustomSnackBar.errorSnackbar("Failed to delete user!");
+        onError: () => {
+          CustomSnackBar.errorSnackbar("Failed to delete!");
           setDeleteModalOpen(false);
           setUserToDelete(null);
         },
@@ -117,12 +152,10 @@ const Offers = () => {
     setIsEditMode(true);
     setEditingItem(row);
     setOpen(true);
-    reset({
-      description: row.description,
-    });
+    reset({ description: row.description });
   };
-  const handleStatusToggle = (newRow: any) => {
 
+  const handleStatusToggle = (newRow: any) => {
     setRows((prevRows: any) =>
       prevRows.map((row: any) =>
         row._id === newRow._id || row.id === newRow.id
@@ -138,49 +171,42 @@ const Offers = () => {
       },
       {
         onSuccess: () => {
-          CustomSnackBar.successSnackbar("Status Updated Successfully!");
+          CustomSnackBar.successSnackbar("Status Updated!");
         },
-        onError: (error: any) => {
-          CustomSnackBar.errorSnackbar("SomeThing Went Wrong!");
+        onError: () => {
+          CustomSnackBar.errorSnackbar("Something Went Wrong!");
         },
       }
     );
   };
 
-  const columns: any = [
+  const columns: GridColDef[] = [
     {
       field: "sno",
       headerName: "S.No",
       width: 80,
       renderCell: (params: any) => {
-        const rowIndex = rows.findIndex(
-          (row: any) =>
-            (row._id || row.id) === (params.row._id || params.row.id)
+        const rowIndex = rows?.findIndex(
+          (row: any) => (row._id || row.id) === (params.row._id || params.row.id)
         );
-        return rowIndex + 1;
+        return <Box sx={{ fontFamily: "'JetBrains Mono', monospace" }}>{(rowIndex ?? 0) + 1}</Box>;
       },
     },
-    { field: "description", headerName: "Description", width: 500 },
+    { field: "description", headerName: "Description", flex: 1, minWidth: 300 },
     {
       field: "status",
       headerName: "Status",
-      width: 200,
+      width: 120,
       renderCell: (params: any) => (
         <Switch
           checked={params.row.status === "active"}
           onChange={() => handleStatusToggle(params.row)}
           sx={{
             "& .MuiSwitch-thumb": {
-              backgroundColor:
-                params.row.status === "active"
-                  ? "var(--primary)"
-                  : "var(--grey)",
+              backgroundColor: params.row.status === "active" ? "#22c55e" : "#64748b",
             },
             "& .MuiSwitch-track": {
-              backgroundColor:
-                params.row.status === "active"
-                  ? "var(--primary) !important"
-                  : "var(--grey) !important",
+              backgroundColor: params.row.status === "active" ? "#16a34a !important" : "#475569 !important",
             },
           }}
         />
@@ -189,51 +215,31 @@ const Offers = () => {
     {
       field: "action",
       headerName: "Action",
-      width: 200,
+      width: 120,
+      sortable: false,
       renderCell: (params: any) => (
-        <Box sx={{ display: "flex", gap: "8px" }}>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
           <IconButton
-            edge="end"
-            aria-label="edit"
+            size="small"
             onClick={() => handleEdit(params.row)}
-            sx={{
-              "& svg": {
-                color: "var(--primary)",
-                fontSize: "18px",
-              },
-            }}
+            sx={{ color: "#60a5fa", "&:hover": { bgcolor: "rgba(59, 130, 246, 0.2)" } }}
           >
-            <MdEdit />
+            <PencilSimple size={18} weight="duotone" />
           </IconButton>
           <IconButton
-            edge="end"
-            aria-label="delete"
+            size="small"
             onClick={() => handleAction(params.row._id || params.row.id)}
-            sx={{
-              "& svg": {
-                color: "var(--red)",
-                fontSize: "18px",
-              },
-            }}
+            sx={{ color: "#f87171", "&:hover": { bgcolor: "rgba(239, 68, 68, 0.2)" } }}
           >
-            <MdDeleteOutline />
+            <Trash size={18} weight="duotone" />
           </IconButton>
         </Box>
       ),
     },
   ];
-  if (error) {
-    return (
-      <div className="Submitted_form_table">
-        <Box sx={{ padding: 2, textAlign: "center", color: "var(--red)" }}>
-          Error loading users: {error.message || "Something went wrong"}
-        </Box>
-      </div>
-    );
-  }
-  const onsubmit = async (data: any) => {
-      setLoading(true);
 
+  const onsubmit = async (data: any) => {
+    setLoading(true);
     if (isEditMode) {
       offersUpdate(
         {
@@ -243,133 +249,123 @@ const Offers = () => {
         },
         {
           onSuccess: () => {
-            CustomSnackBar.successSnackbar("Offers Updated Successfully!");
+            CustomSnackBar.successSnackbar("Offer Updated!");
             handleClose();
           },
           onError: (error) => {
-            CustomSnackBar.errorSnackbar(
-              error.message || "Error updating Offer."
-            );
+            CustomSnackBar.errorSnackbar(error.message || "Error updating Offer.");
           },
-          onSettled: () => {
-          setLoading(false);
-        }
+          onSettled: () => setLoading(false),
         }
       );
     } else {
       offerAdd(
+        { description: data.description, status: "inactive" },
         {
-          description: data.description,
-          status: "inactive",
-        },
-        {
-          onSuccess: (response) => {
+          onSuccess: () => {
+            CustomSnackBar.successSnackbar("Offer Added!");
             handleClose();
-            console.log("Offer added", response);
           },
           onError: (error) => {
-            CustomSnackBar.errorSnackbar(
-              error.message || "Error adding Offer."
-            );
+            CustomSnackBar.errorSnackbar(error.message || "Error adding Offer.");
           },
-          onSettled: () => {
-          setLoading(false);
-        }
+          onSettled: () => setLoading(false),
         }
       );
     }
   };
-  return (
-    <>
-      <div className="Submitted_form_table">
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "end",
-            alignItems: "center",
-            marginBottom: "20px",
-            "@media (max-width: 600px)": {
-              flexDirection: "column",
-              alignItems: "start",
-            },
-          }}
-        >
-          {rows && rows.length < 1 && (
-            <CustomButton
-              type="button"
-              label="Add Offers"
-              variant="contained"
-              btnSx={{
-                background: "var(--primary)",
-                color: "var(--white)",
-                width: "fit-content",
-              }}
-              onClick={() => setOpen(true)}
-            />
-          )}
-        </Box>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={isLoading}
-          initialState={{
-            pagination: {
-              paginationModel: { page: 0, pageSize: 5 },
-            },
-          }}
-          pageSizeOptions={[10, 20]}
-          checkboxSelection={false}
-          disableRowSelectionOnClick
-          className="table_border"
-          autoHeight
-          getRowId={(row) => row._id || row.id}
-        />
-      </div>
 
-      <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <Box sx={style}>
-          {/* Header  */}
+  if (error) {
+    return (
+      <Box sx={{ p: 4, textAlign: "center", color: "#f87171" }}>
+        Error loading offers: {error.message || "Something went wrong"}
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* Header */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Percent size={28} weight="duotone" style={{ color: "#fbbf24" }} />
           <Box
+            component="h1"
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: "8px",
-              borderBottom: "0.4px solid var(--greyText)",
+              fontSize: "24px",
+              fontFamily: "'Chivo', sans-serif",
+              fontWeight: 700,
+              color: "#f8fafc",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              m: 0,
             }}
           >
-            <Typography
-              id="modal-modal-title"
-              variant="h6"
-              component="h2"
-              sx={{ fontSize: "14px", fontFamily: "Medium_M" }}
-            >
+            Offers
+          </Box>
+        </Box>
+        {(!rows || rows.length < 1) && (
+          <Button
+            variant="contained"
+            startIcon={<Plus size={18} weight="bold" />}
+            onClick={() => setOpen(true)}
+            sx={{
+              bgcolor: "#3b82f6",
+              color: "#fff",
+              borderRadius: "6px",
+              fontWeight: 600,
+              fontSize: "13px",
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              px: 2.5,
+              py: 1,
+              "&:hover": { bgcolor: "#2563eb" },
+            }}
+          >
+            Add Offer
+          </Button>
+        )}
+      </Box>
+
+      {/* DataGrid */}
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress sx={{ color: "#60a5fa" }} />
+        </Box>
+      ) : (
+        <DataGrid
+          rows={rows || []}
+          columns={columns}
+          pageSizeOptions={[10, 20]}
+          initialState={{ pagination: { paginationModel: { page: 0, pageSize: 10 } } }}
+          disableRowSelectionOnClick
+          autoHeight
+          getRowId={(row) => row._id || row.id}
+          sx={dataGridStyles}
+        />
+      )}
+
+      {/* Add/Edit Modal */}
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        sx={{
+          "& .MuiDialog-paper": { bgcolor: "transparent", boxShadow: "none" },
+          "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(8px)" },
+        }}
+      >
+        <Box sx={modalStyle}>
+          {/* Header */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1.5, borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+            <Box sx={{ fontSize: "16px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc" }}>
               {isEditMode ? "Edit Offer" : "Add Offer"}
-            </Typography>
-            <IconButton
-              edge="end"
-              aria-label="delete"
-              onClick={handleClose}
-              sx={{
-                "& svg": {
-                  fontSize: "18px",
-                },
-              }}
-            >
-              <IoClose className="close-icon" />
+            </Box>
+            <IconButton onClick={handleClose} sx={{ color: "#94a3b8", "&:hover": { color: "#f8fafc", bgcolor: "rgba(51, 65, 85, 0.5)" } }}>
+              <X size={18} />
             </IconButton>
           </Box>
           {/* Body */}
-          <Box
-            component={"form"}
-            sx={{ marginTop: "12px", maxHeight: "50vh", overflowY: "auto" }}
-            onSubmit={handleSubmit(onsubmit)}
-          >
+          <Box component="form" sx={{ mt: 2 }} onSubmit={handleSubmit(onsubmit)}>
             <CustomInput
               name="description"
               placeholder="Enter Description"
@@ -382,152 +378,56 @@ const Offers = () => {
             />
           </Box>
           {/* Footer */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: "12px",
-              paddingBottom: "12px",
-              gap: "20px",
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2, pt: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)", gap: 1.5 }}>
             <CustomButton
               type="button"
               variant="contained"
-              label="cancel"
-              btnSx={{ background: "transparent", color: "var(--title)" }}
+              label="Cancel"
+              btnSx={{ background: "#334155", color: "#f8fafc", borderRadius: "6px", "&:hover": { background: "#475569" } }}
               onClick={handleClose}
             />
             <CustomButton
               type="submit"
               variant="contained"
-              label={isEditMode ? "Update Offer" : "Add Offer"}
-              btnSx={{ background: "var(--primary)", color: "var(--white)" }}
+              label={isEditMode ? "Update" : "Add"}
+              btnSx={{ background: "#3b82f6", color: "#fff", borderRadius: "6px", fontWeight: 600, "&:hover": { background: "#2563eb" } }}
               onClick={handleSubmit(onsubmit)}
               disabled={loading}
             />
           </Box>
         </Box>
-      </Modal>
+      </Dialog>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Dialog
         open={deleteModalOpen}
         onClose={handleDeleteCancel}
-        maxWidth="xs"
-        fullWidth
         sx={{
-          "& .MuiDialog-paper": {
-            borderRadius: "12px",
-            padding: "0",
-            margin: "16px",
-            maxWidth: "380px",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-            "@media (max-width: 600px)": {
-              margin: "16px",
-              maxWidth: "calc(100vw - 32px)",
-            },
-          },
+          "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px", p: 2 },
+          "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(8px)" },
         }}
       >
-        <DialogTitle
-          sx={{
-            textAlign: "center",
-            padding: "32px 24px 16px",
-            color: "var(--red)",
-            fontWeight: "600",
-            fontSize: "1.25rem",
-            "@media (max-width: 600px)": {
-              padding: "24px 20px 12px",
-              fontSize: "1.1rem",
-            },
-          }}
-        >
-          Delete User
-        </DialogTitle>
-
-        <DialogContent
-          sx={{
-            padding: "0 24px 24px",
-            textAlign: "center",
-            "@media (max-width: 600px)": {
-              padding: "0 20px 20px",
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              color: "#666",
-              fontSize: "1rem",
-              lineHeight: "1.5",
-              "@media (max-width: 600px)": {
-                fontSize: "0.9rem",
-              },
-            }}
-          >
-            Are you sure you want to delete this user?
-          </Typography>
-          <Typography
-            sx={{
-              color: "#999",
-              fontSize: "0.875rem",
-              marginTop: "8px",
-              "@media (max-width: 600px)": {
-                fontSize: "0.8rem",
-              },
-            }}
-          >
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            padding: "0 24px 32px",
-            gap: "12px",
-            justifyContent: "center",
-            "@media (max-width: 600px)": {
-              padding: "0 20px 24px",
-              flexDirection: "column",
-              gap: "8px",
-            },
-          }}
-        >
+        <Box sx={{ p: 2, textAlign: "center" }}>
+          <Trash size={48} weight="duotone" style={{ color: "#f87171", marginBottom: 16 }} />
+          <Box sx={{ fontSize: "18px", fontWeight: 600, color: "#f8fafc", mb: 1 }}>Delete Offer?</Box>
+          <Box sx={{ fontSize: "14px", color: "#94a3b8", mb: 2 }}>This action cannot be undone.</Box>
+        </Box>
+        <DialogActions sx={{ justifyContent: "center", gap: 2, pb: 2 }}>
           <Button
             onClick={handleDeleteCancel}
-            variant="outlined"
-            sx={{
-              ...cancelButtonStyle,
-              minWidth: "100px",
-              height: "40px",
-              borderRadius: "8px",
-              "@media (max-width: 600px)": {
-                width: "100%",
-                height: "44px",
-              },
-            }}
+            sx={{ bgcolor: "#334155", color: "#f8fafc", px: 3, py: 1, borderRadius: "6px", fontWeight: 600, fontSize: "13px", textTransform: "uppercase", "&:hover": { bgcolor: "#475569" } }}
           >
             Cancel
           </Button>
           <Button
             onClick={handleDeleteConfirm}
-            variant="contained"
-            sx={{
-              ...dangerButtonStyle,
-              minWidth: "100px",
-              height: "40px",
-              borderRadius: "8px",
-              "@media (max-width: 600px)": {
-                width: "100%",
-                height: "44px",
-              },
-            }}
+            sx={{ bgcolor: "#ef4444", color: "#fff", px: 3, py: 1, borderRadius: "6px", fontWeight: 600, fontSize: "13px", textTransform: "uppercase", "&:hover": { bgcolor: "#dc2626" } }}
           >
             Delete
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Box>
   );
 };
 

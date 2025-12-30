@@ -1,96 +1,325 @@
-import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Box, useMediaQuery } from "@mui/material";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import Header from "./Header";
-import {
-  LayoutMain,
-  LayoutSidebar,
-  LayoutStyle,
-} from "../assets/Styles/LayoutStyle";
+import Cookies from "js-cookie";
+import { List } from "@phosphor-icons/react";
+
+// Sidebar width constants matching frontend-ref
+const MIN_WIDTH = 60;
+const COLLAPSED_WIDTH = 64;
+const DEFAULT_WIDTH = 220;
+const MAX_WIDTH = 280;
 
 const Layout = () => {
-  const theme = useTheme();
   const isMobile = useMediaQuery("(max-width:991px)");
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const navigate = useNavigate();
+  const userName = Cookies.get("name") || "Admin";
+  const userEmail = Cookies.get("email") || "admin@skillup.edu";
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  // Resizable sidebar state
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
-  // Close sidebar when switching to mobile view
+  // Load saved width from localStorage
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    } else {
-      setSidebarOpen(true);
+    const savedWidth = localStorage.getItem('adminSidebarWidth');
+    const savedHidden = localStorage.getItem('adminSidebarHidden');
+    if (savedWidth) {
+      setSidebarWidth(parseInt(savedWidth));
     }
-  }, [isMobile]);
+    if (savedHidden === 'true') {
+      setIsHidden(true);
+    }
+  }, []);
+
+  // Save width to localStorage
+  useEffect(() => {
+    if (!isResizing) {
+      localStorage.setItem('adminSidebarWidth', sidebarWidth.toString());
+      localStorage.setItem('adminSidebarHidden', isHidden.toString());
+    }
+  }, [sidebarWidth, isHidden, isResizing]);
+
+  // Mouse resize handlers
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (isResizing && sidebarRef.current) {
+      const newWidth = e.clientX;
+
+      // Snap to hidden if dragged very small
+      if (newWidth < MIN_WIDTH) {
+        setIsHidden(true);
+        setSidebarWidth(COLLAPSED_WIDTH);
+      } else {
+        setIsHidden(false);
+        // Clamp between min and max
+        const clampedWidth = Math.min(MAX_WIDTH, Math.max(COLLAPSED_WIDTH, newWidth));
+        setSidebarWidth(clampedWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+  const showLabels = sidebarWidth >= 150 && !isHidden;
 
   return (
-    <>
-      <Box sx={{ ...LayoutStyle }}>
-        {/* Overlay for mobile when sidebar is open */}
-        {isMobile && sidebarOpen && (
-          <Box
-            sx={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              zIndex: 9998,
-            }}
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
+    // min-h-screen bg-slate-950 flex
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "#020617", // slate-950
+        display: "flex",
+        position: "relative",
+      }}
+    >
+      {/* Scanlines Effect */}
+      <Box className="scanlines" />
 
+      {/* Mobile Overlay */}
+      {isMobile && mobileOpen && (
         <Box
           sx={{
-            ...LayoutSidebar,
-            // Desktop behavior
-            ...(isMobile
-              ? {
-                  // Mobile behavior - overlay mode
-                  position: "fixed",
-                  left: sidebarOpen ? 0 : "-300px",
-                  width: "300px",
-                  height: "100vh",
-                  zIndex: 9999,
-                  transition: "left 0.3s ease-in-out",
-                }
-              : {
-                  // Desktop behavior - normal flow
-                  width: sidebarOpen ? "18%" : "0%",
-                  overflow: sidebarOpen ? "auto" : "hidden",
-                  transition: "width 0.3s ease-in-out",
-                }),
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            bgcolor: "rgba(15, 23, 42, 0.8)",
+            backdropFilter: "blur(4px)",
+            zIndex: 49,
+          }}
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      {isMobile ? (
+        // Mobile sidebar
+        <Box
+          sx={{
+            position: "fixed",
+            left: mobileOpen ? 0 : "-280px",
+            width: "280px",
+            height: "100vh",
+            zIndex: 50,
+            transition: "left 0.3s ease-in-out",
           }}
         >
-          <Sidebar isOpen={sidebarOpen} isMobile={isMobile} />
+          <Sidebar isOpen={true} isMobile={true} />
         </Box>
-
+      ) : (
+        // Desktop resizable sidebar
         <Box
+          ref={sidebarRef}
           sx={{
-            ...LayoutMain,
-            // On mobile, main content is always full width
-            // On desktop, it adjusts based on sidebar state
-            width: isMobile ? "100%" : sidebarOpen ? "82%" : "100%",
-            transition: isMobile ? "none" : "width 0.3s ease-in-out",
+            position: "sticky",
+            top: 0,
+            height: "100vh",
+            zIndex: 50,
+            transition: isResizing ? "none" : "all 0.2s ease",
+            width: isHidden ? 0 : sidebarWidth,
+            overflow: isHidden ? "hidden" : "visible",
+            flexShrink: 0,
           }}
         >
-          <Header
-            onToggleSidebar={toggleSidebar}
-            sidebarOpen={sidebarOpen}
-            isMobile={isMobile}
-          />
-          <Box sx={{ padding: "20px" }}>
-            <Outlet />
+          <Sidebar isOpen={showLabels} isMobile={false} />
+
+          {/* Resize Handle */}
+          {!isHidden && (
+            <Box
+              onMouseDown={startResizing}
+              sx={{
+                position: "absolute",
+                right: 0,
+                top: 0,
+                height: "100%",
+                width: "4px",
+                cursor: "ew-resize",
+                zIndex: 51,
+                transition: "background-color 0.2s",
+                transform: "translateX(50%)",
+                "&:hover": {
+                  bgcolor: "rgba(96, 165, 250, 0.5)", // blue-400/50
+                },
+                "&:active": {
+                  bgcolor: "#60a5fa", // blue-400
+                },
+              }}
+            />
+          )}
+        </Box>
+      )}
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          overflow: "auto",
+          position: "relative",
+          zIndex: 10,
+        }}
+      >
+        {/* Header */}
+        <Box
+          sx={{
+            bgcolor: "rgba(2, 6, 23, 0.8)",
+            backdropFilter: "blur(12px)",
+            borderBottom: "1px solid #334155",
+            position: "sticky",
+            top: 0,
+            zIndex: 40,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {/* Show toggle button when sidebar is hidden or on mobile */}
+              {(isMobile || isHidden) && (
+                <Box
+                  onClick={() => {
+                    if (isMobile) {
+                      setMobileOpen(true);
+                    } else {
+                      setIsHidden(false);
+                      setSidebarWidth(DEFAULT_WIDTH);
+                    }
+                  }}
+                  sx={{
+                    p: 1,
+                    cursor: "pointer",
+                    color: "#94a3b8",
+                    borderRadius: "4px",
+                    transition: "all 0.2s",
+                    "&:hover": { color: "#e2e8f0", bgcolor: "#1e293b" },
+                  }}
+                >
+                  <List size={24} />
+                </Box>
+              )}
+              <Box>
+                <Box
+                  component="h2"
+                  sx={{
+                    fontFamily: "'Chivo', sans-serif",
+                    fontWeight: 700,
+                    fontSize: { xs: "16px", md: "20px" },
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    color: "#f8fafc",
+                    m: 0,
+                  }}
+                >
+                  Admin Portal
+                </Box>
+                <Box
+                  component="p"
+                  sx={{
+                    fontSize: "12px",
+                    color: "#94a3b8",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    mt: 0.25,
+                    m: 0,
+                  }}
+                >
+                  Welcome back, {userName}
+                </Box>
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                <Box
+                  component="p"
+                  sx={{
+                    fontSize: "10px",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    m: 0,
+                  }}
+                >
+                  Logged in as
+                </Box>
+                <Box
+                  component="p"
+                  sx={{
+                    fontSize: "14px",
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: "#cbd5e1",
+                    m: 0,
+                  }}
+                >
+                  {userEmail}
+                </Box>
+              </Box>
+              {/* Avatar */}
+              <Box
+                onClick={() => navigate("/profile")}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "transform 0.2s",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+                  "&:hover": { transform: "scale(1.05)" },
+                }}
+              >
+                {userName?.charAt(0).toUpperCase() || "A"}
+              </Box>
+            </Box>
           </Box>
         </Box>
+
+        {/* Page Content */}
+        <Box sx={{ p: 3, flex: 1 }}>
+          <Outlet />
+        </Box>
       </Box>
-    </>
+
+      {/* Overlay when resizing to prevent iframe capturing mouse */}
+      {isResizing && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 100,
+            cursor: "ew-resize",
+          }}
+        />
+      )}
+    </Box>
   );
 };
+
 export default Layout;

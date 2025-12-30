@@ -21,33 +21,33 @@ const createIndexes = async () => {
         await StudentAssignment.collection.createIndex({ student: 1, itemType: 1 });
         await StudentAssignment.collection.createIndex({ itemId: 1 });
         await StudentAssignment.collection.createIndex({ status: 1 });
-        console.log("✓ StudentAssignment indexes created");
+        console.log(" StudentAssignment indexes created");
 
         // User indexes
         const User = require("../models/User");
         await User.collection.createIndex({ email: 1 }, { unique: true });
         await User.collection.createIndex({ role: 1 });
         await User.collection.createIndex({ status: 1 });
-        console.log("✓ User indexes created");
+        console.log(" User indexes created");
 
         // Announcement indexes
         const Announcement = require("../models/Announcement");
         await Announcement.collection.createIndex({ isActive: 1 });
         await Announcement.collection.createIndex({ targetAudience: 1 });
         await Announcement.collection.createIndex({ isActive: 1, targetAudience: 1 });
-        console.log("✓ Announcement indexes created");
+        console.log(" Announcement indexes created");
 
         // Course indexes
         const Course = require("../models/Course");
         await Course.collection.createIndex({ status: 1 });
         await Course.collection.createIndex({ category: 1 });
-        console.log("✓ Course indexes created");
+        console.log(" Course indexes created");
 
         // Submission indexes
         const Submission = require("../models/Submission");
         await Submission.collection.createIndex({ student: 1 });
         await Submission.collection.createIndex({ assignment: 1 });
-        console.log("✓ Submission indexes created");
+        console.log(" Submission indexes created");
 
         console.log("\n✅ All indexes created successfully!");
 

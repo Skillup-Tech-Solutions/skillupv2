@@ -20,7 +20,7 @@ import React from "react";
 import type { CustomInputProps } from "../Interface/interface";
 import type { FieldValues } from "react-hook-form";
 
-const CustomInput =  <T extends FieldValues> ({
+const CustomInput = <T extends FieldValues>({
   label,
   placeholder,
   helperText,
@@ -43,7 +43,7 @@ const CustomInput =  <T extends FieldValues> ({
   const errorMessage = get(errors, `${name}.message`, null);
 
   return (
-    <Box sx={{ ...customBox,...boxSx }}>
+    <Box sx={{ ...customBox, ...boxSx }}>
       <Typography variant="h5" sx={{ ...labelStyle, ...labelSx }}>
         <Tooltip title={label}>{truncatedLabel}</Tooltip>
         {required && (
@@ -64,14 +64,15 @@ const CustomInput =  <T extends FieldValues> ({
             ...(errorMessage
               ? inputStyleColorRed
               : bgmode === "dark"
-              ? inputStyleColorLight
-              : inputStyleColor),
+                ? inputStyleColorLight
+                : inputStyleColor),
             ...inputSx,
           }}
           helperText={errorMessage ? errorMessage.toString() : helperText}
           error={!!errorMessage}
           name={name as string}
           value={value}
+          InputLabelProps={type === "date" ? { shrink: true } : undefined}
           inputProps={{
             ...(type === "number" && {
               inputMode: "numeric",

@@ -7,4 +7,4 @@ export const CarreerRoutes = ["/admincareers"];
 export const CertificateRoutes = ["/certificate"];
 export const DashboardRoutes = ["/dashboard"];
 export const PaymentRoutes = ["/payment-settings", "/payment-management"];
-export const PayrollRoutes = ["/payroll/generate", "/payroll/history", "/payroll/settings"];
+export const PayrollRoutes = ["/payroll", "/payroll/generate", "/payroll/history", "/payroll/settings"];

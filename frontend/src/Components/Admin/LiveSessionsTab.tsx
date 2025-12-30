@@ -1,0 +1,467 @@
+import { useState } from "react";
+import {
+    Box,
+    Typography,
+    Button,
+    Modal,
+    TextField,
+    Grid,
+    Chip,
+    IconButton,
+    CircularProgress,
+} from "@mui/material";
+import {
+    Plus,
+    X,
+    VideoCamera,
+    Play,
+    Stop,
+    Trash,
+    CalendarBlank,
+    Clock,
+    Users,
+    ArrowSquareOut,
+} from "@phosphor-icons/react";
+import dayjs from "dayjs";
+import {
+    useGetSessionsByReferenceApi,
+    useCreateSessionApi,
+    useStartSessionApi,
+    useEndSessionApi,
+    useDeleteSessionApi,
+    type LiveSession,
+    type CreateSessionPayload,
+} from "../../Hooks/liveSessions";
+import VideoRoom from "../VideoRoom/VideoRoom";
+
+interface LiveSessionsTabProps {
+    sessionType: "COURSE" | "PROJECT" | "INTERNSHIP";
+    referenceId: string;
+    referenceName: string;
+    userName: string;
+    userEmail: string;
+}
+
+const modalStyle = {
+    position: "absolute" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: 500,
+    bgcolor: "#1e293b",
+    border: "1px solid rgba(71, 85, 105, 0.5)",
+    borderRadius: "6px",
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+    outline: "none",
+    "@media (max-width: 600px)": { width: "90vw" },
+};
+
+const textFieldStyles = {
+    "& .MuiOutlinedInput-root": {
+        bgcolor: "rgba(15, 23, 42, 0.5)",
+        color: "#f8fafc",
+        borderRadius: "6px",
+        "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" },
+        "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" },
+        "&.Mui-focused fieldset": { borderColor: "#3b82f6", borderWidth: "1px" },
+    },
+    "& .MuiInputLabel-root": { color: "#94a3b8" },
+    "& .MuiInputLabel-root.Mui-focused": { color: "#3b82f6" },
+    "& .MuiInputBase-input": { color: "#f8fafc" },
+};
+
+const LiveSessionsTab = ({
+    sessionType,
+    referenceId,
+    referenceName,
+    userName,
+    userEmail,
+}: LiveSessionsTabProps) => {
+    const [showModal, setShowModal] = useState(false);
+    const [activeSession, setActiveSession] = useState<LiveSession | null>(null);
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        scheduledAt: "",
+        durationMinutes: 60,
+    });
+
+    const { data, isLoading, refetch } = useGetSessionsByReferenceApi(
+        sessionType,
+        referenceId,
+        true // include ended sessions
+    );
+    const sessions = data?.sessions || [];
+
+    const { mutate: createSession, isPending: isCreating } = useCreateSessionApi();
+    const { mutate: startSession, isPending: isStarting } = useStartSessionApi();
+    const { mutate: endSession, isPending: isEnding } = useEndSessionApi();
+    const { mutate: deleteSession, isPending: isDeleting } = useDeleteSessionApi();
+
+    const handleCreate = () => {
+        const payload: CreateSessionPayload = {
+            title: formData.title || `${referenceName} Live Session`,
+            description: formData.description,
+            sessionType,
+            referenceId,
+            scheduledAt: new Date(formData.scheduledAt).toISOString(),
+            durationMinutes: formData.durationMinutes,
+        };
+
+        createSession(payload, {
+            onSuccess: () => {
+                setShowModal(false);
+                setFormData({ title: "", description: "", scheduledAt: "", durationMinutes: 60 });
+                refetch();
+            },
+        });
+    };
+
+    const handleStart = (sessionId: string) => {
+        startSession(sessionId, { onSuccess: () => refetch() });
+    };
+
+    const handleEnd = (sessionId: string) => {
+        if (window.confirm("Are you sure you want to end this session?")) {
+            endSession(sessionId, { onSuccess: () => refetch() });
+        }
+    };
+
+    const handleDelete = (sessionId: string) => {
+        if (window.confirm("Are you sure you want to delete this session?")) {
+            deleteSession(sessionId, { onSuccess: () => refetch() });
+        }
+    };
+
+    const handleJoin = (session: LiveSession) => {
+        setActiveSession(session);
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "LIVE":
+                return { bg: "#22c55e", text: "#fff" };
+            case "SCHEDULED":
+                return { bg: "#3b82f6", text: "#fff" };
+            case "ENDED":
+                return { bg: "#6b7280", text: "#fff" };
+            case "CANCELLED":
+                return { bg: "#ef4444", text: "#fff" };
+            default:
+                return { bg: "#6b7280", text: "#fff" };
+        }
+    };
+
+    if (activeSession) {
+        return (
+            <VideoRoom
+                session={activeSession}
+                userName={userName}
+                userEmail={userEmail}
+                isHost={true}
+                onExit={() => {
+                    setActiveSession(null);
+                    refetch();
+                }}
+            />
+        );
+    }
+
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Header */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "18px" }}>
+                        Live Sessions
+                    </Typography>
+                    <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                        Schedule and manage live video sessions for {referenceName}
+                    </Typography>
+                </Box>
+                <Button
+                    variant="contained"
+                    startIcon={<Plus size={18} weight="bold" />}
+                    onClick={() => setShowModal(true)}
+                    sx={{
+                        bgcolor: "#3b82f6",
+                        color: "#fff",
+                        borderRadius: "6px",
+                        px: 2.5,
+                        py: 1,
+                        fontWeight: 600,
+                        "&:hover": { bgcolor: "#2563eb" },
+                    }}
+                >
+                    Schedule Session
+                </Button>
+            </Box>
+
+            {/* Sessions List */}
+            {isLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                    <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
+                </Box>
+            ) : sessions.length === 0 ? (
+                <Box
+                    sx={{
+                        py: 8,
+                        textAlign: "center",
+                        border: "1px dashed rgba(71, 85, 105, 0.4)",
+                        borderRadius: "6px",
+                    }}
+                >
+                    <VideoCamera size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                    <Typography sx={{ color: "#94a3b8" }}>
+                        No live sessions scheduled yet
+                    </Typography>
+                    <Typography sx={{ color: "#64748b", fontSize: "13px", mt: 1 }}>
+                        Click "Schedule Session" to create your first live session
+                    </Typography>
+                </Box>
+            ) : (
+                <Grid container spacing={2}>
+                    {sessions.map((session) => {
+                        const statusColor = getStatusColor(session.status);
+                        return (
+                            <Grid size={{ xs: 12, md: 6, lg: 4 }} key={session._id}>
+                                <Box
+                                    sx={{
+                                        bgcolor: "#1e293b",
+                                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                                        borderRadius: "6px",
+                                        p: 2.5,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2,
+                                    }}
+                                >
+                                    {/* Title & Status */}
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "15px", flex: 1 }}>
+                                            {session.title}
+                                        </Typography>
+                                        <Chip
+                                            label={session.status}
+                                            size="small"
+                                            sx={{
+                                                bgcolor: statusColor.bg,
+                                                color: statusColor.text,
+                                                fontWeight: 600,
+                                                fontSize: "10px",
+                                                height: 22,
+                                                ...(session.status === "LIVE" && {
+                                                    animation: "pulse 2s infinite",
+                                                    "@keyframes pulse": {
+                                                        "0%": { opacity: 1 },
+                                                        "50%": { opacity: 0.7 },
+                                                        "100%": { opacity: 1 },
+                                                    },
+                                                }),
+                                            }}
+                                        />
+                                    </Box>
+
+                                    {/* Description */}
+                                    {session.description && (
+                                        <Typography sx={{ color: "#94a3b8", fontSize: "13px", lineHeight: 1.5 }}>
+                                            {session.description}
+                                        </Typography>
+                                    )}
+
+                                    {/* Meta Info */}
+                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                                            <CalendarBlank size={14} />
+                                            <Typography sx={{ fontSize: "12px" }}>
+                                                {dayjs(session.scheduledAt).format("MMM D, YYYY")}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                                            <Clock size={14} />
+                                            <Typography sx={{ fontSize: "12px" }}>
+                                                {dayjs(session.scheduledAt).format("h:mm A")} • {session.durationMinutes} min
+                                            </Typography>
+                                        </Box>
+                                        {session.maxParticipants > 0 && (
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                                                <Users size={14} />
+                                                <Typography sx={{ fontSize: "12px" }}>
+                                                    {session.maxParticipants} joined
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+
+                                    {/* Actions */}
+                                    <Box sx={{ display: "flex", gap: 1, mt: "auto" }}>
+                                        {session.status === "SCHEDULED" && (
+                                            <>
+                                                <Button
+                                                    size="small"
+                                                    startIcon={<Play size={16} />}
+                                                    onClick={() => handleStart(session._id)}
+                                                    disabled={isStarting}
+                                                    sx={{
+                                                        flex: 1,
+                                                        bgcolor: "rgba(34, 197, 94, 0.15)",
+                                                        color: "#22c55e",
+                                                        fontWeight: 600,
+                                                        fontSize: "12px",
+                                                        "&:hover": { bgcolor: "rgba(34, 197, 94, 0.25)" },
+                                                    }}
+                                                >
+                                                    Start
+                                                </Button>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleDelete(session._id)}
+                                                    disabled={isDeleting}
+                                                    sx={{ color: "#ef4444", "&:hover": { bgcolor: "rgba(239, 68, 68, 0.1)" } }}
+                                                >
+                                                    <Trash size={16} />
+                                                </IconButton>
+                                            </>
+                                        )}
+                                        {session.status === "LIVE" && (
+                                            <>
+                                                <Button
+                                                    size="small"
+                                                    startIcon={<ArrowSquareOut size={16} />}
+                                                    onClick={() => handleJoin(session)}
+                                                    sx={{
+                                                        flex: 1,
+                                                        bgcolor: "rgba(59, 130, 246, 0.15)",
+                                                        color: "#3b82f6",
+                                                        fontWeight: 600,
+                                                        fontSize: "12px",
+                                                        "&:hover": { bgcolor: "rgba(59, 130, 246, 0.25)" },
+                                                    }}
+                                                >
+                                                    Join Session
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    startIcon={<Stop size={16} />}
+                                                    onClick={() => handleEnd(session._id)}
+                                                    disabled={isEnding}
+                                                    sx={{
+                                                        bgcolor: "rgba(239, 68, 68, 0.15)",
+                                                        color: "#ef4444",
+                                                        fontWeight: 600,
+                                                        fontSize: "12px",
+                                                        "&:hover": { bgcolor: "rgba(239, 68, 68, 0.25)" },
+                                                    }}
+                                                >
+                                                    End
+                                                </Button>
+                                            </>
+                                        )}
+                                        {(session.status === "ENDED" || session.status === "CANCELLED") && (
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleDelete(session._id)}
+                                                disabled={isDeleting}
+                                                sx={{ color: "#ef4444", "&:hover": { bgcolor: "rgba(239, 68, 68, 0.1)" } }}
+                                            >
+                                                <Trash size={16} />
+                                            </IconButton>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
+            )}
+
+            {/* Create Session Modal */}
+            <Modal open={showModal} onClose={() => setShowModal(false)}>
+                <Box sx={modalStyle}>
+                    <Box
+                        sx={{
+                            p: 2.5,
+                            borderBottom: "1px solid rgba(71, 85, 105, 0.4)",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                        }}
+                    >
+                        <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "16px" }}>
+                            Schedule Live Session
+                        </Typography>
+                        <IconButton onClick={() => setShowModal(false)} sx={{ color: "#94a3b8" }}>
+                            <X size={20} />
+                        </IconButton>
+                    </Box>
+                    <Box sx={{ p: 2.5, display: "flex", flexDirection: "column", gap: 2.5 }}>
+                        <TextField
+                            label="Session Title"
+                            placeholder={`${referenceName} Live Session`}
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            fullWidth
+                            sx={textFieldStyles}
+                        />
+                        <TextField
+                            label="Description (Optional)"
+                            placeholder="What will be covered in this session?"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            multiline
+                            rows={2}
+                            fullWidth
+                            sx={textFieldStyles}
+                        />
+                        <Grid container spacing={2}>
+                            <Grid size={{ xs: 12, sm: 8 }}>
+                                <TextField
+                                    label="Date & Time"
+                                    type="datetime-local"
+                                    value={formData.scheduledAt}
+                                    onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={textFieldStyles}
+                                />
+                            </Grid>
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                                <TextField
+                                    label="Duration (min)"
+                                    type="number"
+                                    value={formData.durationMinutes}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, durationMinutes: parseInt(e.target.value) || 60 })
+                                    }
+                                    fullWidth
+                                    sx={textFieldStyles}
+                                />
+                            </Grid>
+                        </Grid>
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 1 }}>
+                            <Button onClick={() => setShowModal(false)} sx={{ color: "#94a3b8" }}>
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleCreate}
+                                disabled={isCreating || !formData.scheduledAt}
+                                sx={{
+                                    bgcolor: "#3b82f6",
+                                    color: "#fff",
+                                    px: 3,
+                                    fontWeight: 600,
+                                    "&:hover": { bgcolor: "#2563eb" },
+                                }}
+                            >
+                                {isCreating ? "Scheduling..." : "Schedule Session"}
+                            </Button>
+                        </Box>
+                    </Box>
+                </Box>
+            </Modal>
+        </Box>
+    );
+};
+
+export default LiveSessionsTab;

@@ -1,16 +1,18 @@
 import {
     Box,
-    Typography,
-    CircularProgress,
     Alert,
-    Card,
-    CardContent,
-    Chip,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { MdAnnouncement, MdCalendarToday, MdPerson } from "react-icons/md";
+import {
+    Megaphone,
+    CalendarBlank,
+    User,
+    Sparkle,
+    Warning,
+    Info,
+} from "@phosphor-icons/react";
 
 const StudentAnnouncements = () => {
     const token = Cookies.get("skToken");
@@ -20,44 +22,58 @@ const StudentAnnouncements = () => {
         queryFn: async () => {
             const response = await axios.get(
                 `${import.meta.env.VITE_APP_BASE_URL}student/announcements`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
             return response.data;
         },
     });
 
+    // Using frontend-ref color palette
     const getPriorityStyles = (priority: string) => {
-        switch (priority) {
+        switch (priority?.toLowerCase()) {
             case "high":
                 return {
-                    label: "High Priority",
                     color: "#ef4444",
-                    bg: "#fef2f2",
-                    border: "#fecaca"
+                    bg: "rgba(127, 29, 29, 0.3)",
+                    border: "rgba(239, 68, 68, 0.5)",
+                    gradient: "linear-gradient(135deg, rgba(127, 29, 29, 0.2) 0%, rgba(127, 29, 29, 0.1) 100%)",
                 };
             case "medium":
                 return {
-                    label: "Medium",
                     color: "#f59e0b",
-                    bg: "#fffbeb",
-                    border: "#fcd34d"
+                    bg: "rgba(120, 53, 15, 0.3)",
+                    border: "rgba(245, 158, 11, 0.5)",
+                    gradient: "linear-gradient(135deg, rgba(120, 53, 15, 0.2) 0%, rgba(120, 53, 15, 0.1) 100%)",
                 };
             default:
                 return {
-                    label: "Normal",
-                    color: "var(--webprimary)",
-                    bg: "#eff6ff",
-                    border: "#93c5fd"
+                    color: "#3b82f6",
+                    bg: "rgba(30, 58, 138, 0.3)",
+                    border: "rgba(59, 130, 246, 0.5)",
+                    gradient: "linear-gradient(135deg, rgba(30, 58, 138, 0.2) 0%, rgba(30, 58, 138, 0.1) 100%)",
                 };
         }
     };
 
     if (isLoading) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-                <CircularProgress sx={{ color: "var(--webprimary)" }} />
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "64vh", gap: 2 }}>
+                <Box sx={{ position: "relative" }}>
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "2px solid #334155",
+                            borderTopColor: "#f59e0b",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                        }}
+                    />
+                </Box>
+                <Box sx={{ color: "#64748b", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Loading Announcements...
+                </Box>
             </Box>
         );
     }
@@ -65,148 +81,175 @@ const StudentAnnouncements = () => {
     if (error) {
         return (
             <Box sx={{ p: 3 }}>
-                <Alert severity="error">Failed to load announcements. Please try again.</Alert>
+                <Alert
+                    severity="error"
+                    sx={{ bgcolor: "rgba(127, 29, 29, 0.3)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.5)", "& .MuiAlert-icon": { color: "#ef4444" } }}
+                >
+                    Failed to load announcements. Please try again.
+                </Alert>
             </Box>
         );
     }
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 900, mx: "auto" }}>
-            {/* Page Header */}
+        <Box sx={{ maxWidth: 800, mx: "auto" }}>
+            {/* Header */}
             <Box sx={{ mb: 4 }}>
-                <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    gutterBottom
+                <Box
+                    component="h1"
                     sx={{
-                        fontFamily: "SemiBold_W",
-                        fontSize: "24px",
-                        color: "var(--title)",
-                        "@media (max-width: 768px)": { fontSize: "22px" },
+                        fontSize: { xs: "20px", md: "24px" },
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
                     }}
                 >
+                    <Megaphone size={28} weight="duotone" color="#f59e0b" />
                     Announcements
-                </Typography>
-                <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--greyText)" }}>
-                    Stay updated with the latest news and important notices
-                </Typography>
+                </Box>
+                <Box component="p" sx={{ color: "#64748b", mt: 1, fontSize: "14px" }}>
+                    Stay updated with the latest news and important notifications
+                </Box>
             </Box>
 
             {!data || data.length === 0 ? (
-                <Card sx={{
-                    border: "1px solid #e0e0e0",
-                    borderRadius: "10px",
-                    p: 6,
-                    textAlign: "center"
-                }}>
-                    <MdAnnouncement size={48} color="var(--greyText)" />
-                    <Typography sx={{ fontFamily: "SemiBold_W", fontSize: "18px", mt: 2, mb: 1 }}>
-                        No announcements yet!
-                    </Typography>
-                    <Typography sx={{ fontFamily: "Regular_W", fontSize: "14px", color: "var(--greyText)" }}>
-                        Check back later for important updates.
-                    </Typography>
-                </Card>
+                <Box
+                    sx={{
+                        bgcolor: "rgba(30, 41, 59, 0.4)",
+                        border: "1px solid rgba(71, 85, 105, 0.6)",
+                        borderRadius: "12px",
+                        p: 6,
+                        textAlign: "center",
+                    }}
+                >
+                    <Megaphone size={48} weight="duotone" style={{ color: "#475569", marginBottom: 16 }} />
+                    <Box sx={{ fontSize: "18px", fontWeight: 600, color: "#f8fafc", mb: 1 }}>No announcements yet!</Box>
+                    <Box sx={{ color: "#64748b", fontSize: "14px" }}>Check back later for updates.</Box>
+                </Box>
             ) : (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                     {data.map((announcement: any) => {
-                        const priorityStyle = getPriorityStyles(announcement.priority);
-
+                        const priorityStyles = getPriorityStyles(announcement.priority);
                         return (
-                            <Card
+                            <Box
                                 key={announcement._id}
                                 sx={{
-                                    border: `1px solid ${priorityStyle.border}`,
-                                    borderRadius: "10px",
+                                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                                    borderRadius: "12px",
                                     overflow: "hidden",
-                                    transition: "all 0.3s ease",
-                                    "&:hover": {
-                                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                                        transform: "translateY(-2px)",
-                                    },
+                                    position: "relative",
                                 }}
                             >
-                                {/* Priority Accent Bar */}
-                                <Box sx={{ height: 4, bgcolor: priorityStyle.color }} />
+                                {/* Accent Border Top */}
+                                <Box
+                                    sx={{
+                                        height: 3,
+                                        background: priorityStyles.color,
+                                    }}
+                                />
 
-                                <CardContent sx={{ p: 3 }}>
-                                    {/* Header */}
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2, flexWrap: "wrap", gap: 1 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                {/* Background Sparkle */}
+                                <Sparkle
+                                    size={80}
+                                    weight="duotone"
+                                    style={{
+                                        position: "absolute",
+                                        right: -16,
+                                        top: -16,
+                                        color: "rgba(71, 85, 105, 0.15)",
+                                    }}
+                                />
+
+                                <Box sx={{ p: 3, position: "relative", zIndex: 10 }}>
+                                    {/* Header Row */}
+                                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, mb: 2 }}>
+                                        <Box sx={{ flex: 1 }}>
                                             <Box
+                                                component="h3"
                                                 sx={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: "10px",
-                                                    bgcolor: priorityStyle.bg,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <MdAnnouncement size={20} color={priorityStyle.color} />
-                                            </Box>
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: "SemiBold_W",
-                                                    fontSize: "16px",
-                                                    color: "var(--title)",
+                                                    fontSize: "18px",
+                                                    fontWeight: 600,
+                                                    color: "#f8fafc",
+                                                    m: 0,
+                                                    mb: 1,
                                                 }}
                                             >
                                                 {announcement.title}
-                                            </Typography>
+                                            </Box>
                                         </Box>
-                                        <Chip
-                                            label={priorityStyle.label}
-                                            size="small"
+
+                                        {/* Priority Badge */}
+                                        <Box
                                             sx={{
-                                                fontFamily: "Medium_W",
-                                                fontSize: "11px",
-                                                bgcolor: priorityStyle.bg,
-                                                color: priorityStyle.color,
-                                                border: `1px solid ${priorityStyle.color}`,
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: 0.5,
+                                                px: 1.5,
+                                                py: 0.5,
+                                                borderRadius: "8px",
+                                                fontSize: "10px",
                                                 fontWeight: 600,
-                                                textTransform: "capitalize",
+                                                textTransform: "uppercase",
+                                                letterSpacing: "0.05em",
+                                                bgcolor: priorityStyles.bg,
+                                                color: priorityStyles.color,
+                                                border: `1px solid ${priorityStyles.border}`,
+                                                flexShrink: 0,
                                             }}
-                                        />
+                                        >
+                                            {announcement.priority === "high" && <Warning size={12} weight="fill" />}
+                                            {announcement.priority === "medium" && <Info size={12} weight="fill" />}
+                                            {announcement.priority}
+                                        </Box>
                                     </Box>
 
                                     {/* Content */}
-                                    <Typography
+                                    <Box
                                         sx={{
-                                            fontFamily: "Regular_W",
+                                            color: "#94a3b8",
                                             fontSize: "14px",
-                                            color: "var(--greyText)",
                                             lineHeight: 1.7,
-                                            mb: 2,
+                                            mb: 3,
+                                            whiteSpace: "pre-wrap",
                                         }}
                                     >
                                         {announcement.content}
-                                    </Typography>
+                                    </Box>
 
-                                    {/* Footer */}
-                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "var(--greyText)" }}>
-                                            <MdCalendarToday size={14} />
-                                            <Typography sx={{ fontFamily: "Regular_W", fontSize: "12px" }}>
-                                                {new Date(announcement.createdAt).toLocaleDateString("en-US", {
-                                                    year: "numeric",
-                                                    month: "long",
-                                                    day: "numeric",
-                                                })}
-                                            </Typography>
+                                    {/* Meta Info */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexWrap: "wrap",
+                                            gap: 3,
+                                            pt: 2,
+                                            borderTop: "1px solid rgba(71, 85, 105, 0.4)",
+                                        }}
+                                    >
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "12px" }}>
+                                            <CalendarBlank size={14} weight="duotone" />
+                                            {new Date(announcement.createdAt).toLocaleDateString("en-US", {
+                                                year: "numeric",
+                                                month: "short",
+                                                day: "numeric",
+                                            })}
                                         </Box>
                                         {announcement.createdBy?.name && (
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "var(--greyText)" }}>
-                                                <MdPerson size={14} />
-                                                <Typography sx={{ fontFamily: "Regular_W", fontSize: "12px" }}>
-                                                    {announcement.createdBy.name}
-                                                </Typography>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "12px" }}>
+                                                <User size={14} weight="duotone" />
+                                                {announcement.createdBy.name}
                                             </Box>
                                         )}
                                     </Box>
-                                </CardContent>
-                            </Card>
+                                </Box>
+                            </Box>
                         );
                     })}
                 </Box>

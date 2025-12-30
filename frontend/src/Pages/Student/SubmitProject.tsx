@@ -1,19 +1,22 @@
 import {
     Box,
-    Typography,
-    CircularProgress,
     Alert,
-    Card,
-    CardContent,
     TextField,
     Button,
 } from "@mui/material";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import Cookies from "js-cookie";
-import { submitButtonStyle, cancelButtonStyle } from "../../assets/Styles/ButtonStyles";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+    PaperPlaneTilt,
+    UploadSimple,
+    ArrowLeft,
+    FolderSimple,
+    ListChecks,
+    FileText,
+} from "@phosphor-icons/react";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
 
 const SubmitProject = () => {
@@ -38,7 +41,6 @@ const SubmitProject = () => {
     });
 
     const project = assignments?.find((a: any) => a.itemId?._id === projectId)?.itemId;
-    console.log("Debug Project Data:", project);
 
     const submitMutation = useMutation({
         mutationFn: async (data: { projectId: string; fileUpload: string; fileName: string; description: string }) => {
@@ -96,7 +98,7 @@ const SubmitProject = () => {
                 fileName: file.name,
                 description,
             });
-        } catch (error: any) {
+        } catch {
             // If upload endpoint doesn't exist, use mock file path
             submitMutation.mutate({
                 projectId: projectId!,
@@ -109,19 +111,58 @@ const SubmitProject = () => {
         }
     };
 
+    const inputStyles = {
+        "& .MuiOutlinedInput-root": {
+            bgcolor: "#0f172a",
+            color: "#f8fafc",
+            fontFamily: "'Inter', sans-serif",
+            fontSize: "14px",
+            borderRadius: "8px",
+            "& fieldset": { borderColor: "#475569" },
+            "&:hover fieldset": { borderColor: "#64748b" },
+            "&.Mui-focused fieldset": { borderColor: "#22d3ee" },
+        },
+        "& .MuiInputLabel-root": { color: "#64748b", fontFamily: "'Inter', sans-serif", fontSize: "14px" },
+        "& .MuiInputLabel-root.Mui-focused": { color: "#22d3ee" },
+    };
+
     if (isLoading) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress />
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "64vh", gap: 2 }}>
+                <Box sx={{ position: "relative" }}>
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: "50%",
+                            border: "2px solid #334155",
+                            borderTopColor: "#22d3ee",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                        }}
+                    />
+                </Box>
+                <Box sx={{ color: "#64748b", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Loading Project...
+                </Box>
             </Box>
         );
     }
 
     if (!project) {
         return (
-            <Box sx={{ p: 3 }}>
-                <Alert severity="error">Project not found or not assigned to you.</Alert>
-                <Button onClick={() => navigate("/student/my-projects")} sx={{ mt: 2 }}>
+            <Box sx={{ maxWidth: 600, mx: "auto" }}>
+                <Alert
+                    severity="error"
+                    sx={{ bgcolor: "rgba(127, 29, 29, 0.3)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.5)", "& .MuiAlert-icon": { color: "#ef4444" } }}
+                >
+                    Project not found or not assigned to you.
+                </Alert>
+                <Button
+                    startIcon={<ArrowLeft size={18} />}
+                    onClick={() => navigate("/student/my-projects")}
+                    sx={{ mt: 2, color: "#94a3b8", "&:hover": { bgcolor: "rgba(51, 65, 85, 0.5)" } }}
+                >
                     Back to My Projects
                 </Button>
             </Box>
@@ -129,70 +170,124 @@ const SubmitProject = () => {
     }
 
     return (
-        <Box sx={{ p: { xs: 1, md: 3 } }}>
-            <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-                📤 Submit Project
-            </Typography>
+        <Box sx={{ maxWidth: 600, mx: "auto" }}>
+            {/* Header */}
+            <Box sx={{ mb: 4 }}>
+                <Box
+                    component="h1"
+                    sx={{
+                        fontSize: { xs: "20px", md: "24px" },
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        color: "#f8fafc",
+                        m: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                    }}
+                >
+                    <PaperPlaneTilt size={28} weight="duotone" color="#22d3ee" />
+                    Submit Project
+                </Box>
+            </Box>
 
-            <Card
+            <Box
                 sx={{
-                    maxWidth: 600,
-                    borderRadius: 3,
-                    border: "1px solid #e5e7eb",
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "16px",
+                    overflow: "hidden",
                 }}
             >
-                <CardContent sx={{ p: 4 }}>
-                    <Typography variant="h6" fontWeight="600" sx={{ mb: 1 }}>
-                        {project.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                <Box sx={{ p: 3 }}>
+                    {/* Project Info */}
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                        <FolderSimple size={20} weight="duotone" color="#22d3ee" />
+                        <Box sx={{ fontSize: "18px", fontWeight: 600, color: "#f8fafc" }}>
+                            {project.name}
+                        </Box>
+                    </Box>
+                    <Box sx={{ color: "#94a3b8", fontSize: "14px", mb: 3, lineHeight: 1.6 }}>
                         {project.description}
-                    </Typography>
+                    </Box>
 
+                    {/* Requirements */}
                     {project.requirements && (
-                        <Box sx={{ mb: 3, p: 2, backgroundColor: "#f8fafc", borderRadius: 2 }}>
-                            <Typography variant="subtitle2" fontWeight="600" sx={{ mb: 1 }}>
-                                Requirements:
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                        <Box
+                            sx={{
+                                mb: 3,
+                                p: 2,
+                                bgcolor: "rgba(15, 23, 42, 0.5)",
+                                border: "1px solid rgba(71, 85, 105, 0.4)",
+                                borderRadius: "12px",
+                            }}
+                        >
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                <ListChecks size={16} weight="duotone" color="#64748b" />
+                                <Box sx={{ fontSize: "12px", fontWeight: 600, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    Requirements
+                                </Box>
+                            </Box>
+                            <Box sx={{ color: "#94a3b8", fontSize: "13px" }}>
                                 {project.requirements}
-                            </Typography>
+                            </Box>
                         </Box>
                     )}
 
+                    {/* Deliverables */}
                     {project.deliverables && project.deliverables.length > 0 && (
-                        <Alert severity="info" sx={{ mb: 3 }}>
-                            <Typography variant="subtitle2" fontWeight="bold">
-                                Required Deliverables:
-                            </Typography>
-                            <Typography variant="body2">
-                                {project.deliverables.join(", ")}
-                            </Typography>
+                        <Alert
+                            severity="info"
+                            sx={{
+                                mb: 3,
+                                bgcolor: "rgba(22, 78, 99, 0.2)",
+                                color: "#22d3ee",
+                                border: "1px solid rgba(34, 211, 238, 0.3)",
+                                "& .MuiAlert-icon": { color: "#22d3ee" },
+                            }}
+                        >
+                            <Box sx={{ fontSize: "12px", fontWeight: 600, mb: 0.5 }}>Required Deliverables:</Box>
+                            <Box sx={{ fontSize: "13px" }}>{project.deliverables.join(", ")}</Box>
                         </Alert>
                     )}
 
+                    {/* File Upload */}
                     <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        <Box sx={{ fontSize: "12px", fontWeight: 600, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em", mb: 1 }}>
                             Upload File *
-                        </Typography>
-                        <input
-                            type="file"
-                            onChange={handleFileChange}
-                            style={{
-                                width: "100%",
-                                padding: "12px",
-                                border: "2px dashed #e5e7eb",
-                                borderRadius: "8px",
-                                backgroundColor: "#f9fafb",
+                        </Box>
+                        <Box
+                            component="label"
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                p: 3,
+                                border: "2px dashed #475569",
+                                borderRadius: "12px",
+                                cursor: "pointer",
+                                transition: "all 0.2s",
+                                "&:hover": { borderColor: "#64748b", bgcolor: "rgba(51, 65, 85, 0.3)" },
                             }}
-                        />
+                        >
+                            <UploadSimple size={32} style={{ color: "#64748b", marginBottom: 8 }} />
+                            <Box sx={{ fontSize: "14px", color: "#94a3b8" }}>
+                                {file ? file.name : "Click to select file"}
+                            </Box>
+                            <input type="file" hidden onChange={handleFileChange} />
+                        </Box>
                         {file && (
-                            <Typography variant="caption" color="primary" sx={{ mt: 1, display: "block" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 1, color: "#22d3ee", fontSize: "12px" }}>
+                                <FileText size={14} weight="duotone" />
                                 Selected: {file.name}
-                            </Typography>
+                            </Box>
                         )}
                     </Box>
 
+                    {/* Description */}
                     <Box sx={{ mb: 3 }}>
                         <TextField
                             label="Description (Optional)"
@@ -202,28 +297,51 @@ const SubmitProject = () => {
                             onChange={(e) => setDescription(e.target.value)}
                             fullWidth
                             placeholder="Add any notes or comments about your submission..."
+                            sx={inputStyles}
                         />
                     </Box>
 
+                    {/* Actions */}
                     <Box sx={{ display: "flex", gap: 2 }}>
                         <Button
-                            variant="contained"
                             onClick={handleSubmit}
                             disabled={!file || uploading || submitMutation.isPending}
-                            sx={{ ...submitButtonStyle, borderRadius: 2, px: 4 }}
+                            startIcon={<PaperPlaneTilt size={18} />}
+                            sx={{
+                                bgcolor: "#22d3ee",
+                                color: "#0f172a",
+                                px: 3,
+                                py: 1,
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                fontSize: "13px",
+                                textTransform: "uppercase",
+                                "&:hover": { bgcolor: "#06b6d4" },
+                                "&:disabled": { opacity: 0.5, bgcolor: "#22d3ee" },
+                            }}
                         >
                             {uploading || submitMutation.isPending ? "Submitting..." : "Submit Project"}
                         </Button>
                         <Button
-                            variant="outlined"
                             onClick={() => navigate("/student/my-projects")}
-                            sx={{ ...cancelButtonStyle, borderRadius: 2, padding: "6px 14px" }}
+                            startIcon={<ArrowLeft size={18} />}
+                            sx={{
+                                bgcolor: "#334155",
+                                color: "#f8fafc",
+                                px: 3,
+                                py: 1,
+                                borderRadius: "8px",
+                                fontWeight: 600,
+                                fontSize: "13px",
+                                textTransform: "uppercase",
+                                "&:hover": { bgcolor: "#475569" },
+                            }}
                         >
                             Cancel
                         </Button>
                     </Box>
-                </CardContent>
-            </Card>
+                </Box>
+            </Box>
         </Box>
     );
 };

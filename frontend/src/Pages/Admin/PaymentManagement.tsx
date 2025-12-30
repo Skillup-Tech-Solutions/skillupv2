@@ -9,7 +9,6 @@ import {
     TableHead,
     TableRow,
     Paper,
-    Chip,
     Button,
     IconButton,
     Dialog,
@@ -29,7 +28,6 @@ import { MdVisibility, MdCheck, MdRefresh, MdReceipt, MdDownload } from "react-i
 import { useGetPendingPayments, useMarkPaymentPaid, useGenerateInvoice } from "../../Hooks/payment";
 import { openFileInNewTab, normalizeDownloadUrl } from "../../utils/normalizeUrl";
 import CustomSnackBar from "../../Custom/CustomSnackBar";
-import { submitButtonStyle } from "../../assets/Styles/ButtonStyles";
 
 
 interface Payment {
@@ -138,13 +136,18 @@ const PaymentManagement = () => {
     }
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box>
             {/* Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Typography variant="h5" fontWeight="bold"> Payment Management</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <MdReceipt size={28} style={{ color: "#60a5fa" }} />
+                    <Typography sx={{ fontSize: "24px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Payment Management
+                    </Typography>
+                </Box>
 
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ minWidth: 140, "& .MuiOutlinedInput-root": { bgcolor: "rgba(15, 23, 42, 0.5)", color: "#f8fafc", "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" }, "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" } }, "& .MuiInputLabel-root": { color: "#94a3b8" }, "& .MuiSelect-icon": { color: "#64748b" } }}>
                         <InputLabel>Status</InputLabel>
                         <Select
                             value={statusFilter}
@@ -157,7 +160,7 @@ const PaymentManagement = () => {
                         </Select>
                     </FormControl>
 
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <FormControl size="small" sx={{ minWidth: 140, "& .MuiOutlinedInput-root": { bgcolor: "rgba(15, 23, 42, 0.5)", color: "#f8fafc", "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" }, "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" } }, "& .MuiInputLabel-root": { color: "#94a3b8" }, "& .MuiSelect-icon": { color: "#64748b" } }}>
                         <InputLabel>Type</InputLabel>
                         <Select
                             value={typeFilter}
@@ -171,126 +174,99 @@ const PaymentManagement = () => {
                         </Select>
                     </FormControl>
 
-                    <IconButton onClick={() => refetch()} color="primary">
+                    <IconButton onClick={() => refetch()} sx={{ color: "#94a3b8", border: "1px solid rgba(71, 85, 105, 0.4)", "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" } }}>
                         <MdRefresh />
                     </IconButton>
                 </Box>
             </Box>
 
             {/* Table */}
-            <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2 }}>
+            <TableContainer component={Paper} elevation={0} sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px" }}>
                 <Table>
                     <TableHead>
-                        <TableRow sx={{ bgcolor: "#f8fafc" }}>
-                            <TableCell><strong>Invoice ID</strong></TableCell>
-                            <TableCell><strong>Source</strong></TableCell>
-                            <TableCell><strong>Student</strong></TableCell>
-                            <TableCell align="right"><strong>Amount</strong></TableCell>
-                            <TableCell><strong>Method</strong></TableCell>
-                            <TableCell><strong>Status</strong></TableCell>
-                            <TableCell align="center"><strong>Actions</strong></TableCell>
+                        <TableRow sx={{ bgcolor: "#0f172a" }}>
+                            <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Invoice ID</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Source</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Student</TableCell>
+                            <TableCell align="right" sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Amount</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Method</TableCell>
+                            <TableCell sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Status</TableCell>
+                            <TableCell align="center" sx={{ color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 600, borderColor: "rgba(71, 85, 105, 0.4)" }}>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {payments?.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                                    <Typography color="text.secondary">No payments found</Typography>
+                                <TableCell colSpan={7} align="center" sx={{ py: 4, borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Typography sx={{ color: "#64748b" }}>No payments found</Typography>
                                 </TableCell>
                             </TableRow>
                         )}
                         {payments?.map((payment: Payment) => (
-                            <TableRow key={payment._id} hover>
-                                <TableCell>
-                                    <Typography variant="body2" fontWeight="600">{payment.invoiceId}</Typography>
-                                    <Typography variant="caption" color="text.secondary">
+                            <TableRow key={payment._id} sx={{ "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" } }}>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "#f8fafc" }}>{payment.invoiceId}</Typography>
+                                    <Typography sx={{ fontSize: "11px", color: "#64748b" }}>
                                         {new Date(payment.assignedAt).toLocaleDateString()}
                                     </Typography>
                                 </TableCell>
-                                <TableCell>
-                                    <Chip
-                                        label={`${payment.itemType.charAt(0).toUpperCase() + payment.itemType.slice(1)}`}
-                                        size="small"
-                                        sx={{ bgcolor: getTypeColor(payment.itemType), color: "white", fontWeight: 500 }}
-                                    />
-                                    <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Typography sx={{ fontSize: "12px", fontWeight: 600, color: getTypeColor(payment.itemType) }}>
+                                        {payment.itemType.charAt(0).toUpperCase() + payment.itemType.slice(1)}
+                                    </Typography>
+                                    <Typography sx={{ fontSize: "11px", color: "#94a3b8", mt: 0.5 }}>
                                         {payment.itemName}
                                     </Typography>
                                 </TableCell>
-                                <TableCell>
-                                    <Typography variant="body2" fontWeight="500">{payment.student?.name}</Typography>
-                                    <Typography variant="caption" color="text.secondary">{payment.student?.email}</Typography>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Typography sx={{ fontSize: "13px", fontWeight: 500, color: "#f8fafc" }}>{payment.student?.name}</Typography>
+                                    <Typography sx={{ fontSize: "11px", color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>{payment.student?.email}</Typography>
                                 </TableCell>
-                                <TableCell align="right">
-                                    <Typography variant="body1" fontWeight="bold">₹{payment.amount?.toLocaleString()}</Typography>
+                                <TableCell align="right" sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Typography sx={{ fontSize: "14px", fontWeight: 700, color: "#4ade80" }}>₹{payment.amount?.toLocaleString()}</Typography>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
                                     {payment.paymentMethod ? (
-                                        <Chip label={payment.paymentMethod.toUpperCase()} size="small" variant="outlined" />
+                                        <Typography sx={{ fontSize: "11px", fontWeight: 600, color: "#60a5fa", textTransform: "uppercase" }}>{payment.paymentMethod}</Typography>
                                     ) : (
-                                        <Typography variant="caption" color="text.secondary">-</Typography>
+                                        <Typography sx={{ fontSize: "11px", color: "#64748b" }}>-</Typography>
                                     )}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                                        <Chip
-                                            label={payment.status === "paid" ? "PAID" : "PENDING"}
-                                            size="small"
-                                            color={payment.status === "paid" ? "success" : "warning"}
-                                        />
+                                        <Typography sx={{ fontSize: "12px", fontWeight: 600, color: payment.status === "paid" ? "#4ade80" : "#facc15" }}>
+                                            {payment.status === "paid" ? "PAID" : "PENDING"}
+                                        </Typography>
                                         {payment.proofFile && payment.status === "pending" && (
-                                            <Chip label="Proof Uploaded" size="small" color="info" variant="outlined" />
+                                            <Typography sx={{ fontSize: "10px", color: "#60a5fa" }}>Proof Uploaded</Typography>
                                         )}
                                     </Box>
                                 </TableCell>
-                                <TableCell align="center">
-                                    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+                                <TableCell align="center" sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }}>
+                                    <Box sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}>
                                         {payment.proofFile && (
                                             <Tooltip title="View Proof">
-                                                <IconButton
-                                                    size="small"
-                                                    color="primary"
-                                                    onClick={() => handleViewProof(payment.proofFile!)}
-                                                >
+                                                <IconButton size="small" onClick={() => handleViewProof(payment.proofFile!)} sx={{ color: "#60a5fa", "&:hover": { bgcolor: "rgba(96, 165, 250, 0.2)" } }}>
                                                     <MdVisibility />
                                                 </IconButton>
                                             </Tooltip>
                                         )}
                                         {payment.status === "pending" && (
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                color="success"
-                                                startIcon={<MdCheck />}
-                                                onClick={() => handleOpenMarkPaid(payment)}
-                                            >
-                                                Mark Paid
+                                            <Button size="small" onClick={() => handleOpenMarkPaid(payment)} sx={{ bgcolor: "#22c55e", color: "#fff", fontSize: "11px", fontWeight: 600, borderRadius: "6px", px: 1.5, "&:hover": { bgcolor: "#16a34a" } }}>
+                                                <MdCheck style={{ marginRight: 4 }} /> Mark Paid
                                             </Button>
                                         )}
                                         {payment.status === "paid" && !payment.invoice && (
                                             <Tooltip title="Generate Invoice">
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    color="primary"
-                                                    startIcon={<MdReceipt />}
-                                                    onClick={() => handleGenerateInvoice(payment)}
-                                                    disabled={generateInvoiceMutation.isPending}
-                                                >
-                                                    {generateInvoiceMutation.isPending ? "..." : "Generate"}
+                                                <Button size="small" onClick={() => handleGenerateInvoice(payment)} disabled={generateInvoiceMutation.isPending} sx={{ border: "1px solid rgba(71, 85, 105, 0.4)", color: "#60a5fa", fontSize: "11px", fontWeight: 600, borderRadius: "6px", px: 1.5, "&:hover": { bgcolor: "rgba(96, 165, 250, 0.1)" } }}>
+                                                    <MdReceipt style={{ marginRight: 4 }} /> {generateInvoiceMutation.isPending ? "..." : "Generate"}
                                                 </Button>
                                             </Tooltip>
                                         )}
                                         {payment.invoice?.url && (
                                             <Tooltip title="Download Invoice">
-                                                <Button
-                                                    size="small"
-                                                    variant="contained"
-                                                    color="secondary"
-                                                    startIcon={<MdDownload />}
-                                                    onClick={() => handleDownloadInvoice(payment.invoice!.url)}
-                                                >
-                                                    Invoice
+                                                <Button size="small" onClick={() => handleDownloadInvoice(payment.invoice!.url)} sx={{ bgcolor: "#8b5cf6", color: "#fff", fontSize: "11px", fontWeight: 600, borderRadius: "6px", px: 1.5, "&:hover": { bgcolor: "#7c3aed" } }}>
+                                                    <MdDownload style={{ marginRight: 4 }} /> Invoice
                                                 </Button>
                                             </Tooltip>
                                         )}
@@ -303,19 +279,20 @@ const PaymentManagement = () => {
             </TableContainer>
 
             {/* Mark as Paid Modal */}
-            <Dialog open={markPaidModal} onClose={() => setMarkPaidModal(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Confirm Payment</DialogTitle>
+            <Dialog open={markPaidModal} onClose={() => setMarkPaidModal(false)} maxWidth="sm" fullWidth
+                sx={{ "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" }, "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)" } }}>
+                <DialogTitle sx={{ fontWeight: 700, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", color: "#f8fafc", fontFamily: "'Chivo', sans-serif" }}>Confirm Payment</DialogTitle>
                 <DialogContent>
                     {selectedPayment && (
                         <Box sx={{ pt: 2 }}>
-                            <Alert severity="info" sx={{ mb: 3 }}>
-                                You are marking payment as <strong>PAID</strong> for:
-                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                            <Box sx={{ mb: 3, p: 2, bgcolor: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "6px" }}>
+                                <Typography sx={{ fontSize: "13px", color: "#f8fafc", mb: 1 }}>You are marking payment as <strong style={{ color: "#4ade80" }}>PAID</strong> for:</Typography>
+                                <Box component="ul" sx={{ m: 0, pl: 2, color: "#94a3b8", fontSize: "12px" }}>
                                     <li><strong>Student:</strong> {selectedPayment.student?.name}</li>
                                     <li><strong>Item:</strong> {selectedPayment.itemName} ({selectedPayment.itemType})</li>
                                     <li><strong>Amount:</strong> ₹{selectedPayment.amount?.toLocaleString()}</li>
                                 </Box>
-                            </Alert>
+                            </Box>
 
                             <TextField
                                 label="Transaction ID (Optional)"
@@ -324,19 +301,14 @@ const PaymentManagement = () => {
                                 fullWidth
                                 placeholder="Enter transaction/reference ID"
                                 helperText="This will be recorded for reference"
+                                sx={{ "& .MuiOutlinedInput-root": { bgcolor: "rgba(15, 23, 42, 0.5)", color: "#f8fafc", "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" }, "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" } }, "& .MuiInputLabel-root": { color: "#94a3b8" }, "& .MuiFormHelperText-root": { color: "#64748b" } }}
                             />
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ p: 2.5 }}>
-                    <Button onClick={() => setMarkPaidModal(false)} color="inherit">Cancel</Button>
-                    <Button
-                        variant="contained"
-                        color="success"
-                        onClick={handleMarkPaid}
-                        disabled={markPaidMutation.isPending}
-                        sx={submitButtonStyle}
-                    >
+                <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Button onClick={() => setMarkPaidModal(false)} sx={{ bgcolor: "#334155", color: "#f8fafc", borderRadius: "6px", "&:hover": { bgcolor: "#475569" } }}>Cancel</Button>
+                    <Button onClick={handleMarkPaid} disabled={markPaidMutation.isPending} sx={{ bgcolor: "#22c55e", color: "#fff", borderRadius: "6px", fontWeight: 600, "&:hover": { bgcolor: "#16a34a" } }}>
                         {markPaidMutation.isPending ? "Processing..." : "Confirm & Mark Paid"}
                     </Button>
                 </DialogActions>

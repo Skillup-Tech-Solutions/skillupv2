@@ -3,15 +3,29 @@ import {
     Button,
     Typography,
     TextField,
-    Card,
-    CardContent,
     Switch,
     FormControlLabel,
-    Alert
+    CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
+import { MdBusiness, MdPalette, MdAccountBalance } from "react-icons/md";
 import { useGetPayrollSettings, useUpdatePayrollSettings } from "../../../Hooks/employee";
 import CustomSnackBar from "../../../Custom/CustomSnackBar";
+import {
+    textFieldDarkStyles,
+    primaryButtonDarkStyles,
+} from "../../../assets/Styles/AdminDarkTheme";
+
+// Section Card Component
+const SectionCard = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
+    <Box sx={{ bgcolor: "rgba(30, 41, 59, 0.4)", border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px", overflow: "hidden" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2.5, py: 1.5, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", bgcolor: "rgba(15, 23, 42, 0.5)" }}>
+            <Box sx={{ color: "#60a5fa" }}>{icon}</Box>
+            <Typography sx={{ fontSize: "12px", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.1em" }}>{title}</Typography>
+        </Box>
+        <Box sx={{ p: 2.5 }}>{children}</Box>
+    </Box>
+);
 
 const PayslipSettings = () => {
     const { data, isLoading } = useGetPayrollSettings();
@@ -61,122 +75,134 @@ const PayslipSettings = () => {
         });
     };
 
-    if (isLoading) return <Box p={3}>Loading...</Box>;
+    if (isLoading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+                <CircularProgress sx={{ color: "#60a5fa" }} />
+            </Box>
+        );
+    }
 
     return (
-        <Box p={3} maxWidth="lg" mx="auto">
-            <Typography variant="h5" fontWeight="bold" mb={3}>Payroll Configuration</Typography>
-
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" mb={2}>Organization Details</Typography>
-                            <Box display="flex" flexDirection="column" gap={2}>
-                                <TextField
-                                    label="Organization Name"
-                                    fullWidth
-                                    value={settings.organizationName}
-                                    onChange={e => setSettings({ ...settings, organizationName: e.target.value })}
-                                />
-                                <TextField
-                                    label="Address"
-                                    fullWidth
-                                    multiline
-                                    rows={3}
-                                    value={settings.organizationAddress}
-                                    onChange={e => setSettings({ ...settings, organizationAddress: e.target.value })}
-                                />
-                                <TextField
-                                    label="Footer Note"
-                                    fullWidth
-                                    placeholder="e.g. This is a computer generated document."
-                                    value={settings.footerNote || ""}
-                                    onChange={e => setSettings({ ...settings, footerNote: e.target.value })}
-                                    helperText="This text appears at the bottom of the PDF."
-                                />
-                            </Box>
-                        </CardContent>
-                    </Card>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Top Row - Two Cards Side by Side */}
+            <Box sx={{ display: "flex", gap: 3 }}>
+                {/* Organization Details */}
+                <Box sx={{ flex: 1 }}>
+                    <SectionCard icon={<MdBusiness size={18} />} title="Organization Details">
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <TextField
+                                label="Organization Name"
+                                fullWidth
+                                value={settings.organizationName}
+                                onChange={e => setSettings({ ...settings, organizationName: e.target.value })}
+                                sx={textFieldDarkStyles}
+                                size="small"
+                            />
+                            <TextField
+                                label="Address"
+                                fullWidth
+                                multiline
+                                rows={2}
+                                value={settings.organizationAddress}
+                                onChange={e => setSettings({ ...settings, organizationAddress: e.target.value })}
+                                sx={textFieldDarkStyles}
+                            />
+                            <TextField
+                                label="Footer Note"
+                                fullWidth
+                                placeholder="e.g. This is a computer generated document."
+                                value={settings.footerNote || ""}
+                                onChange={e => setSettings({ ...settings, footerNote: e.target.value })}
+                                helperText="This text appears at the bottom of the PDF."
+                                sx={{ ...textFieldDarkStyles, "& .MuiFormHelperText-root": { color: "#64748b" } }}
+                                size="small"
+                            />
+                        </Box>
+                    </SectionCard>
                 </Box>
 
-                <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" mb={2}>Payslip Appearance</Typography>
-                            <Box display="flex" flexDirection="column" gap={2}>
-                                <Box display="flex" alignItems="center" gap={2}>
-                                    <TextField
-                                        label="Theme Color (Hex)"
-                                        value={settings.themeColor}
-                                        onChange={e => setSettings({ ...settings, themeColor: e.target.value })}
-                                        sx={{ width: 150 }}
-                                    />
-                                    <input
-                                        type="color"
-                                        value={settings.themeColor}
-                                        onChange={e => setSettings({ ...settings, themeColor: e.target.value })}
-                                        style={{ width: 50, height: 50, padding: 0, border: "none" }}
-                                    />
-                                </Box>
-                                <FormControlLabel
-                                    control={<Switch checked={settings.showLogo} onChange={e => setSettings({ ...settings, showLogo: e.target.checked })} />}
-                                    label="Show Organization Logo on Payslip"
+                {/* Payslip Appearance */}
+                <Box sx={{ flex: 1 }}>
+                    <SectionCard icon={<MdPalette size={18} />} title="Payslip Appearance">
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <TextField
+                                    label="Theme Color (Hex)"
+                                    value={settings.themeColor}
+                                    onChange={e => setSettings({ ...settings, themeColor: e.target.value })}
+                                    sx={{ width: 160, ...textFieldDarkStyles }}
+                                    size="small"
                                 />
-                                <Alert severity="info" sx={{ mt: 1 }}>
+                                <input
+                                    type="color"
+                                    value={settings.themeColor}
+                                    onChange={e => setSettings({ ...settings, themeColor: e.target.value })}
+                                    style={{ width: 40, height: 40, padding: 0, border: "1px solid rgba(71, 85, 105, 0.4)", borderRadius: "6px", cursor: "pointer", backgroundColor: "transparent" }}
+                                />
+                            </Box>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={settings.showLogo}
+                                        onChange={e => setSettings({ ...settings, showLogo: e.target.checked })}
+                                        sx={{
+                                            "& .MuiSwitch-switchBase.Mui-checked": { color: "#3b82f6" },
+                                            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#3b82f6" },
+                                            "& .MuiSwitch-track": { bgcolor: "#475569" }
+                                        }}
+                                    />
+                                }
+                                label={<Typography sx={{ color: "#f8fafc", fontSize: "13px" }}>Show Organization Logo on Payslip</Typography>}
+                            />
+                            <Box sx={{ p: 1.5, bgcolor: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.2)", borderRadius: "6px" }}>
+                                <Typography sx={{ fontSize: "11px", color: "#60a5fa" }}>
                                     Logo acts as the brand header. Ensure 'logoUrl' is set in DB or use default.
-                                </Alert>
+                                </Typography>
                             </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
-
-                <Box sx={{ width: "100%" }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" mb={2}>Default Salary Components</Typography>
-                            <Typography variant="body2" color="textSecondary" mb={2}>
-                                Enter values separated by comma. These will appear as suggestions when setting up employee salary.
-                            </Typography>
-
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                                <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
-                                    <TextField
-                                        label="Default Allowances"
-                                        fullWidth
-                                        multiline
-                                        rows={2}
-                                        placeholder="Special Allowance, Conveyance, Internet"
-                                        value={allowancesInput}
-                                        onChange={e => setAllowancesInput(e.target.value)}
-                                        helperText="Comma separated values"
-                                    />
-                                </Box>
-                                <Box sx={{ width: { xs: "100%", md: "calc(50% - 12px)" } }}>
-                                    <TextField
-                                        label="Default Deductions"
-                                        fullWidth
-                                        multiline
-                                        rows={2}
-                                        placeholder="Provident Fund, Professional Tax"
-                                        value={deductionsInput}
-                                        onChange={e => setDeductionsInput(e.target.value)}
-                                        helperText="Comma separated values"
-                                    />
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                        </Box>
+                    </SectionCard>
                 </Box>
             </Box>
 
-            <Box mt={3} display="flex" justifyContent="flex-end">
-                <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleSave}
-                    disabled={updateMutation.isPending}
-                >
+            {/* Salary Components - Full Width */}
+            <SectionCard icon={<MdAccountBalance size={18} />} title="Default Salary Components">
+                <Typography sx={{ fontSize: "12px", color: "#64748b", mb: 2 }}>
+                    Enter values separated by comma. These will appear as suggestions when setting up employee salary.
+                </Typography>
+                <Box sx={{ display: "flex", gap: 3 }}>
+                    <Box sx={{ flex: 1 }}>
+                        <TextField
+                            label="Default Allowances"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            placeholder="Special Allowance, Conveyance, Internet"
+                            value={allowancesInput}
+                            onChange={e => setAllowancesInput(e.target.value)}
+                            helperText="Comma separated values"
+                            sx={{ ...textFieldDarkStyles, "& .MuiFormHelperText-root": { color: "#64748b" } }}
+                        />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                        <TextField
+                            label="Default Deductions"
+                            fullWidth
+                            multiline
+                            rows={2}
+                            placeholder="Provident Fund, Professional Tax"
+                            value={deductionsInput}
+                            onChange={e => setDeductionsInput(e.target.value)}
+                            helperText="Comma separated values"
+                            sx={{ ...textFieldDarkStyles, "& .MuiFormHelperText-root": { color: "#64748b" } }}
+                        />
+                    </Box>
+                </Box>
+            </SectionCard>
+
+            {/* Save Button */}
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Button onClick={handleSave} disabled={updateMutation.isPending} sx={primaryButtonDarkStyles}>
                     {updateMutation.isPending ? "Saving..." : "Save Settings"}
                 </Button>
             </Box>

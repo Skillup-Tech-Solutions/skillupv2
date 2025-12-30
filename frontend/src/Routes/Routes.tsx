@@ -166,6 +166,7 @@ const Pay = lazyRetry(() => import("../Pages/Student/Pay"));
 const StudentAnnouncements = lazyRetry(() => import("../Pages/Student/StudentAnnouncements"));
 const StudentProfile = lazyRetry(() => import("../Pages/Student/StudentProfile"));
 const SubmitProject = lazyRetry(() => import("../Pages/Student/SubmitProject"));
+const StudentLiveSessions = lazyRetry(() => import("../Components/Student/StudentLiveSessions"));
 
 // Employee pages - Lazy
 const EmployeePortal = lazyRetry(() => import("../Pages/Employee/EmployeePortal"));
@@ -222,6 +223,7 @@ const routes = createHashRouter([
       { path: "student/:id", element: <LazyLoad><StudentDetail /></LazyLoad> },
       { path: "employees", element: <LazyLoad><PeopleManagement /></LazyLoad> },
       { path: "payroll/salary/:id", element: <LazyLoad><SalarySetup /></LazyLoad> },
+      { path: "payroll", element: <LazyLoad><PayrollManagement /></LazyLoad> },
       { path: "payroll/generate", element: <LazyLoad><PayrollManagement /></LazyLoad> },
       { path: "payroll/history", element: <LazyLoad><PayrollManagement /></LazyLoad> },
       { path: "payroll/settings", element: <LazyLoad><PayrollManagement /></LazyLoad> },
@@ -243,6 +245,7 @@ const routes = createHashRouter([
       { path: "announcements", element: <LazyLoad><StudentAnnouncements /></LazyLoad> },
       { path: "profile", element: <LazyLoad><StudentProfile /></LazyLoad> },
       { path: "submit-project/:projectId", element: <LazyLoad><SubmitProject /></LazyLoad> },
+      { path: "live-sessions", element: <LazyLoad><StudentLiveSessions /></LazyLoad> },
     ],
   },
 

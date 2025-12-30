@@ -11,10 +11,6 @@ import {
     TextField,
     Tooltip,
     MenuItem,
-    Chip,
-    Tabs,
-    Tab,
-    Paper,
     InputAdornment,
     Card,
     CardContent,
@@ -26,16 +22,28 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetEmployees, useCreateEmployee, useUpdateEmployeeProfile } from "../../../Hooks/employee";
 import CustomSnackBar from "../../../Custom/CustomSnackBar";
-import { primaryButtonStyle, cancelButtonStyle, submitButtonStyle } from "../../../assets/Styles/ButtonStyles";
 
-// Stats Card Component
+const textFieldDarkStyles = {
+    "& .MuiOutlinedInput-root": {
+        bgcolor: "rgba(15, 23, 42, 0.5)",
+        color: "#f8fafc",
+        borderRadius: "6px",
+        "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" },
+        "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" },
+        "&.Mui-focused fieldset": { borderColor: "#3b82f6", borderWidth: "1px" },
+    },
+    "& .MuiInputBase-input::placeholder": { color: "#64748b", opacity: 1 },
+    "& .MuiInputLabel-root": { color: "#94a3b8", "&.Mui-focused": { color: "#3b82f6" } },
+};
+
+// Stats Card Component - Dark Theme
 const StatsCard = ({ icon, label, count, color }: { icon: React.ReactNode; label: string; count: number; color: string }) => (
-    <Card sx={{ flex: 1, minWidth: 140, bgcolor: `${color}15`, border: `1px solid ${color}30` }}>
+    <Card sx={{ flex: 1, minWidth: 140, bgcolor: `rgba(30, 41, 59, 0.4)`, border: `1px solid rgba(71, 85, 105, 0.4)`, borderRadius: "6px" }}>
         <CardContent sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}>
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Box>
-                    <Typography variant="h5" fontWeight="bold" color={color}>{count}</Typography>
-                    <Typography variant="caption" color="text.secondary">{label}</Typography>
+                    <Typography sx={{ fontSize: "24px", fontWeight: 700, color }}>{count}</Typography>
+                    <Typography sx={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</Typography>
                 </Box>
                 <Box sx={{ color, opacity: 0.7, fontSize: 24 }}>{icon}</Box>
             </Box>
@@ -70,8 +78,9 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 600, borderBottom: "1px solid #e0e0e0" }}>
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
+            sx={{ "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" }, "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)" } }}>
+            <DialogTitle sx={{ fontWeight: 700, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", color: "#f8fafc", fontFamily: "'Chivo', sans-serif" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <FaUserTie /> Add New Employee
                 </Box>
@@ -79,7 +88,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
             <DialogContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, mt: 2 }}>
                     {/* Basic Info Section */}
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: -1 }}>
+                    <Typography sx={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", mb: -0.5 }}>
                         Basic Information
                     </Typography>
                     <Box sx={{ display: "flex", gap: 2 }}>
@@ -90,6 +99,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             placeholder="John Doe"
+                            sx={textFieldDarkStyles}
                         />
                         <TextField
                             label="Employee ID *"
@@ -98,6 +108,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.employeeId}
                             onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                             placeholder="EMP001"
+                            sx={textFieldDarkStyles}
                         />
                     </Box>
                     <Box sx={{ display: "flex", gap: 2 }}>
@@ -109,6 +120,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.email}
                             onChange={e => setFormData({ ...formData, email: e.target.value })}
                             placeholder="employee@company.com"
+                            sx={textFieldDarkStyles}
                         />
                         <TextField
                             label="Mobile"
@@ -117,11 +129,12 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.mobile}
                             onChange={e => setFormData({ ...formData, mobile: e.target.value })}
                             placeholder="9876543210"
+                            sx={textFieldDarkStyles}
                         />
                     </Box>
 
                     {/* Work Info Section */}
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: -1, mt: 1 }}>
+                    <Typography sx={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", mt: 1, mb: -0.5 }}>
                         💼 Work Details
                     </Typography>
                     <Box sx={{ display: "flex", gap: 2 }}>
@@ -132,6 +145,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.designation}
                             onChange={e => setFormData({ ...formData, designation: e.target.value })}
                             placeholder="Software Developer"
+                            sx={textFieldDarkStyles}
                         />
                         <TextField
                             label="Department *"
@@ -140,6 +154,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             value={formData.department}
                             onChange={e => setFormData({ ...formData, department: e.target.value })}
                             placeholder="Engineering"
+                            sx={textFieldDarkStyles}
                         />
                     </Box>
                     <Box sx={{ display: "flex", gap: 2 }}>
@@ -151,6 +166,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             size="small"
                             value={formData.joiningDate}
                             onChange={e => setFormData({ ...formData, joiningDate: e.target.value })}
+                            sx={textFieldDarkStyles}
                         />
                         <TextField
                             select
@@ -159,6 +175,7 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                             size="small"
                             value={formData.gender}
                             onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                            sx={textFieldDarkStyles}
                         >
                             <MenuItem value="Male">Male</MenuItem>
                             <MenuItem value="Female">Female</MenuItem>
@@ -166,9 +183,9 @@ const AddEmployeeModal = ({ open, onClose }: { open: boolean; onClose: () => voi
                     </Box>
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
-                <Button onClick={onClose} variant="outlined" sx={{ ...cancelButtonStyle }}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={createMutation.isPending} sx={{ ...submitButtonStyle }}>
+            <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                <Button onClick={onClose} sx={{ bgcolor: "#334155", color: "#f8fafc", borderRadius: "6px", "&:hover": { bgcolor: "#475569" } }}>Cancel</Button>
+                <Button onClick={handleSubmit} disabled={createMutation.isPending} sx={{ bgcolor: "#3b82f6", color: "#fff", borderRadius: "6px", fontWeight: 600, "&:hover": { bgcolor: "#2563eb" } }}>
                     {createMutation.isPending ? "Creating..." : "Create Employee"}
                 </Button>
             </DialogActions>
@@ -206,8 +223,9 @@ const EditEmployeeModal = ({ open, onClose, employeeData }: { open: boolean; onC
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle sx={{ fontWeight: 600, borderBottom: "1px solid #e0e0e0" }}>
+        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth
+            sx={{ "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" }, "& .MuiBackdrop-root": { bgcolor: "rgba(15, 23, 42, 0.8)" } }}>
+            <DialogTitle sx={{ fontWeight: 700, borderBottom: "1px solid rgba(71, 85, 105, 0.4)", color: "#f8fafc", fontFamily: "'Chivo', sans-serif" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <MdEdit /> Edit Employee
                 </Box>
@@ -215,26 +233,26 @@ const EditEmployeeModal = ({ open, onClose, employeeData }: { open: boolean; onC
             <DialogContent>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
                     <Box sx={{ display: "flex", gap: 2 }}>
-                        <TextField label="Full Name" fullWidth size="small" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                        <TextField label="Mobile" fullWidth size="small" value={formData.mobile} onChange={e => setFormData({ ...formData, mobile: e.target.value })} />
+                        <TextField label="Full Name" fullWidth size="small" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} sx={textFieldDarkStyles} />
+                        <TextField label="Mobile" fullWidth size="small" value={formData.mobile} onChange={e => setFormData({ ...formData, mobile: e.target.value })} sx={textFieldDarkStyles} />
                     </Box>
                     <Box sx={{ display: "flex", gap: 2 }}>
-                        <TextField label="Designation" fullWidth size="small" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} />
-                        <TextField label="Department" fullWidth size="small" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} />
+                        <TextField label="Designation" fullWidth size="small" value={formData.designation} onChange={e => setFormData({ ...formData, designation: e.target.value })} sx={textFieldDarkStyles} />
+                        <TextField label="Department" fullWidth size="small" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} sx={textFieldDarkStyles} />
                     </Box>
                     <Box sx={{ display: "flex", gap: 2 }}>
-                        <TextField label="Joining Date" type="date" InputLabelProps={{ shrink: true }} fullWidth size="small" value={formData.joiningDate} onChange={e => setFormData({ ...formData, joiningDate: e.target.value })} />
-                        <TextField select label="Gender" fullWidth size="small" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })}>
+                        <TextField label="Joining Date" type="date" InputLabelProps={{ shrink: true }} fullWidth size="small" value={formData.joiningDate} onChange={e => setFormData({ ...formData, joiningDate: e.target.value })} sx={textFieldDarkStyles} />
+                        <TextField select label="Gender" fullWidth size="small" value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} sx={textFieldDarkStyles}>
                             <MenuItem value="Male">Male</MenuItem>
                             <MenuItem value="Female">Female</MenuItem>
                         </TextField>
                     </Box>
-                    <TextField label="Address" fullWidth size="small" multiline rows={2} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                    <TextField label="Address" fullWidth size="small" multiline rows={2} value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} sx={textFieldDarkStyles} />
                 </Box>
             </DialogContent>
-            <DialogActions sx={{ p: 2, borderTop: "1px solid #e0e0e0" }}>
-                <Button onClick={onClose} variant="outlined" sx={{ ...cancelButtonStyle }}>Cancel</Button>
-                <Button onClick={handleSubmit} variant="contained" disabled={updateMutation.isPending} sx={{ ...submitButtonStyle }}>
+            <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                <Button onClick={onClose} sx={{ bgcolor: "#334155", color: "#f8fafc", borderRadius: "6px", "&:hover": { bgcolor: "#475569" } }}>Cancel</Button>
+                <Button onClick={handleSubmit} disabled={updateMutation.isPending} sx={{ bgcolor: "#3b82f6", color: "#fff", borderRadius: "6px", fontWeight: 600, "&:hover": { bgcolor: "#2563eb" } }}>
                     {updateMutation.isPending ? "Updating..." : "Update Employee"}
                 </Button>
             </DialogActions>
@@ -309,25 +327,24 @@ const EmployeeManagement = () => {
             width: 100,
             valueGetter: (value, row) => row?.employeeId || "-",
             renderCell: (params) => (
-                <Chip
-                    label={params.row.employeeId || "-"}
-                    size="small"
-                    sx={{ fontWeight: 600, bgcolor: "#f3f4f6" }}
-                />
+                <Typography sx={{ fontSize: "12px", fontWeight: 600, color: "#a78bfa", fontFamily: "'JetBrains Mono', monospace" }}>
+                    {params.row.employeeId || "-"}
+                </Typography>
             )
         },
         {
             field: "name",
             headerName: "Employee",
-            width: 220,
+            flex: 1,
+            minWidth: 200,
             renderCell: (params) => (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: "#6366f1", fontSize: 14 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, overflow: "hidden" }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: "#6366f1", fontSize: 13, flexShrink: 0 }}>
                         {params.row.user?.name?.charAt(0)?.toUpperCase() || "?"}
                     </Avatar>
-                    <Box>
-                        <Typography variant="body2" fontWeight={600}>{params.row.user?.name || "-"}</Typography>
-                        <Typography variant="caption" color="text.secondary">{params.row.user?.email || "-"}</Typography>
+                    <Box sx={{ overflow: "hidden" }}>
+                        <Typography sx={{ fontSize: "13px", fontWeight: 600, color: "#f8fafc", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{params.row.user?.name || "-"}</Typography>
+                        <Typography sx={{ fontSize: "11px", color: "#64748b", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{params.row.user?.email || "-"}</Typography>
                     </Box>
                 </Box>
             )
@@ -337,7 +354,7 @@ const EmployeeManagement = () => {
             headerName: "Designation",
             width: 160,
             renderCell: (params) => (
-                <Typography variant="body2">{params.row.designation || "-"}</Typography>
+                <Typography sx={{ fontSize: "12px", color: "#f8fafc" }}>{params.row.designation || "-"}</Typography>
             )
         },
         {
@@ -345,38 +362,34 @@ const EmployeeManagement = () => {
             headerName: "Department",
             width: 140,
             renderCell: (params) => (
-                <Chip
-                    icon={<MdBusiness size={14} />}
-                    label={params.row.department || "-"}
-                    size="small"
-                    sx={{ bgcolor: "#ede9fe", color: "#6366f1", fontWeight: 500 }}
-                />
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <MdBusiness size={14} style={{ color: "#60a5fa" }} />
+                    <Typography sx={{ fontSize: "12px", fontWeight: 600, color: "#60a5fa" }}>{params.row.department || "-"}</Typography>
+                </Box>
             )
         },
         {
             field: "status",
             headerName: "Status",
-            width: 110,
+            width: 100,
             renderCell: (params: any) => (
-                <Chip
-                    label={params.row.user?.status || "Active"}
-                    color={params.row.user?.status === "Active" || !params.row.user?.status ? "success" : "default"}
-                    size="small"
-                    sx={{ fontWeight: 500 }}
-                />
+                <Typography sx={{ fontSize: "12px", fontWeight: 600, color: params.row.user?.status === "Active" || !params.row.user?.status ? "#4ade80" : "#94a3b8" }}>
+                    {params.row.user?.status || "Active"}
+                </Typography>
             )
         },
         {
             field: "actions",
             headerName: "Actions",
-            width: 180,
+            width: 150,
+            sortable: false,
             renderCell: (params: any) => (
                 <Box sx={{ display: "flex", gap: 0.5 }}>
                     <Tooltip title="Edit Profile">
                         <IconButton
                             size="small"
                             onClick={(e) => { e.stopPropagation(); handleEditClick(params.row); }}
-                            sx={{ color: "#6366f1", bgcolor: "#ede9fe", "&:hover": { bgcolor: "#ddd6fe" } }}
+                            sx={{ color: "#a78bfa", "&:hover": { bgcolor: "rgba(167, 139, 250, 0.2)" } }}
                         >
                             <MdEdit size={16} />
                         </IconButton>
@@ -385,7 +398,7 @@ const EmployeeManagement = () => {
                         <IconButton
                             size="small"
                             onClick={(e) => { e.stopPropagation(); navigate(`/payroll/salary/${params.row._id}`); }}
-                            sx={{ color: "#10b981", bgcolor: "#d1fae5", "&:hover": { bgcolor: "#a7f3d0" } }}
+                            sx={{ color: "#4ade80", "&:hover": { bgcolor: "rgba(74, 222, 128, 0.2)" } }}
                         >
                             <MdAttachMoney size={16} />
                         </IconButton>
@@ -394,7 +407,7 @@ const EmployeeManagement = () => {
                         <IconButton
                             size="small"
                             onClick={(e) => { e.stopPropagation(); navigate(`/payroll/history?employeeId=${params.row._id}`); }}
-                            sx={{ color: "#3b82f6", bgcolor: "#dbeafe", "&:hover": { bgcolor: "#bfdbfe" } }}
+                            sx={{ color: "#60a5fa", "&:hover": { bgcolor: "rgba(96, 165, 250, 0.2)" } }}
                         >
                             <MdHistory size={16} />
                         </IconButton>
@@ -407,15 +420,18 @@ const EmployeeManagement = () => {
     if (error) return <Box p={3} color="#ef4444">Error loading employees</Box>;
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box>
             {/* Header */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-                <Typography variant="h5" fontWeight="bold">
-                    Employee Management
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <FaUserTie size={24} style={{ color: "#a78bfa" }} />
+                    <Typography sx={{ fontSize: "20px", fontWeight: 700, color: "#f8fafc", fontFamily: "'Chivo', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        Employee Management
+                    </Typography>
+                </Box>
                 <Box sx={{ display: "flex", gap: 1 }}>
                     <Tooltip title="Refresh">
-                        <IconButton onClick={() => refetch()} sx={{ border: "1px solid #e0e0e0" }}>
+                        <IconButton onClick={() => refetch()} sx={{ color: "#94a3b8", border: "1px solid rgba(71, 85, 105, 0.4)", "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3)" } }}>
                             <MdRefresh />
                         </IconButton>
                     </Tooltip>
@@ -423,7 +439,7 @@ const EmployeeManagement = () => {
                         variant="contained"
                         startIcon={<FaUserPlus />}
                         onClick={() => setAddModalOpen(true)}
-                        sx={{ ...primaryButtonStyle, borderRadius: 2 }}
+                        sx={{ bgcolor: "#3b82f6", color: "#fff", borderRadius: "6px", px: 2.5, fontWeight: 600, "&:hover": { bgcolor: "#2563eb" } }}
                     >
                         Add Employee
                     </Button>
@@ -439,18 +455,16 @@ const EmployeeManagement = () => {
             </Box>
 
             {/* Tabs */}
-            <Paper sx={{ mb: 2 }}>
-                <Tabs
-                    value={tabValue}
-                    onChange={(_, v) => setTabValue(v)}
-                    indicatorColor="primary"
-                    textColor="primary"
-                >
-                    <Tab label={`All Employees (${stats.all})`} />
-                    <Tab label={`Active (${stats.active})`} />
-                    <Tab label={`Inactive (${stats.inactive})`} />
-                </Tabs>
-            </Paper>
+            <Box sx={{ borderBottom: "1px solid rgba(71, 85, 105, 0.4)", mb: 2 }}>
+                <Box sx={{ display: "flex", gap: 0 }}>
+                    {[`All (${stats.all})`, `Active (${stats.active})`, `Inactive (${stats.inactive})`].map((label, index) => (
+                        <Box key={index} onClick={() => setTabValue(index)}
+                            sx={{ px: 2, py: 1.5, cursor: "pointer", fontSize: "12px", fontWeight: 600, color: tabValue === index ? "#60a5fa" : "#94a3b8", borderBottom: tabValue === index ? "2px solid #60a5fa" : "2px solid transparent", textTransform: "uppercase", letterSpacing: "0.05em", "&:hover": { color: "#f8fafc" } }}>
+                            {label}
+                        </Box>
+                    ))}
+                </Box>
+            </Box>
 
             {/* Search */}
             <Box sx={{ mb: 2 }}>
@@ -459,11 +473,11 @@ const EmployeeManagement = () => {
                     size="small"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    sx={{ minWidth: 350, maxWidth: 500 }}
+                    sx={{ minWidth: 350, maxWidth: 500, ...textFieldDarkStyles }}
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <MdSearch color="#9ca3af" />
+                                <MdSearch color="#64748b" />
                             </InputAdornment>
                         ),
                     }}
@@ -471,22 +485,30 @@ const EmployeeManagement = () => {
             </Box>
 
             {/* Data Table */}
-            <Paper elevation={0} sx={{ border: "1px solid #e5e7eb", borderRadius: 2 }}>
+            <Box>
                 <DataGrid
                     rows={filteredRows}
                     columns={columns}
                     loading={isLoading}
                     autoHeight
+                    rowHeight={52}
                     getRowId={(row) => row._id}
                     initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
                     pageSizeOptions={[10, 20, 50]}
                     sx={{
-                        border: "none",
-                        "& .MuiDataGrid-row:hover": { bgcolor: "#f8fafc" },
-                        "& .MuiDataGrid-columnHeaders": { bgcolor: "#f8fafc" },
+                        bgcolor: "rgba(30, 41, 59, 0.4)", borderRadius: "6px", border: "1px solid rgba(71, 85, 105, 0.4)",
+                        "& .MuiDataGrid-columnHeaders": { bgcolor: "#0f172a !important", color: "#94a3b8" },
+                        "& .MuiDataGrid-columnHeader": { bgcolor: "#0f172a !important" },
+                        "& .MuiDataGrid-filler": { bgcolor: "#0f172a !important" },
+                        "& .MuiDataGrid-columnHeaderTitle": { fontFamily: "'JetBrains Mono', monospace", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", color: "#94a3b8" },
+                        "& .MuiDataGrid-columnHeaderSeparator": { display: "none" },
+                        "& .MuiDataGrid-row": { borderBottom: "1px solid rgba(71, 85, 105, 0.3)", "&:hover": { bgcolor: "rgba(51, 65, 85, 0.3) !important" } },
+                        "& .MuiDataGrid-cell": { display: "flex", alignItems: "center", borderColor: "rgba(71, 85, 105, 0.3)", color: "#f8fafc" },
+                        "& .MuiDataGrid-footerContainer": { bgcolor: "#0f172a", borderTop: "1px solid rgba(71, 85, 105, 0.4)" },
+                        "& .MuiTablePagination-root": { color: "#94a3b8" },
                     }}
                 />
-            </Paper>
+            </Box>
 
             <AddEmployeeModal open={addModalOpen} onClose={() => setAddModalOpen(false)} />
             <EditEmployeeModal open={editModalOpen} onClose={() => setEditModalOpen(false)} employeeData={selectedEmployee} />

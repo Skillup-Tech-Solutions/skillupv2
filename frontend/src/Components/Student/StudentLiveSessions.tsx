@@ -1,0 +1,570 @@
+import { useState } from "react";
+import {
+    Box,
+    Typography,
+    Grid,
+    Chip,
+    Button,
+    CircularProgress,
+    Tabs,
+    Tab,
+} from "@mui/material";
+import {
+    VideoCamera,
+    CalendarBlank,
+    Clock,
+    Users,
+    ArrowSquareOut,
+    BookOpen,
+    Briefcase,
+    Buildings,
+    ClockCounterClockwise,
+} from "@phosphor-icons/react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import Cookies from "js-cookie";
+import {
+    useGetLiveNowSessionsApi,
+    useGetUpcomingSessionsApi,
+    useGetSessionHistoryApi,
+    useJoinSessionApi,
+    type LiveSession,
+} from "../../Hooks/liveSessions";
+import VideoRoom from "../VideoRoom/VideoRoom";
+
+dayjs.extend(relativeTime);
+
+const StudentLiveSessions = () => {
+    const userName = Cookies.get("name") || "Student";
+    const userEmail = Cookies.get("email") || "";
+
+    const [activeTab, setActiveTab] = useState(0);
+    const [activeSession, setActiveSession] = useState<LiveSession | null>(null);
+
+    const { data: liveData, isLoading: liveLoading, refetch: refetchLive } = useGetLiveNowSessionsApi();
+    const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
+    const { data: historyData, isLoading: historyLoading } = useGetSessionHistoryApi();
+    const { mutate: joinSession } = useJoinSessionApi();
+
+    const liveSessions = liveData?.sessions || [];
+    const upcomingSessions = upcomingData?.sessions || [];
+    const historySessions = historyData?.sessions || [];
+
+    const handleJoin = (session: LiveSession) => {
+        joinSession(session._id, {
+            onSuccess: () => {
+                setActiveSession(session);
+            },
+        });
+    };
+
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case "COURSE":
+                return <BookOpen size={16} weight="duotone" style={{ color: "#60a5fa" }} />;
+            case "PROJECT":
+                return <Briefcase size={16} weight="duotone" style={{ color: "#a78bfa" }} />;
+            case "INTERNSHIP":
+                return <Buildings size={16} weight="duotone" style={{ color: "#34d399" }} />;
+            default:
+                return <VideoCamera size={16} />;
+        }
+    };
+
+    const getTypeLabel = (type: string) => {
+        switch (type) {
+            case "COURSE":
+                return "Course";
+            case "PROJECT":
+                return "Project";
+            case "INTERNSHIP":
+                return "Internship";
+            default:
+                return type;
+        }
+    };
+
+    // If in active session, show video room
+    if (activeSession) {
+        return (
+            <VideoRoom
+                session={activeSession}
+                userName={userName}
+                userEmail={userEmail}
+                isHost={false}
+                onExit={() => {
+                    setActiveSession(null);
+                    refetchLive();
+                }}
+            />
+        );
+    }
+
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Header */}
+            <Box>
+                <Typography
+                    sx={{
+                        fontSize: "24px",
+                        fontFamily: "'Chivo', sans-serif",
+                        fontWeight: 800,
+                        color: "#f8fafc",
+                        mb: 0.5,
+                    }}
+                >
+                    Live Sessions
+                </Typography>
+                <Typography sx={{ color: "#94a3b8", fontSize: "14px" }}>
+                    Join live video sessions for your courses, projects, and internships
+                </Typography>
+            </Box>
+
+            {/* Live Now Banner */}
+            {liveSessions.length > 0 && (
+                <Box
+                    sx={{
+                        bgcolor: "rgba(34, 197, 94, 0.1)",
+                        border: "1px solid rgba(34, 197, 94, 0.3)",
+                        borderRadius: "6px",
+                        p: 2.5,
+                    }}
+                >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                        <Box
+                            sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                bgcolor: "#22c55e",
+                                animation: "pulse 2s infinite",
+                                "@keyframes pulse": {
+                                    "0%": { opacity: 1, transform: "scale(1)" },
+                                    "50%": { opacity: 0.5, transform: "scale(1.2)" },
+                                    "100%": { opacity: 1, transform: "scale(1)" },
+                                },
+                            }}
+                        />
+                        <Typography sx={{ color: "#22c55e", fontWeight: 700, fontSize: "14px" }}>
+                            {liveSessions.length} Session{liveSessions.length > 1 ? "s" : ""} Live Now
+                        </Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                        {liveSessions.map((session) => (
+                            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session._id}>
+                                <Box
+                                    sx={{
+                                        bgcolor: "#1e293b",
+                                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                                        borderRadius: "6px",
+                                        p: 2,
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 1.5 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                            {getTypeIcon(session.sessionType)}
+                                            <Typography sx={{ color: "#94a3b8", fontSize: "11px", textTransform: "uppercase" }}>
+                                                {getTypeLabel(session.sessionType)}
+                                            </Typography>
+                                        </Box>
+                                        <Chip
+                                            label="LIVE"
+                                            size="small"
+                                            sx={{
+                                                bgcolor: "#22c55e",
+                                                color: "#fff",
+                                                fontWeight: 700,
+                                                fontSize: "10px",
+                                                height: 20,
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "15px", mb: 0.5 }}>
+                                        {session.title}
+                                    </Typography>
+                                    <Typography sx={{ color: "#64748b", fontSize: "12px", mb: 2 }}>
+                                        {session.referenceName}
+                                    </Typography>
+                                    <Button
+                                        fullWidth
+                                        startIcon={<ArrowSquareOut size={18} />}
+                                        onClick={() => handleJoin(session)}
+                                        sx={{
+                                            bgcolor: "#22c55e",
+                                            color: "#fff",
+                                            fontWeight: 600,
+                                            borderRadius: "6px",
+                                            "&:hover": { bgcolor: "#16a34a" },
+                                        }}
+                                    >
+                                        Join Now
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Box>
+            )}
+
+            <Tabs
+                value={activeTab}
+                onChange={(_, v) => setActiveTab(v)}
+                sx={{
+                    "& .MuiTabs-indicator": { bgcolor: "#3b82f6" },
+                    "& .MuiTab-root": {
+                        color: "#64748b",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        textTransform: "none",
+                        "&.Mui-selected": { color: "#3b82f6" },
+                    },
+                }}
+            >
+                <Tab label={`Live Now (${liveSessions.length})`} />
+                <Tab label={`Upcoming (${upcomingSessions.length})`} />
+                <Tab label={`History (${historySessions.length})`} />
+            </Tabs>
+
+            {/* Content */}
+            {activeTab === 0 && (
+                <>
+                    {liveLoading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                            <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
+                        </Box>
+                    ) : liveSessions.length === 0 ? (
+                        <Box
+                            sx={{
+                                py: 8,
+                                textAlign: "center",
+                                border: "1px dashed rgba(71, 85, 105, 0.4)",
+                                borderRadius: "6px",
+                            }}
+                        >
+                            <VideoCamera size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                            <Typography sx={{ color: "#94a3b8" }}>No live sessions at the moment</Typography>
+                            <Typography sx={{ color: "#64748b", fontSize: "13px", mt: 1 }}>
+                                Check the "Upcoming" tab for scheduled sessions
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {liveSessions.map((session) => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session._id}>
+                                    <SessionCard session={session} onJoin={() => handleJoin(session)} />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </>
+            )}
+
+            {activeTab === 1 && (
+                <>
+                    {upcomingLoading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                            <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
+                        </Box>
+                    ) : upcomingSessions.length === 0 ? (
+                        <Box
+                            sx={{
+                                py: 8,
+                                textAlign: "center",
+                                border: "1px dashed rgba(71, 85, 105, 0.4)",
+                                borderRadius: "6px",
+                            }}
+                        >
+                            <CalendarBlank size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                            <Typography sx={{ color: "#94a3b8" }}>No upcoming sessions scheduled</Typography>
+                            <Typography sx={{ color: "#64748b", fontSize: "13px", mt: 1 }}>
+                                Your instructors will schedule sessions soon
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {upcomingSessions.map((session) => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session._id}>
+                                    <SessionCard session={session} isUpcoming />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </>
+            )}
+
+            {/* History Tab */}
+            {activeTab === 2 && (
+                <>
+                    {historyLoading ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                            <CircularProgress size={32} sx={{ color: "#3b82f6" }} />
+                        </Box>
+                    ) : historySessions.length === 0 ? (
+                        <Box
+                            sx={{
+                                py: 8,
+                                textAlign: "center",
+                                border: "1px dashed rgba(71, 85, 105, 0.4)",
+                                borderRadius: "6px",
+                            }}
+                        >
+                            <ClockCounterClockwise size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                            <Typography sx={{ color: "#94a3b8" }}>No session history yet</Typography>
+                            <Typography sx={{ color: "#64748b", fontSize: "13px", mt: 1 }}>
+                                Completed sessions will appear here
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {historySessions.map((session) => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={session._id}>
+                                    <HistoryCard session={session} />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </>
+            )}
+        </Box>
+    );
+};
+
+// Session Card Component
+const SessionCard = ({
+    session,
+    onJoin,
+    isUpcoming = false,
+}: {
+    session: LiveSession;
+    onJoin?: () => void;
+    isUpcoming?: boolean;
+}) => {
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case "COURSE":
+                return <BookOpen size={16} weight="duotone" style={{ color: "#60a5fa" }} />;
+            case "PROJECT":
+                return <Briefcase size={16} weight="duotone" style={{ color: "#a78bfa" }} />;
+            case "INTERNSHIP":
+                return <Buildings size={16} weight="duotone" style={{ color: "#34d399" }} />;
+            default:
+                return <VideoCamera size={16} />;
+        }
+    };
+
+    return (
+        <Box
+            sx={{
+                bgcolor: "#1e293b",
+                border: "1px solid rgba(71, 85, 105, 0.4)",
+                borderRadius: "6px",
+                p: 2.5,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+            }}
+        >
+            {/* Header */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {getTypeIcon(session.sessionType)}
+                    <Typography sx={{ color: "#94a3b8", fontSize: "11px", textTransform: "uppercase" }}>
+                        {session.sessionType}
+                    </Typography>
+                </Box>
+                {session.status === "LIVE" && (
+                    <Chip
+                        label="LIVE"
+                        size="small"
+                        sx={{
+                            bgcolor: "#22c55e",
+                            color: "#fff",
+                            fontWeight: 700,
+                            fontSize: "10px",
+                            height: 20,
+                            animation: "pulse 2s infinite",
+                            "@keyframes pulse": {
+                                "0%": { opacity: 1 },
+                                "50%": { opacity: 0.7 },
+                                "100%": { opacity: 1 },
+                            },
+                        }}
+                    />
+                )}
+                {session.status === "SCHEDULED" && (
+                    <Chip
+                        label="SCHEDULED"
+                        size="small"
+                        sx={{
+                            bgcolor: "rgba(59, 130, 246, 0.2)",
+                            color: "#60a5fa",
+                            fontWeight: 600,
+                            fontSize: "10px",
+                            height: 20,
+                        }}
+                    />
+                )}
+            </Box>
+
+            {/* Title */}
+            <Box>
+                <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "15px", mb: 0.5 }}>
+                    {session.title}
+                </Typography>
+                <Typography sx={{ color: "#64748b", fontSize: "12px" }}>{session.referenceName}</Typography>
+            </Box>
+
+            {/* Meta */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                    <CalendarBlank size={14} />
+                    <Typography sx={{ fontSize: "12px" }}>
+                        {dayjs(session.scheduledAt).format("MMM D, YYYY")}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                    <Clock size={14} />
+                    <Typography sx={{ fontSize: "12px" }}>
+                        {dayjs(session.scheduledAt).format("h:mm A")}
+                    </Typography>
+                </Box>
+                {session.participants && session.participants.length > 0 && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                        <Users size={14} />
+                        <Typography sx={{ fontSize: "12px" }}>{session.participants.length} joined</Typography>
+                    </Box>
+                )}
+            </Box>
+
+            {/* Host */}
+            <Typography sx={{ color: "#94a3b8", fontSize: "12px" }}>
+                Hosted by {session.hostName || "Instructor"}
+            </Typography>
+
+            {/* Action */}
+            {!isUpcoming && session.status === "LIVE" && onJoin && (
+                <Button
+                    fullWidth
+                    startIcon={<ArrowSquareOut size={18} />}
+                    onClick={onJoin}
+                    sx={{
+                        bgcolor: "rgba(59, 130, 246, 0.15)",
+                        color: "#3b82f6",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                        mt: "auto",
+                        "&:hover": { bgcolor: "rgba(59, 130, 246, 0.25)" },
+                    }}
+                >
+                    Join Session
+                </Button>
+            )}
+
+            {isUpcoming && (
+                <Typography sx={{ color: "#64748b", fontSize: "12px", textAlign: "center", mt: "auto" }}>
+                    Starts {dayjs(session.scheduledAt).fromNow()}
+                </Typography>
+            )}
+        </Box>
+    );
+};
+
+// History Card Component
+const HistoryCard = ({ session }: { session: LiveSession }) => {
+    const getTypeIcon = (type: string) => {
+        switch (type) {
+            case "COURSE":
+                return <BookOpen size={16} weight="duotone" style={{ color: "#60a5fa" }} />;
+            case "PROJECT":
+                return <Briefcase size={16} weight="duotone" style={{ color: "#a78bfa" }} />;
+            case "INTERNSHIP":
+                return <Buildings size={16} weight="duotone" style={{ color: "#34d399" }} />;
+            default:
+                return <VideoCamera size={16} />;
+        }
+    };
+
+    // Calculate duration
+    const getDuration = () => {
+        if (session.startedAt && session.endedAt) {
+            const start = dayjs(session.startedAt);
+            const end = dayjs(session.endedAt);
+            const minutes = end.diff(start, 'minutes');
+            if (minutes < 60) return `${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours}h ${mins}m`;
+        }
+        return `${session.durationMinutes} min`;
+    };
+
+    return (
+        <Box
+            sx={{
+                bgcolor: "#1e293b",
+                border: "1px solid rgba(71, 85, 105, 0.4)",
+                borderRadius: "6px",
+                p: 2.5,
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+            }}
+        >
+            {/* Header */}
+            <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {getTypeIcon(session.sessionType)}
+                    <Typography sx={{ color: "#94a3b8", fontSize: "11px", textTransform: "uppercase" }}>
+                        {session.sessionType}
+                    </Typography>
+                </Box>
+                <Chip
+                    label="ENDED"
+                    size="small"
+                    sx={{
+                        bgcolor: "rgba(71, 85, 105, 0.3)",
+                        color: "#94a3b8",
+                        fontWeight: 600,
+                        fontSize: "10px",
+                        height: 20,
+                    }}
+                />
+            </Box>
+
+            {/* Title */}
+            <Box>
+                <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "15px", mb: 0.5 }}>
+                    {session.title}
+                </Typography>
+                <Typography sx={{ color: "#64748b", fontSize: "12px" }}>{session.referenceName}</Typography>
+            </Box>
+
+            {/* Meta */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                    <CalendarBlank size={14} />
+                    <Typography sx={{ fontSize: "12px" }}>
+                        {dayjs(session.scheduledAt).format("MMM D, YYYY")}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                    <Clock size={14} />
+                    <Typography sx={{ fontSize: "12px" }}>{getDuration()}</Typography>
+                </Box>
+                {session.participants && session.participants.length > 0 && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
+                        <Users size={14} />
+                        <Typography sx={{ fontSize: "12px" }}>{session.participants.length} attended</Typography>
+                    </Box>
+                )}
+            </Box>
+
+            {/* Host */}
+            <Typography sx={{ color: "#94a3b8", fontSize: "12px" }}>
+                Hosted by {session.hostName || "Instructor"}
+            </Typography>
+        </Box>
+    );
+};
+
+export default StudentLiveSessions;
