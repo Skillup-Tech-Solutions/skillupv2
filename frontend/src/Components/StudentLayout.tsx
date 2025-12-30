@@ -24,6 +24,8 @@ const StudentLayout = () => {
     const [isHidden, setIsHidden] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const sidebarRef = useRef<HTMLDivElement>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [downloadFileName, setDownloadFileName] = useState("");
 
     // Load saved width from localStorage
     useEffect(() => {
@@ -80,6 +82,24 @@ const StudentLayout = () => {
             window.removeEventListener('mouseup', stopResizing);
         };
     }, [resize, stopResizing]);
+
+    useEffect(() => {
+        const handleDownloadStart = (e: any) => {
+            setIsDownloading(true);
+            setDownloadFileName(e.detail?.filename || "file");
+        };
+        const handleDownloadEnd = () => {
+            setIsDownloading(false);
+        };
+
+        window.addEventListener('download-start', handleDownloadStart as EventListener);
+        window.addEventListener('download-end', handleDownloadEnd);
+
+        return () => {
+            window.removeEventListener('download-start', handleDownloadStart as EventListener);
+            window.removeEventListener('download-end', handleDownloadEnd);
+        };
+    }, []);
 
     const showLabels = sidebarWidth >= 150 && !isHidden;
 
@@ -349,6 +369,53 @@ const StudentLayout = () => {
 
             {/* Bottom Navigation for Mobile */}
             <StudentBottomNav onOpenSidebar={() => setMobileOpen(true)} />
+
+            {/* Download Progress Indicator */}
+            {isDownloading && (
+                <Box
+                    sx={{
+                        position: "fixed",
+                        bottom: isMobile ? 80 : 20,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 200,
+                        bgcolor: "rgba(15, 23, 42, 0.9)",
+                        backdropFilter: "blur(12px)",
+                        border: "1px solid rgba(59, 130, 246, 0.5)",
+                        borderRadius: "12px",
+                        px: 3,
+                        py: 1.5,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        minWidth: "280px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+                        animation: "slideUp 0.3s ease-out",
+                        "@keyframes slideUp": {
+                            from: { transform: "translateX(-50%) translateY(20px)", opacity: 0 },
+                            to: { transform: "translateX(-50%) translateY(0)", opacity: 1 }
+                        }
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            border: "2px solid rgba(59, 130, 246, 0.2)",
+                            borderTopColor: "#3b82f6",
+                            animation: "spin 1s linear infinite",
+                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                        }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                        <Box sx={{ color: "#f8fafc", fontSize: "13px", fontWeight: 600 }}>Downloading...</Box>
+                        <Box sx={{ color: "#94a3b8", fontSize: "11px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
+                            {downloadFileName}
+                        </Box>
+                    </Box>
+                </Box>
+            )}
 
             {/* Overlay when resizing to prevent iframe capturing mouse */}
             {isResizing && (

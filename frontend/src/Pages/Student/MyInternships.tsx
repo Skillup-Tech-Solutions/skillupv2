@@ -84,10 +84,15 @@ const MyInternships = () => {
         onError: (err: any) => CustomSnackBar.errorSnackbar(err.response?.data?.message || "Failed to upload"),
     });
 
-    const handleDownload = (path: string, filename: string) => {
-        downloadFileAsBlob(path, filename).catch(() =>
-            CustomSnackBar.errorSnackbar("Download failed")
-        );
+    const handleDownload = async (path: string, filename: string) => {
+        window.dispatchEvent(new CustomEvent('download-start', { detail: { filename } }));
+        try {
+            await downloadFileAsBlob(path, filename);
+        } catch (error) {
+            CustomSnackBar.errorSnackbar("Download failed");
+        } finally {
+            window.dispatchEvent(new CustomEvent('download-end'));
+        }
     };
 
     // Get current step for progress stepper
