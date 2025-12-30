@@ -63,11 +63,11 @@ const StudentLiveSessions = () => {
         joinSession(session._id, {
             onSuccess: (data: any) => {
                 if (data.alreadyActive) {
-                    setPendingSession(session);
+                    setPendingSession(data.session || session);
                     setIsAlreadyActive(true);
                     setShowJoinDialog(true);
                 } else {
-                    setActiveSession(session);
+                    setActiveSession(data.session || session);
                 }
             },
         });
@@ -508,12 +508,14 @@ const SessionCard = ({
                         {dayjs(session.scheduledAt).format("h:mm A")}
                     </Typography>
                 </Box>
-                {session.participants && session.participants.length > 0 && (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
-                        <Users size={14} />
-                        <Typography sx={{ fontSize: "12px" }}>{session.participants.length} joined</Typography>
-                    </Box>
-                )}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: session.status === "LIVE" ? "#22c55e" : "#64748b" }}>
+                    <Users size={14} />
+                    <Typography sx={{ fontSize: "12px", fontWeight: session.status === "LIVE" ? 600 : 400 }}>
+                        {session.status === "LIVE"
+                            ? `${session.activeParticipantsCount || 0} active`
+                            : `${session.participants?.length || 0} joined`}
+                    </Typography>
+                </Box>
             </Box>
 
             {/* Host */}

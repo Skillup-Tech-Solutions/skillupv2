@@ -15,6 +15,7 @@ const LiveSessionsWidget = ({ variant = "student", maxItems = 3 }: LiveSessionsW
     const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
 
     const liveSessions = liveData?.sessions || [];
+    const activeLiveSessionsCount = liveSessions.filter(s => (s.activeParticipantsCount || 0) > 0).length;
     const upcomingSessions = upcomingData?.sessions || [];
     const isLoading = liveLoading || upcomingLoading;
 
@@ -63,9 +64,9 @@ const LiveSessionsWidget = ({ variant = "student", maxItems = 3 }: LiveSessionsW
             >
                 <VideoCamera size={16} weight="duotone" />
                 Live Sessions
-                {liveSessions.length > 0 && (
+                {activeLiveSessionsCount > 0 && (
                     <Chip
-                        label={`${liveSessions.length} LIVE`}
+                        label={`${activeLiveSessionsCount} LIVE`}
                         size="small"
                         sx={{
                             ml: 1,
@@ -234,7 +235,7 @@ const SessionRow = ({
                         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b" }}>
                             <Users size={12} />
                             <Typography sx={{ fontSize: "11px" }}>
-                                {session.participants?.length || 0}
+                                {session.activeParticipantsCount ?? (session.participants?.length || 0)}
                             </Typography>
                         </Box>
                         <Chip

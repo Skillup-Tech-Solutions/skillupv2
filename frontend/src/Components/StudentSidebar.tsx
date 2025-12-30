@@ -5,10 +5,10 @@ import {
     DialogActions,
     Button,
 } from "@mui/material";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import Cookies from "js-cookie";
-import { images } from "../assets/Images/Images";
+
 import {
     Gauge,
     Books,
@@ -20,6 +20,7 @@ import {
     GraduationCap,
     VideoCamera,
 } from "@phosphor-icons/react";
+import { useGetLiveNowSessionsApi } from "../Hooks/liveSessions";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -28,7 +29,7 @@ interface SidebarProps {
 }
 
 const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
-    const username = Cookies.get("name");
+
     const role = Cookies.get("role");
     const navigate = useNavigate();
     const location = useLocation();
@@ -69,6 +70,8 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
     };
 
     const isActive = (path: string) => location.pathname === path;
+    const { data: liveData } = useGetLiveNowSessionsApi();
+    const hasLiveSession = liveData?.sessions && liveData.sessions.some(s => (s.activeParticipantsCount || 0) > 0);
 
     const menuItems = [
         { path: "/student/dashboard", label: "Overview", icon: Gauge },
@@ -198,8 +201,27 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
                                         >
                                             <Icon size={20} weight="duotone" style={{ flexShrink: 0 }} />
                                             {showLabels && (
-                                                <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                    {item.label}
+                                                <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", overflow: "hidden" }}>
+                                                    <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                        {item.label}
+                                                    </Box>
+                                                    {item.label === "Live Sessions" && hasLiveSession && (
+                                                        <Box
+                                                            sx={{
+                                                                width: 6,
+                                                                height: 6,
+                                                                borderRadius: "50%",
+                                                                bgcolor: "#ef4444",
+                                                                boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                                                                animation: "pulse-red 2s infinite",
+                                                                "@keyframes pulse-red": {
+                                                                    "0%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.7)" },
+                                                                    "70%": { transform: "scale(1)", boxShadow: "0 0 0 6px rgba(239, 68, 68, 0)" },
+                                                                    "100%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(239, 68, 68, 0)" }
+                                                                }
+                                                            }}
+                                                        />
+                                                    )}
                                                 </Box>
                                             )}
                                         </Box>

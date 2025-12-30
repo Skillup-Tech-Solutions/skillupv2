@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Box, Typography, Chip, Button } from "@mui/material";
-import { ArrowLeft, Users, Clock, VideoCamera } from "@phosphor-icons/react";
+import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
+import { useLeaveSessionApi } from "../../Hooks/liveSessions";
+import Cookies from "js-cookie";
 
 declare global {
     interface Window {
@@ -16,27 +18,61 @@ interface VideoRoomProps {
     userEmail: string;
     isHost?: boolean;
     onExit: () => void;
+    onEndSession?: () => void; // Added for hosts to end meeting for everyone
 }
 
-const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: VideoRoomProps) => {
+const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEndSession }: VideoRoomProps) => {
     const jitsiContainerRef = useRef<HTMLDivElement>(null);
     const jitsiApiRef = useRef<any>(null);
     const jitsiInitialized = useRef(false);
+    const unmounting = useRef(false);
     const [mounted, setMounted] = useState(false);
-    const [participantCount, setParticipantCount] = useState(1);
+    // Initialize with 1 if it's the host, or use the active count from session
+    const [participantCount, setParticipantCount] = useState(
+        isHost ? Math.max(1, session.activeParticipantsCount || 0) : (session.activeParticipantsCount || 1)
+    );
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const { mutate: leaveSessionApi } = useLeaveSessionApi();
+
+    // Securely get base URL from config for beacon
+    const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
 
     useEffect(() => {
         setMounted(true);
 
+        const handleBeforeUnload = () => {
+            // Fetch with keepalive is more reliable and supports headers
+            if (session._id) {
+                const token = Cookies.get("skToken");
+                const url = `${BASE_URL}live-sessions/${session._id}/leave`;
+
+                fetch(url, {
+                    method: 'POST',
+                    keepalive: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    body: JSON.stringify({})
+                });
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
         return () => {
+            unmounting.current = true;
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+
             // Cleanup Jitsi on unmount
             if (jitsiApiRef.current) {
                 jitsiApiRef.current.dispose();
                 jitsiApiRef.current = null;
             }
             jitsiInitialized.current = false;
+            // Removed direct leaveSessionApi call from here to prevent 'too strict' ghost leaves during remounts/screen sharing
         };
-    }, []);
+    }, [session._id, BASE_URL]);
 
     useEffect(() => {
         if (mounted && session.roomId) {
@@ -93,10 +129,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
             // Use jitsi.riot.im (Element's Jitsi) - no lobby enforcement
             const domain = "jitsi.riot.im";
             // Simple room name without special characters
-            const roomName = `skillup${session.roomId.replace(/-/g, '')}`;
+            const roomName = `skillup${session.roomId.replace(/-/g, '')} `;
 
             // Generate a unique user ID based on email + random suffix to allow multi-device joins
-            const userId = `${btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}_${Math.random().toString(36).substring(2, 6)}`;
+            const userId = `${btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}_${Math.random().toString(36).substring(2, 6)} `;
 
             const options = {
                 roomName,
@@ -127,6 +163,17 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                         min: 5,
                         max: 5,
                     },
+                    // Bandwidth & Quality Optimization
+                    constraints: {
+                        video: {
+                            height: {
+                                ideal: 480,
+                                max: 720,
+                                min: 240
+                            }
+                        }
+                    },
+                    disableAudioLevels: false,
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone
@@ -211,13 +258,31 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
         }
     };
 
-    const handleExit = () => {
+    const handleExit = (endForEveryone = false) => {
         if (jitsiApiRef.current) {
             jitsiApiRef.current.dispose();
             jitsiApiRef.current = null;
         }
         jitsiInitialized.current = false;
-        onExit();
+
+        if (endForEveryone && onEndSession) {
+            onEndSession();
+        } else {
+            // Explicitly notify backend that WE are leaving
+            if (session._id) {
+                leaveSessionApi(session._id);
+            }
+            onExit();
+        }
+        setShowExitConfirm(false);
+    };
+
+    const handleExitClick = () => {
+        if (isHost) {
+            setShowExitConfirm(true);
+        } else {
+            handleExit();
+        }
     };
 
     // Room content to be portaled to body for fullscreen experience
@@ -254,7 +319,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
             >
                 <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
                     <Button
-                        onClick={handleExit}
+                        onClick={handleExitClick}
                         startIcon={<ArrowLeft size={18} />}
                         sx={{
                             color: "#94a3b8",
@@ -324,6 +389,67 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
             <Box sx={{ flex: 1, display: "flex", position: "relative", width: "100%", bgcolor: "#000" }}>
                 <Box ref={jitsiContainerRef} sx={{ position: "absolute", inset: 0 }} />
             </Box>
+
+            {/* Host Exit Confirmation Dialog */}
+            <Dialog
+                open={showExitConfirm}
+                onClose={() => setShowExitConfirm(false)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        backgroundImage: "none",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                        maxWidth: "400px"
+                    }
+                }}
+            >
+                <DialogTitle sx={{ color: "#f8fafc", px: 3, pt: 3, display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Warning size={24} weight="duotone" color="#eab308" />
+                    Leave Session
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, py: 2 }}>
+                    <Typography sx={{ color: "#94a3b8", fontSize: "14px", lineHeight: 1.6 }}>
+                        You are about to leave the live session. What would you like to do?
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5, flexDirection: "column", alignItems: "stretch" }}>
+                    <Button
+                        onClick={() => handleExit(true)}
+                        variant="contained"
+                        startIcon={<SignOut size={18} />}
+                        sx={{
+                            bgcolor: "#ef4444",
+                            color: "#fff",
+                            fontWeight: 700,
+                            textTransform: "none",
+                            "&:hover": { bgcolor: "#dc2626" }
+                        }}
+                    >
+                        End Session for Everyone
+                    </Button>
+                    <Button
+                        onClick={() => handleExit(false)}
+                        variant="outlined"
+                        startIcon={<HandWaving size={18} />}
+                        sx={{
+                            color: "#94a3b8",
+                            borderColor: "rgba(71, 85, 105, 0.4)",
+                            fontWeight: 600,
+                            textTransform: "none",
+                            "&:hover": { bgcolor: "rgba(255,255,255,0.05)", borderColor: "rgba(71, 85, 105, 0.6)" }
+                        }}
+                    >
+                        Just Leave (Keep session active)
+                    </Button>
+                    <Button
+                        onClick={() => setShowExitConfirm(false)}
+                        sx={{ color: "#64748b", fontWeight: 500, fontSize: "13px", textTransform: "none" }}
+                    >
+                        Cancel
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 

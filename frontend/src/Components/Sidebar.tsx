@@ -14,7 +14,7 @@ import {
   Users,
   GraduationCap,
   Books,
-  FolderSimple,
+
   Tag,
   Percent,
   Briefcase,
@@ -23,7 +23,9 @@ import {
   CurrencyDollar,
   Gear,
   SignOut,
+  VideoCamera,
 } from "@phosphor-icons/react";
+import { useGetLiveNowSessionsApi } from "../Hooks/liveSessions";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -55,11 +57,13 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
   };
 
   const isActive = (paths: string[]) => paths.some(p => location.pathname.startsWith(p));
-  const isExactActive = (path: string) => location.pathname === path;
+  const { data: liveData } = useGetLiveNowSessionsApi();
+  const hasLiveSession = liveData?.sessions && liveData.sessions.some(s => (s.activeParticipantsCount || 0) > 0);
 
   const menuItems = role === "admin" ? [
     { paths: ["/dashboard"], label: "Dashboard", icon: Gauge },
     { paths: ["/users"], label: "People", icon: Users },
+    { paths: ["/student/live-sessions"], label: "Live Sessions", icon: VideoCamera },
     { paths: ["/courses", "/internships", "/projects"], label: "Programs", icon: GraduationCap },
     { paths: ["/syllabus"], label: "Syllabus", icon: Books },
     { paths: ["/category"], label: "Category", icon: Tag },
@@ -194,8 +198,27 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
                     >
                       <Icon size={20} weight="duotone" style={{ flexShrink: 0 }} />
                       {showLabels && (
-                        <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {item.label}
+                        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", overflow: "hidden" }}>
+                          <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {item.label}
+                          </Box>
+                          {item.label === "Live Sessions" && hasLiveSession && (
+                            <Box
+                              sx={{
+                                width: 6,
+                                height: 6,
+                                borderRadius: "50%",
+                                bgcolor: "#ef4444",
+                                boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.7)",
+                                animation: "pulse-red 2s infinite",
+                                "@keyframes pulse-red": {
+                                  "0%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(239, 68, 68, 0.7)" },
+                                  "70%": { transform: "scale(1)", boxShadow: "0 0 0 6px rgba(239, 68, 68, 0)" },
+                                  "100%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(239, 68, 68, 0)" }
+                                }
+                              }}
+                            />
+                          )}
                         </Box>
                       )}
                     </Box>

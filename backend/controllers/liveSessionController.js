@@ -13,6 +13,14 @@ const getReferenceModel = (sessionType) => {
     }
 };
 
+// Enrich session with active participants count
+const enrichSession = (session) => {
+    if (!session) return null;
+    const sessionObj = session.toObject ? session.toObject() : session;
+    sessionObj.activeParticipantsCount = (session.participants || []).filter(p => !p.leftAt).length;
+    return sessionObj;
+};
+
 // Create a new live session
 exports.createSession = async (req, res) => {
     try {
@@ -78,7 +86,7 @@ exports.getSessions = async (req, res) => {
             .sort({ scheduledAt: -1 })
             .limit(100);
 
-        res.json({ success: true, sessions });
+        res.json({ success: true, sessions: sessions.map(enrichSession) });
     } catch (error) {
         console.error("Error getting sessions:", error);
         res.status(500).json({ error: error.message });
@@ -99,7 +107,7 @@ exports.getSessionHistory = async (req, res) => {
             .sort({ endedAt: -1, scheduledAt: -1 })
             .limit(parseInt(limit));
 
-        res.json({ success: true, sessions });
+        res.json({ success: true, sessions: sessions.map(enrichSession) });
     } catch (error) {
         console.error("Error getting session history:", error);
         res.status(500).json({ error: error.message });
@@ -124,7 +132,7 @@ exports.getSessionsByReference = async (req, res) => {
         const sessions = await LiveSession.find(filter)
             .sort({ scheduledAt: -1 });
 
-        res.json({ success: true, sessions });
+        res.json({ success: true, sessions: sessions.map(enrichSession) });
     } catch (error) {
         console.error("Error getting sessions by reference:", error);
         res.status(500).json({ error: error.message });
@@ -140,7 +148,7 @@ exports.getSession = async (req, res) => {
             return res.status(404).json({ error: "Session not found" });
         }
 
-        res.json({ success: true, session });
+        res.json({ success: true, session: enrichSession(session) });
     } catch (error) {
         console.error("Error getting session:", error);
         res.status(500).json({ error: error.message });
@@ -159,7 +167,7 @@ exports.getLiveSessions = async (req, res) => {
         const sessions = await LiveSession.find(filter)
             .sort({ startedAt: -1 });
 
-        res.json({ success: true, sessions });
+        res.json({ success: true, sessions: sessions.map(enrichSession) });
     } catch (error) {
         console.error("Error getting live sessions:", error);
         res.status(500).json({ error: error.message });
@@ -233,9 +241,17 @@ exports.endSession = async (req, res) => {
         session.status = "ENDED";
         session.endedAt = new Date();
 
+        // Mark all active participants as left
+        session.participants.forEach(p => {
+            if (!p.leftAt) {
+                p.leftAt = new Date();
+            }
+        });
+
         // Calculate max participants
-        if (session.participants.length > session.maxParticipants) {
-            session.maxParticipants = session.participants.length;
+        const activeCount = session.participants.filter(p => !p.leftAt).length;
+        if (activeCount > session.maxParticipants) {
+            session.maxParticipants = activeCount;
         }
 
         await session.save();
@@ -361,20 +377,28 @@ exports.joinSession = async (req, res) => {
             .substring(0, 16);
 
         // Check if user already joined (prevent duplicates)
+        // Only return alreadyActive if their last entry HAS NOT left yet
         const existingParticipant = session.participants.find(
             p => p.userId === userId && !p.leftAt
         );
 
         if (existingParticipant) {
-            // User already in session, return success with a flag so frontend can prompt
             return res.json({
                 success: true,
-                session,
+                session: enrichSession(session),
                 roomId: session.roomId,
                 alreadyActive: true,
                 message: "User is already active in this session"
             });
         }
+
+        // Clean up any historical "stale" records for this specific user in this session
+        // (Just in case they crashed and are rejoining)
+        session.participants.forEach(p => {
+            if (p.userId === userId && !p.leftAt) {
+                p.leftAt = new Date();
+            }
+        });
 
         const participant = {
             userId: userId,
@@ -384,15 +408,60 @@ exports.joinSession = async (req, res) => {
         };
 
         session.participants.push(participant);
+
+        // Update max participants during live session
+        const currentActive = session.participants.filter(p => !p.leftAt).length;
+        if (currentActive > session.maxParticipants) {
+            session.maxParticipants = currentActive;
+        }
+
         await session.save();
 
         res.json({
             success: true,
-            session,
+            session: enrichSession(session),
             roomId: session.roomId
         });
     } catch (error) {
         console.error("Error joining session:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Leave session (track participant exit)
+exports.leaveSession = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
+        const session = await LiveSession.findById(req.params.id);
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        const crypto = require("crypto");
+        const userId = crypto.createHash('md5')
+            .update(req.user.email || req.user.id)
+            .digest('hex')
+            .substring(0, 16);
+
+        // Find the active participant entry for this user
+        const participantIndex = session.participants.findIndex(
+            p => p.userId === userId && !p.leftAt
+        );
+
+        if (participantIndex !== -1) {
+            session.participants[participantIndex].leftAt = new Date();
+            await session.save();
+        }
+
+        res.json({
+            success: true,
+            message: "Successfully left session"
+        });
+    } catch (error) {
+        console.error("Error leaving session:", error);
         res.status(500).json({ error: error.message });
     }
 };

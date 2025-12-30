@@ -26,6 +26,7 @@ export interface LiveSession {
         leftAt?: string;
     }>;
     maxParticipants: number;
+    activeParticipantsCount?: number;
     startedAt?: string;
     endedAt?: string;
     createdAt: string;
@@ -304,6 +305,23 @@ export const useJoinSessionApi = () => {
         onError: (error: any) => {
             console.error(error);
             CustomSnackBar.errorSnackbar(error.message || "Failed to join session");
+        },
+    });
+};
+
+// Leave session (for tracking)
+export const useLeaveSessionApi = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (sessionId: string) => {
+            const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/leave`, "POST");
+            return response as ApiResponse;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
+        },
+        onError: (error: any) => {
+            console.error(error);
         },
     });
 };

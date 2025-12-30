@@ -148,11 +148,11 @@ const LiveSessionsTab = ({
         joinSession(session._id, {
             onSuccess: (data: any) => {
                 if (data.alreadyActive) {
-                    setPendingJoinSession(session);
+                    setPendingJoinSession(data.session || session);
                     setIsAlreadyIn(true);
                     setShowJoinConfirm(true);
                 } else {
-                    setActiveSession(session);
+                    setActiveSession(data.session || session);
                 }
             },
         });
@@ -192,6 +192,14 @@ const LiveSessionsTab = ({
                 onExit={() => {
                     setActiveSession(null);
                     refetch();
+                }}
+                onEndSession={() => {
+                    endSession(activeSession._id, {
+                        onSuccess: () => {
+                            setActiveSession(null);
+                            refetch();
+                        }
+                    });
                 }}
             />
         );
@@ -369,14 +377,14 @@ const LiveSessionsTab = ({
                                                 {dayjs(session.scheduledAt).format("h:mm A")} • {session.durationMinutes} min
                                             </Typography>
                                         </Box>
-                                        {session.maxParticipants > 0 && (
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: "#64748b" }}>
-                                                <Users size={14} />
-                                                <Typography sx={{ fontSize: "12px" }}>
-                                                    {session.maxParticipants} joined
-                                                </Typography>
-                                            </Box>
-                                        )}
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, color: session.status === "LIVE" ? "#22c55e" : "#64748b" }}>
+                                            <Users size={14} />
+                                            <Typography sx={{ fontSize: "12px", fontWeight: session.status === "LIVE" ? 600 : 400 }}>
+                                                {session.status === "LIVE"
+                                                    ? `${session.activeParticipantsCount || 0} active`
+                                                    : `${session.maxParticipants || 0} joined`}
+                                            </Typography>
+                                        </Box>
                                     </Box>
 
                                     {/* Actions */}

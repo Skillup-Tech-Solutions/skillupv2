@@ -11,6 +11,7 @@ router.get("/history", auth, liveSessionController.getSessionHistory);
 router.get("/reference/:type/:id", auth, liveSessionController.getSessionsByReference);
 router.get("/:id", auth, liveSessionController.getSession);
 router.post("/:id/join", auth, liveSessionController.joinSession);
+router.post("/:id/leave", auth, liveSessionController.leaveSession);
 
 // Admin routes
 router.get("/", auth, roleAuth.adminOnly, liveSessionController.getSessions);
