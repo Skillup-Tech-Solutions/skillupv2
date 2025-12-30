@@ -366,12 +366,13 @@ exports.joinSession = async (req, res) => {
         );
 
         if (existingParticipant) {
-            // User already in session, just return success
+            // User already in session, return success with a flag so frontend can prompt
             return res.json({
                 success: true,
                 session,
                 roomId: session.roomId,
-                message: "Already in session"
+                alreadyActive: true,
+                message: "User is already active in this session"
             });
         }
 

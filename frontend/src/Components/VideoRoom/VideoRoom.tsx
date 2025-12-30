@@ -95,8 +95,8 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
             // Simple room name without special characters
             const roomName = `skillup${session.roomId.replace(/-/g, '')}`;
 
-            // Generate a unique user ID based on email (consistent across sessions)
-            const userId = btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
+            // Generate a unique user ID based on email + random suffix to allow multi-device joins
+            const userId = `${btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}_${Math.random().toString(36).substring(2, 6)}`;
 
             const options = {
                 roomName,
@@ -121,6 +121,12 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit }: Vid
                     // Mobile specific
                     disableDeepLinking: true,
                     mobileWebAppRequired: false,
+                    // Screen Sharing
+                    disableDesktopSharing: false,
+                    desktopSharingFrameRate: {
+                        min: 5,
+                        max: 5,
+                    },
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone

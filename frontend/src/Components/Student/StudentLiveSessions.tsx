@@ -8,6 +8,10 @@ import {
     CircularProgress,
     Tabs,
     Tab,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
 import {
     VideoCamera,
@@ -19,6 +23,8 @@ import {
     Briefcase,
     Buildings,
     ClockCounterClockwise,
+    Devices,
+    Warning,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -40,6 +46,9 @@ const StudentLiveSessions = () => {
 
     const [activeTab, setActiveTab] = useState(0);
     const [activeSession, setActiveSession] = useState<LiveSession | null>(null);
+    const [pendingSession, setPendingSession] = useState<LiveSession | null>(null);
+    const [showJoinDialog, setShowJoinDialog] = useState(false);
+    const [isAlreadyActive, setIsAlreadyActive] = useState(false);
 
     const { data: liveData, isLoading: liveLoading, refetch: refetchLive } = useGetLiveNowSessionsApi();
     const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
@@ -52,10 +61,25 @@ const StudentLiveSessions = () => {
 
     const handleJoin = (session: LiveSession) => {
         joinSession(session._id, {
-            onSuccess: () => {
-                setActiveSession(session);
+            onSuccess: (data: any) => {
+                if (data.alreadyActive) {
+                    setPendingSession(session);
+                    setIsAlreadyActive(true);
+                    setShowJoinDialog(true);
+                } else {
+                    setActiveSession(session);
+                }
             },
         });
+    };
+
+    const confirmJoin = () => {
+        if (pendingSession) {
+            setActiveSession(pendingSession);
+            setPendingSession(null);
+            setShowJoinDialog(false);
+            setIsAlreadyActive(false);
+        }
     };
 
     const getTypeIcon = (type: string) => {
@@ -102,6 +126,62 @@ const StudentLiveSessions = () => {
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Join Confirmation Dialog */}
+            <Dialog
+                open={showJoinDialog}
+                onClose={() => setShowJoinDialog(false)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        backgroundImage: "none",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                        maxWidth: "400px"
+                    }
+                }}
+            >
+                <DialogTitle sx={{ color: "#f8fafc", px: 3, pt: 3, display: "flex", alignItems: "center", gap: 1.5 }}>
+                    {isAlreadyActive ? <Devices size={24} weight="duotone" color="#3b82f6" /> : <VideoCamera size={24} weight="duotone" color="#3b82f6" />}
+                    {isAlreadyActive ? "Already in Session" : "Join Session"}
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, py: 2 }}>
+                    <Typography sx={{ color: "#94a3b8", fontSize: "14px", lineHeight: 1.6 }}>
+                        {isAlreadyActive
+                            ? "You are already active in this session on another device. Do you want to join as an additional connection?"
+                            : `Ready to join "${pendingSession?.title}"?`}
+                    </Typography>
+                    {isAlreadyActive && (
+                        <Box sx={{ mt: 2, p: 1.5, bgcolor: "rgba(234, 179, 8, 0.1)", border: "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "6px", display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Warning size={18} color="#eab308" />
+                            <Typography sx={{ color: "#eab308", fontSize: "12px" }}>
+                                Joining from multiple devices is allowed but not recommended
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5 }}>
+                    <Button
+                        onClick={() => setShowJoinDialog(false)}
+                        sx={{ color: "#94a3b8", fontWeight: 600, textTransform: "none" }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={confirmJoin}
+                        variant="contained"
+                        sx={{
+                            bgcolor: "#3b82f6",
+                            color: "#fff",
+                            fontWeight: 700,
+                            textTransform: "none",
+                            px: 3,
+                            "&:hover": { bgcolor: "#2563eb" }
+                        }}
+                    >
+                        {isAlreadyActive ? "Join as Second Device" : "Join Now"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
             {/* Header */}
             <Box>
                 <Typography
