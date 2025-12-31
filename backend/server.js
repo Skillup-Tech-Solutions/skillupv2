@@ -55,7 +55,7 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// CORS Config - support multiple origins for development
+// CORS Config - support multiple origins for development and native apps
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
@@ -63,7 +63,11 @@ const allowedOrigins = [
   'http://localhost:4173',  // Vite preview server
   'http://localhost:3000',
   'http://127.0.0.1:5173',
-  'http://127.0.0.1:4173'
+  'http://127.0.0.1:4173',
+  // Capacitor native app origins
+  'https://localhost',
+  'capacitor://localhost',
+  'ionic://localhost'
 ].filter(Boolean);
 
 app.use(cors({
