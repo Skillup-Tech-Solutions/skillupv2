@@ -3,14 +3,33 @@ const User = require('../models/User');
 const Notification = require('../models/Notification');
 const path = require('path');
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin - supports both ENV vars (production) and file (local dev)
 try {
-    const serviceAccount = require('../config/firebase-service-account.json');
     if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        console.log('[Firebase] Admin SDK initialized successfully');
+        let credential;
+
+        // Option 1: Environment variable (for Render/production)
+        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            credential = admin.credential.cert(serviceAccount);
+            console.log('[Firebase] Using credentials from FIREBASE_SERVICE_ACCOUNT env var');
+        }
+        // Option 2: File-based (for local development)
+        else {
+            try {
+                const serviceAccount = require('../config/firebase-service-account.json');
+                credential = admin.credential.cert(serviceAccount);
+                console.log('[Firebase] Using credentials from firebase-service-account.json file');
+            } catch (fileError) {
+                console.warn('[Firebase] No credentials found - push notifications will not work');
+                console.warn('[Firebase] Set FIREBASE_SERVICE_ACCOUNT env var or add config/firebase-service-account.json');
+            }
+        }
+
+        if (credential) {
+            admin.initializeApp({ credential });
+            console.log('[Firebase] Admin SDK initialized successfully');
+        }
     }
 } catch (error) {
     console.error('[Firebase] Failed to initialize Admin SDK:', error.message);
