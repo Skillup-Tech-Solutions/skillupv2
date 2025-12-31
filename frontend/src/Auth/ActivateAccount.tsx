@@ -1,30 +1,28 @@
 import { Box, Typography, CircularProgress } from "@mui/material";
-import {
-    blueStarOne,
-    blueStarTwo,
-    boxTwo,
-    LoginContentOverlay,
-    LoginImage,
-    LoginLeft,
-    LoginOverLay,
-    LoginRight,
-    LoginStyle,
-    marginBottom10,
-    whiteStar,
-    boxThree,
-} from "../assets/Styles/LoginStyle";
-import { images } from "../assets/Images/Images";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import CustomInput from "../Custom/CustomInput";
-import { useState, useEffect } from "react";
-import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
-import CustomButton from "../Custom/CustomButton";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import CustomSnackBar from "../Custom/CustomSnackBar";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import CustomSnackBar from "../Custom/CustomSnackBar";
+import { images } from "../assets/Images/Images";
+import { Lock, Eye, EyeSlash, ShieldCheck, CheckCircle, WarningCircle } from "@phosphor-icons/react";
+import {
+    LoginStyle,
+    scanlineOverlay,
+    backdropOverlay,
+    boxTwo,
+    labelStyleHUD,
+    inputContainerHUD,
+    inputIconHUD,
+    inputHUD,
+    eyeIconHUD,
+    buttonHUD,
+    errorHUD,
+    boxThreeHUD
+} from "../assets/Styles/LoginStyle";
 
 const ActivateSchema = z.object({
     password: z.string().min(6, "Password must be at least 6 characters"),
@@ -52,7 +50,6 @@ const ActivateAccount = () => {
         resolver: zodResolver(ActivateSchema),
     });
 
-    // Validate token
     const { data: tokenData, isLoading: isValidating, error: tokenError } = useQuery({
         queryKey: ["validate-token", token],
         queryFn: async () => {
@@ -101,144 +98,128 @@ const ActivateAccount = () => {
         );
     };
 
-    if (!token) {
+    if (!token || tokenError || (!isValidating && !tokenData?.valid)) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", flexDirection: "column", gap: 2 }}>
-                <Typography variant="h5" color="error">Invalid Activation Link</Typography>
-                <Typography>No activation token found in the URL.</Typography>
-                <CustomButton type="button" label="Go to Login" onClick={() => navigate("/login")} />
+            <Box sx={LoginStyle}>
+                <Box sx={scanlineOverlay} />
+                <Box sx={backdropOverlay} />
+                <Box sx={boxTwo}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <WarningCircle size={64} color="#ef4444" weight="duotone" />
+                        <Typography variant="h3" sx={{ mt: 2, color: '#ef4444' }}>Invalid Access</Typography>
+                        <Typography variant="h6" sx={{ mt: 1 }}>
+                            This activation link is invalid or has expired. Please request a new invite from the administrator.
+                        </Typography>
+                        <Box component="button" onClick={() => navigate("/login")} sx={{ ...buttonHUD, mt: 4 }}>
+                            Return to Login
+                        </Box>
+                    </Box>
+                </Box>
             </Box>
         );
     }
 
     if (isValidating) {
         return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", flexDirection: "column", gap: 2 }}>
-                <CircularProgress />
-                <Typography>Validating activation link...</Typography>
-            </Box>
-        );
-    }
-
-    if (tokenError || !tokenData?.valid) {
-        return (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", flexDirection: "column", gap: 2 }}>
-                <Typography variant="h5" color="error">Invalid or Expired Link</Typography>
-                <Typography>This activation link is no longer valid. Please contact admin for a new invite.</Typography>
-                <CustomButton type="button" label="Go to Login" onClick={() => navigate("/login")} />
+            <Box sx={LoginStyle}>
+                <Box sx={scanlineOverlay} />
+                <Box sx={backdropOverlay} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
+                    <CircularProgress sx={{ color: '#3b82f6' }} />
+                    <Typography sx={{ mt: 2, color: '#94a3b8', fontFamily: "'JetBrains Mono', monospace" }}>
+                        AUTHENTICATING TOKEN...
+                    </Typography>
+                </Box>
             </Box>
         );
     }
 
     return (
-        <>
-            <Box sx={{ ...LoginStyle }}>
-                <Box sx={{ ...LoginLeft }}>
+        <Box sx={LoginStyle}>
+            <Box sx={scanlineOverlay} />
+            <Box sx={backdropOverlay} />
+
+            <Box sx={boxTwo}>
+                {/* Header */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                     <Box
-                        component={"img"}
-                        src={images.loginBack}
-                        sx={{ ...LoginImage }}
-                    />
-                    <Box
-                        component={"img"}
-                        src={images.loginOverlay}
-                        sx={{ ...LoginOverLay }}
-                    />
-                    <Box sx={{ ...LoginContentOverlay }}>
+                        sx={{
+                            width: "80px",
+                            height: "80px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            marginBottom: "24px",
+                        }}
+                    >
                         <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...blueStarOne }}
+                            component="img"
+                            src={images.logonew}
+                            alt="SkillUp Logo"
+                            sx={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
-                        <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...whiteStar }}
-                        />
-                        <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...blueStarTwo }}
-                        />
-                        <Typography variant="h3">
-                            Activate Your <br /> Account
-                        </Typography>
-                        <Typography variant="h4">
-                            Set your password to complete registration
-                        </Typography>
                     </Box>
+                    <Typography variant="h3">Initialize Account</Typography>
+                    <Typography variant="h6">Welcome, {tokenData?.user?.name}! Set your secure password.</Typography>
                 </Box>
-                <Box sx={{ ...LoginRight }}>
-                    <Box sx={{ ...boxTwo }}>
-                        <Box
-                            sx={{
-                                background: "var(--websecondary)",
-                                width: "100px",
-                                height: "40px",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                borderRadius: "3px",
-                                cursor: "pointer",
-                                marginBottom: "10px",
-                            }}
-                        >
+
+                <Box component="form" onSubmit={handleSubmit(onsubmit)}>
+                    {/* Password */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Create Password</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}><Lock size={18} /></Box>
                             <Box
-                                component={"img"}
-                                sx={{ width: "80px" }}
-                                src={images.logonew}
-                            />
-                        </Box>
-                        <Typography variant="h3">Welcome, {tokenData?.user?.name}!</Typography>
-                        <Typography variant="h6">Set your password to activate your account</Typography>
-                        <form onSubmit={handleSubmit(onsubmit)}>
-                            <CustomInput
-                                name="password"
-                                placeholder="Create a Password"
-                                label="Password"
+                                component="input"
                                 type={visibility ? "text" : "password"}
-                                bgmode="dark"
-                                icon={
-                                    visibility ? (
-                                        <IoEyeOutline onClick={() => setVisibility(!visibility)} />
-                                    ) : (
-                                        <IoEyeOffOutline onClick={() => setVisibility(!visibility)} />
-                                    )
-                                }
-                                required={false}
-                                register={register}
-                                errors={errors}
+                                placeholder="Min 6 characters"
+                                autoComplete="new-password"
+                                {...register("password")}
+                                sx={inputHUD}
                             />
-                            <CustomInput
-                                name="confirmPassword"
-                                placeholder="Confirm your Password"
-                                label="Confirm Password"
-                                type={confirmVisibility ? "text" : "password"}
-                                bgmode="dark"
-                                boxSx={{ ...marginBottom10 }}
-                                icon={
-                                    confirmVisibility ? (
-                                        <IoEyeOutline onClick={() => setConfirmVisibility(!confirmVisibility)} />
-                                    ) : (
-                                        <IoEyeOffOutline onClick={() => setConfirmVisibility(!confirmVisibility)} />
-                                    )
-                                }
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomButton type="submit" variant="contained" label="Activate Account" disabled={loading} />
-                        </form>
+                            <Box sx={eyeIconHUD} onClick={() => setVisibility(!visibility)}>
+                                {visibility ? <Eye size={18} /> : <EyeSlash size={18} />}
+                            </Box>
+                        </Box>
+                        {errors.password && <Typography sx={errorHUD}>{errors.password.message}</Typography>}
                     </Box>
 
-                    <Box sx={{ ...boxThree }}>
-                        <Typography variant="h4">
-                            © SkillUp Tech Solutions {new Date().getFullYear()}
-                        </Typography>
+                    {/* Confirm Password */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Confirm Password</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}><ShieldCheck size={18} /></Box>
+                            <Box
+                                component="input"
+                                type={confirmVisibility ? "text" : "password"}
+                                placeholder="Repeat your password"
+                                autoComplete="new-password"
+                                {...register("confirmPassword")}
+                                sx={inputHUD}
+                            />
+                            <Box sx={eyeIconHUD} onClick={() => setConfirmVisibility(!confirmVisibility)}>
+                                {confirmVisibility ? <Eye size={18} /> : <EyeSlash size={18} />}
+                            </Box>
+                        </Box>
+                        {errors.confirmPassword && <Typography sx={errorHUD}>{errors.confirmPassword.message}</Typography>}
+                    </Box>
+
+                    <Box component="button" type="submit" disabled={loading} sx={buttonHUD}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                            <CheckCircle size={20} weight="bold" />
+                            {loading ? 'Activating...' : 'Activate System Access'}
+                        </Box>
                     </Box>
                 </Box>
+
+                {/* Footer */}
+                <Box sx={boxThreeHUD}>
+                    <Typography variant="h4">
+                        © SkillUp Tech Solutions {new Date().getFullYear()}
+                    </Typography>
+                </Box>
             </Box>
-        </>
+        </Box>
     );
 };
 

@@ -14,9 +14,13 @@ const WebFooter = () => {
     <Box
       sx={{
         backgroundColor: "var(--weblight)",
-        padding: "30px 30px 20px 30px",
+        padding: "30px 30px",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
         borderRadius: "5px",
-        "@media (max-width: 450px)": { padding: "20px" },
+        "@media (max-width: 450px)": {
+          padding: "20px",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)"
+        },
       }}
     >
       <Box

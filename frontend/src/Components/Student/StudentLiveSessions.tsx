@@ -29,7 +29,7 @@ import {
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Cookies from "js-cookie";
+import { getFromStorage } from "../../utils/pwaUtils";
 import {
     useGetLiveNowSessionsApi,
     useGetUpcomingSessionsApi,
@@ -46,8 +46,8 @@ import PullToRefreshIndicator from "./PullToRefreshIndicator";
 dayjs.extend(relativeTime);
 
 const StudentLiveSessions = () => {
-    const userName = Cookies.get("name") || "Student";
-    const userEmail = Cookies.get("email") || "";
+    const userName = getFromStorage("name") || "Student";
+    const userEmail = getFromStorage("email") || "";
 
     const [activeTab, setActiveTab] = useState(0);
     const [activeSession, setActiveSession] = useState<LiveSession | null>(null);

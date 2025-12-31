@@ -192,6 +192,7 @@ const Layout = () => {
             position: "sticky",
             top: 0,
             zIndex: 40,
+            pt: "env(safe-area-inset-top, 0px)",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 2 }}>

@@ -102,6 +102,7 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
         <Box
           sx={{
             p: 2,
+            pt: "calc(env(safe-area-inset-top, 0px) + 16px)",
             borderBottom: "1px solid #1e293b",
             display: "flex",
             alignItems: "center",

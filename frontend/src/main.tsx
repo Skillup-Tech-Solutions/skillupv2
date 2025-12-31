@@ -6,6 +6,40 @@ import App from './App.tsx'
 import './Interceptors/Interceptor'
 // Import PWA registration from vite-plugin-pwa
 import { registerSW } from 'virtual:pwa-register'
+import Cookies from 'js-cookie'
+
+// ========== CAPACITOR IMMEDIATE REDIRECT ==========
+// This runs BEFORE React renders to prevent landing page flash in native apps
+const isCapacitorNative = () => {
+  return !!(window as any).Capacitor?.isNativePlatform?.() ||
+    !!(window as any).Capacitor?.isNative;
+};
+
+// If in Capacitor and on the root path, redirect immediately before React mounts
+if (isCapacitorNative()) {
+  const currentHash = window.location.hash;
+  const isOnLandingPage = !currentHash || currentHash === '#/' || currentHash === '#';
+
+  if (isOnLandingPage) {
+    const token = Cookies.get('skToken');
+    const role = Cookies.get('role');
+
+    if (token && role) {
+      // Logged in - go to dashboard
+      if (role === 'admin') {
+        window.location.hash = '#/dashboard';
+      } else if (role === 'student') {
+        window.location.hash = '#/student/dashboard';
+      } else if (role === 'employee') {
+        window.location.hash = '#/employee/dashboard';
+      }
+    } else {
+      // Not logged in - go to login
+      window.location.hash = '#/login';
+    }
+  }
+}
+// ========== END CAPACITOR REDIRECT ==========
 
 // Handle chunk load errors (happens after deployment when old chunks no longer exist)
 // This will auto-refresh the page once to get the latest version

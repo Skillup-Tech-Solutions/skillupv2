@@ -1,30 +1,36 @@
 import { Box, Typography } from "@mui/material";
-import {
-    blueStarOne,
-    blueStarTwo,
-    boxTwo,
-    LoginContentOverlay,
-    LoginImage,
-    LoginLeft,
-    LoginOverLay,
-    LoginRight,
-    LoginStyle,
-    marginBottom10,
-    whiteStar,
-    boxThree,
-} from "../assets/Styles/LoginStyle";
-import { images } from "../assets/Images/Images";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import CustomInput from "../Custom/CustomInput";
-import { useState } from "react";
-import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
-import CustomButton from "../Custom/CustomButton";
-import { useNavigate } from "react-router-dom";
-import CustomSnackBar from "../Custom/CustomSnackBar";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
+import CustomSnackBar from "../Custom/CustomSnackBar";
+import { images } from "../assets/Images/Images";
+import {
+    User,
+    Envelope,
+    Phone,
+    Lock,
+    Eye,
+    EyeSlash
+} from "@phosphor-icons/react";
+import {
+    LoginStyle,
+    scanlineOverlay,
+    backdropOverlay,
+    boxTwo,
+    labelStyleHUD,
+    inputContainerHUD,
+    inputIconHUD,
+    inputHUD,
+    eyeIconHUD,
+    buttonHUD,
+    forgotPasswordHUD,
+    errorHUD,
+    boxThreeHUD
+} from "../assets/Styles/LoginStyle";
 
 const StudentSignupSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters"),
@@ -54,7 +60,7 @@ const StudentSignup = () => {
     });
 
     const signupMutation = useMutation({
-        mutationFn: async (data: { name: string; email: string; mobile: string; password: string }) => {
+        mutationFn: async (data: any) => {
             const response = await axios.post(
                 `${import.meta.env.VITE_APP_BASE_URL}student/signup`,
                 data
@@ -70,9 +76,7 @@ const StudentSignup = () => {
             {
                 onSuccess: () => {
                     CustomSnackBar.successSnackbar("Registration successful! You can now login.");
-                    setTimeout(() => {
-                        navigate("/login");
-                    }, 1500);
+                    setTimeout(() => navigate("/login"), 1500);
                 },
                 onError: (error: any) => {
                     CustomSnackBar.errorSnackbar(error.response?.data?.message || "Registration failed!");
@@ -85,153 +89,176 @@ const StudentSignup = () => {
     };
 
     return (
-        <>
-            <Box sx={{ ...LoginStyle }}>
-                <Box sx={{ ...LoginLeft }}>
+        <Box sx={LoginStyle}>
+            {/* HUD CRT Effect */}
+            <Box sx={scanlineOverlay} />
+            <Box sx={backdropOverlay} />
+
+            <Box sx={boxTwo}>
+                {/* Header Section */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                     <Box
-                        component={"img"}
-                        src={images.loginBack}
-                        sx={{ ...LoginImage }}
-                    />
-                    <Box
-                        component={"img"}
-                        src={images.loginOverlay}
-                        sx={{ ...LoginOverLay }}
-                    />
-                    <Box sx={{ ...LoginContentOverlay }}>
+                        sx={{
+                            width: "80px",
+                            height: "80px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            marginBottom: "24px",
+                        }}
+                    >
                         <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...blueStarOne }}
+                            component="img"
+                            src={images.logonew}
+                            alt="SkillUp Logo"
+                            sx={{ width: "100%", height: "100%", objectFit: "contain" }}
                         />
-                        <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...whiteStar }}
-                        />
-                        <Box
-                            component={"img"}
-                            src={images.whiteStar}
-                            sx={{ ...blueStarTwo }}
-                        />
-                        <Typography variant="h3">
-                            Start Your <br /> Learning Journey
-                        </Typography>
-                        <Typography variant="h4">
-                            Join SkillUp Tech and unlock your potential
-                        </Typography>
                     </Box>
+                    <Typography variant="h3">Create Account</Typography>
+                    <Typography variant="h6">Join SkillUp to start your journey</Typography>
                 </Box>
-                <Box sx={{ ...LoginRight }}>
-                    <Box sx={{ ...boxTwo }}>
-                        <Box
-                            sx={{
-                                background: "var(--websecondary)",
-                                width: "100px",
-                                height: "40px",
-                                display: "flex",
-                                justifyContent: "center",
-                                alignItems: "center",
-                                borderRadius: "3px",
-                                cursor: "pointer",
-                                marginBottom: "10px",
-                            }}
-                        >
+
+                {/* Signup Form */}
+                <Box component="form" onSubmit={handleSubmit(onsubmit)}>
+                    {/* Full Name */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Full Name</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}>
+                                <User size={18} weight="regular" />
+                            </Box>
                             <Box
-                                component={"img"}
-                                sx={{ width: "80px" }}
-                                src={images.logonew}
+                                component="input"
+                                type="text"
+                                placeholder="Enter your Full Name"
+                                autoComplete="name"
+                                {...register("name")}
+                                sx={inputHUD}
                             />
                         </Box>
-                        <Typography variant="h3">Student Registration</Typography>
-                        <Typography variant="h6">Create your account to get started</Typography>
-                        <form onSubmit={handleSubmit(onsubmit)}>
-                            <CustomInput
-                                name="name"
-                                placeholder="Enter your Full Name"
-                                label="Full Name"
-                                type="text"
-                                bgmode="dark"
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomInput
-                                name="email"
-                                placeholder="Enter your Email"
-                                label="Email"
-                                type="email"
-                                bgmode="dark"
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomInput
-                                name="mobile"
-                                placeholder="Enter your Mobile (10 digits)"
-                                label="Mobile Number"
-                                type="text"
-                                bgmode="dark"
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomInput
-                                name="password"
-                                placeholder="Create a Password"
-                                label="Password"
-                                type={visibility ? "text" : "password"}
-                                bgmode="dark"
-                                icon={
-                                    visibility ? (
-                                        <IoEyeOutline onClick={() => setVisibility(!visibility)} />
-                                    ) : (
-                                        <IoEyeOffOutline onClick={() => setVisibility(!visibility)} />
-                                    )
-                                }
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomInput
-                                name="confirmPassword"
-                                placeholder="Confirm your Password"
-                                label="Confirm Password"
-                                type={confirmVisibility ? "text" : "password"}
-                                bgmode="dark"
-                                boxSx={{ ...marginBottom10 }}
-                                icon={
-                                    confirmVisibility ? (
-                                        <IoEyeOutline onClick={() => setConfirmVisibility(!confirmVisibility)} />
-                                    ) : (
-                                        <IoEyeOffOutline onClick={() => setConfirmVisibility(!confirmVisibility)} />
-                                    )
-                                }
-                                required={false}
-                                register={register}
-                                errors={errors}
-                            />
-                            <CustomButton type="submit" variant="contained" label="Sign Up" disabled={loading} />
-                            <Box sx={{ textAlign: "center", marginTop: "15px" }}>
-                                <Typography
-                                    variant="body2"
-                                    sx={{ color: "var(--textLight)", cursor: "pointer" }}
-                                    onClick={() => navigate("/login")}
-                                >
-                                    Already have an account? <span style={{ color: "var(--primary)", fontWeight: 600 }}>Sign In</span>
-                                </Typography>
-                            </Box>
-                        </form>
+                        {errors.name && (
+                            <Typography sx={errorHUD}>{errors.name.message}</Typography>
+                        )}
                     </Box>
 
-                    <Box sx={{ ...boxThree }}>
-                        <Typography variant="h4">
-                            © SkillUp Tech Solutions {new Date().getFullYear()}
-                        </Typography>
+                    {/* Email */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Email</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}>
+                                <Envelope size={18} weight="regular" />
+                            </Box>
+                            <Box
+                                component="input"
+                                type="email"
+                                placeholder="Enter your Email"
+                                autoComplete="email"
+                                inputMode="email"
+                                {...register("email")}
+                                sx={inputHUD}
+                            />
+                        </Box>
+                        {errors.email && (
+                            <Typography sx={errorHUD}>{errors.email.message}</Typography>
+                        )}
+                    </Box>
+
+                    {/* Mobile */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Mobile Number</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}>
+                                <Phone size={18} weight="regular" />
+                            </Box>
+                            <Box
+                                component="input"
+                                type="text"
+                                placeholder="Enter your Mobile (10 digits)"
+                                autoComplete="tel"
+                                inputMode="tel"
+                                {...register("mobile")}
+                                sx={inputHUD}
+                            />
+                        </Box>
+                        {errors.mobile && (
+                            <Typography sx={errorHUD}>{errors.mobile.message}</Typography>
+                        )}
+                    </Box>
+
+                    {/* Password */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Password</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}>
+                                <Lock size={18} weight="regular" />
+                            </Box>
+                            <Box
+                                component="input"
+                                type={visibility ? "text" : "password"}
+                                placeholder="Create a Password"
+                                autoComplete="new-password"
+                                {...register("password")}
+                                sx={inputHUD}
+                            />
+                            <Box sx={eyeIconHUD} onClick={() => setVisibility(!visibility)}>
+                                {visibility ? <Eye size={18} /> : <EyeSlash size={18} />}
+                            </Box>
+                        </Box>
+                        {errors.password && (
+                            <Typography sx={errorHUD}>{errors.password.message}</Typography>
+                        )}
+                    </Box>
+
+                    {/* Confirm Password */}
+                    <Box>
+                        <Typography sx={labelStyleHUD}>Confirm Password</Typography>
+                        <Box sx={inputContainerHUD}>
+                            <Box sx={inputIconHUD}>
+                                <Lock size={18} weight="regular" />
+                            </Box>
+                            <Box
+                                component="input"
+                                type={confirmVisibility ? "text" : "password"}
+                                placeholder="Confirm your Password"
+                                autoComplete="new-password"
+                                {...register("confirmPassword")}
+                                sx={inputHUD}
+                            />
+                            <Box sx={eyeIconHUD} onClick={() => setConfirmVisibility(!confirmVisibility)}>
+                                {confirmVisibility ? <Eye size={18} /> : <EyeSlash size={18} />}
+                            </Box>
+                        </Box>
+                        {errors.confirmPassword && (
+                            <Typography sx={errorHUD}>{errors.confirmPassword.message}</Typography>
+                        )}
+                    </Box>
+
+                    <Box
+                        component="button"
+                        type="submit"
+                        disabled={loading}
+                        sx={{ ...buttonHUD, backgroundColor: '#2563eb', boxShadow: '0 0 15px rgba(37, 99, 235, 0.4)', '&:hover': { backgroundColor: '#3b82f6', boxShadow: '0 0 20px rgba(59, 130, 246, 0.6)' } }}
+                    >
+                        {loading ? 'Signing Up...' : 'Sign Up'}
                     </Box>
                 </Box>
+
+                {/* Navigation Link */}
+                <Typography
+                    sx={{ ...forgotPasswordHUD, textAlign: 'center', mt: 3, mb: 0 }}
+                    onClick={() => navigate("/login")}
+                >
+                    Already have an account? <span style={{ fontWeight: 700 }}>Sign In</span>
+                </Typography>
+
+                {/* Footer Section */}
+                <Box sx={boxThreeHUD}>
+                    <Typography variant="h4">
+                        © SkillUp Tech Solutions {new Date().getFullYear()}
+                    </Typography>
+                </Box>
             </Box>
-        </>
+        </Box>
     );
 };
 

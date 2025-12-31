@@ -26,6 +26,7 @@ import CustomSnackBar from "../Custom/CustomSnackBar";
 import config from "../Config/Config";
 import CourseSubmissionsList from "../Components/Admin/CourseSubmissionsList";
 import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
+import { getFromStorage } from "../utils/pwaUtils";
 
 const style = {
   position: "absolute",
@@ -165,8 +166,8 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
           sessionType="COURSE"
           referenceId={selectedCourse._id}
           referenceName={selectedCourse.name}
-          userName="Admin"
-          userEmail="admin@skillup.com"
+          userName={getFromStorage("name") || "Admin"}
+          userEmail={getFromStorage("email") || "admin@skillup.com"}
         />
       );
     }

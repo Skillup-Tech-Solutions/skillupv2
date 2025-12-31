@@ -32,8 +32,11 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      const token = Cookies.get("skToken");
-      const cookieRole = Cookies.get("role");
+      // Helper to get from dual storage
+      const getFromStorage = (key: string) => Cookies.get(key) || localStorage.getItem(key);
+
+      const token = getFromStorage("skToken");
+      const cookieRole = getFromStorage("role");
 
       if (!token) {
         setIsAuthenticated(false);

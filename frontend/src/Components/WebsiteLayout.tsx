@@ -6,6 +6,8 @@ import WebFooter from "./WebFooter";
 import WebNavbar from "./WebNavbar";
 import { Outlet, useLocation } from "react-router-dom";
 import { images } from "../assets/Images/Images";
+import { usePullToRefresh } from "../utils/usePullToRefresh";
+import { ArrowDown } from "@phosphor-icons/react";
 export const webImages = {
   //   backgroundImage:`url(${images.overlay})`,
   //   width:"100%",
@@ -19,6 +21,14 @@ export const webImages = {
 const WebsiteLayout = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const location = useLocation();
+
+  const { pullDistance, isRefreshing } = usePullToRefresh({
+    onRefresh: async () => {
+      // Simulate/trigger refresh
+      window.location.reload();
+      return new Promise((resolve) => setTimeout(resolve, 1000));
+    },
+  });
 
   // Scroll to top when route changes
   useEffect(() => {
@@ -49,7 +59,50 @@ const WebsiteLayout = () => {
   };
 
   return (
-    <Box sx={{ position: "relative", overflowX: "hidden" }}>
+    <Box
+      sx={{
+        position: "relative",
+        overflowX: "hidden",
+        transform: `translateY(${pullDistance}px)`,
+        transition: isRefreshing ? "transform 0.2s ease" : "none",
+      }}
+    >
+      {/* Pull to Refresh Indicator */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: -50,
+          left: 0,
+          right: 0,
+          height: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: Math.min(pullDistance / 80, 1),
+        }}
+      >
+        <Box
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            bgcolor: "var(--webprimary)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            animation: isRefreshing ? "spin 1s linear infinite" : "none",
+            transform: `rotate(${pullDistance * 2}deg)`,
+            "@keyframes spin": {
+              "0%": { transform: "rotate(0deg)" },
+              "100%": { transform: "rotate(360deg)" },
+            },
+          }}
+        >
+          <ArrowDown size={18} weight="bold" />
+        </Box>
+      </Box>
+
       <Box sx={{ ...webImages }}>
         <Box
           component={"img"}
@@ -66,13 +119,20 @@ const WebsiteLayout = () => {
         sx={{
           background: "#ffffffea",
           padding: "10px 20px",
-          paddingTop: "calc(env(safe-area-inset-top) + 10px)", // Handle iOS safe area
+          // Use env with fallback to 10px to not disturb desktop
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)",
           zIndex: "999",
           position: "relative",
           minHeight: "100vh",
-          "@media (max-width: 991px)": { padding: "10px", paddingTop: "calc(env(safe-area-inset-top) + 10px)" },
+          "@media (max-width: 991px)": {
+            padding: "10px",
+            paddingTop: "calc(env(safe-area-inset-top, 0px) + 10px)",
+          },
           "@media (max-width: 600px)": { background: "#ffffffc4" },
-          "@media (max-width: 450px)": { padding: "10px 5px", paddingTop: "calc(env(safe-area-inset-top) + 5px)" },
+          "@media (max-width: 450px)": {
+            padding: "10px 5px",
+            paddingTop: "calc(env(safe-area-inset-top, 0px) + 5px)",
+          },
         }}
       >
         <WebOffer />

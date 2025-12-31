@@ -107,7 +107,7 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
                 <Box
                     sx={{
                         p: 2,
-                        pt: "calc(env(safe-area-inset-top) + 16px)", // For iOS notched devices
+                        pt: "calc(env(safe-area-inset-top, 0px) + 16px)", // For iOS notched devices
                         borderBottom: "1px solid #1e293b",
                         display: "flex",
                         alignItems: "center",

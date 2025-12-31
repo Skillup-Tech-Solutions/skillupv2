@@ -68,8 +68,14 @@ const WebNavbar = () => {
           top: "0",
           zIndex: "999999",
           backgroundColor: isSticky ? "var(--white)" : "transparent",
-          padding: isSticky ? "15px 0px" : "0px",
-          transition: "0.3s ease",
+          // Add safe area padding to cover status bar area nicely
+          padding: `calc(env(safe-area-inset-top, 0px) + ${isSticky ? "15px" : "20px"}) 20px 15px 20px`,
+          margin: isSticky ? "0 -20px" : "0px",
+          transition: "background-color 0.3s ease, padding 0.3s ease",
+          "@media (max-width: 991px)": {
+            padding: `calc(env(safe-area-inset-top, 0px) + ${isSticky ? "10px" : "15px"}) 10px 10px 10px`,
+            margin: isSticky ? "0 -10px" : "0px",
+          },
         }}
       >
         {/* Left Logo */}
@@ -171,7 +177,7 @@ const WebNavbar = () => {
         onClose={toggleDrawer}
         PaperProps={{ sx: { width: 250 } }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, pt: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
           {/* Logo + Close Button */}
           <Box
             sx={{

@@ -38,13 +38,18 @@ const api = axios.create({
   baseURL: config.BASE_URL,
 });
 
+// Helper to get token from dual storage (Cookie or LocalStorage)
+const getToken = (key: string) => {
+  return Cookies.get(key) || localStorage.getItem(key);
+};
+
 // Shared token refresh handler for both axios and api
 const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | typeof api) => {
   const originalRequest = error.config;
 
   // Handle token expiration
   if (error.response?.status === 401 && !originalRequest._retry) {
-    const refreshToken = Cookies.get("skRefreshToken");
+    const refreshToken = getToken("skRefreshToken");
 
     // If no refresh token, redirect to login
     if (!refreshToken) {
@@ -58,7 +63,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then((token) => {
+      }).then((token: any) => {
         originalRequest.headers["Authorization"] = `Bearer ${token}`;
         return axiosInstance(originalRequest);
       });
@@ -75,13 +80,16 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
 
       const newAccessToken = response.data.accessToken;
 
-      // Store new access token
+      // Store new access token in both places
       const isProduction = window.location.protocol === 'https:';
-      Cookies.set("skToken", newAccessToken, {
+      const cookieOptions = {
         path: "/",
-        sameSite: "strict",
+        sameSite: "strict" as const,
         ...(isProduction && { secure: true })
-      });
+      };
+
+      Cookies.set("skToken", newAccessToken, cookieOptions);
+      localStorage.setItem("skToken", newAccessToken);
 
       // Process queued requests
       processQueue(null, newAccessToken);
@@ -90,13 +98,12 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {
-      // Refresh failed, clear tokens and redirect to login
+      // Refresh failed, clear tokens from both places
       processQueue(refreshError, null);
-      Cookies.remove("skToken");
-      Cookies.remove("skRefreshToken");
-      Cookies.remove("email");
-      Cookies.remove("role");
-      Cookies.remove("name");
+      ["skToken", "skRefreshToken", "email", "role", "name"].forEach(key => {
+        Cookies.remove(key);
+        localStorage.removeItem(key);
+      });
       window.location.href = "/#/login";
       return Promise.reject(refreshError);
     } finally {
@@ -138,7 +145,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
 // Request interceptor for custom api instance
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("skToken");
+    const token = getToken("skToken");
     setIsLoading(true);
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -168,7 +175,7 @@ api.interceptors.response.use(
 
 axios.interceptors.request.use(
   (config) => {
-    const token = Cookies.get("skToken");
+    const token = getToken("skToken");
     if (token && !config.headers["Authorization"]) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }

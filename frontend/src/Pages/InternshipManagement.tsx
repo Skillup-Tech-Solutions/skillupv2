@@ -17,6 +17,7 @@ import Cookies from "js-cookie";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import InternshipSubmissionsList from "../Components/Admin/InternshipSubmissionsList";
 import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
+import { getFromStorage } from "../utils/pwaUtils";
 
 const dialogStyle = {
     "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" },
@@ -200,8 +201,8 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
                         sessionType="INTERNSHIP"
                         referenceId={selectedInternship._id}
                         referenceName={selectedInternship.title}
-                        userName="Admin"
-                        userEmail="admin@skillup.com"
+                        userName={getFromStorage("name") || "Admin"}
+                        userEmail={getFromStorage("email") || "admin@skillup.com"}
                     />
                 ) : (
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>

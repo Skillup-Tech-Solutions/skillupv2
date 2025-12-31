@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving } fr
 import type { LiveSession } from "../../Hooks/liveSessions";
 import { useLeaveSessionApi } from "../../Hooks/liveSessions";
 import Cookies from "js-cookie";
+import { getFromStorage } from "../../utils/pwaUtils";
 
 declare global {
     interface Window {
@@ -106,8 +107,11 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
         }
         if (!jitsiContainerRef.current) return;
 
-        // Security check: Ensure user is logged in
-        if (!userName || !userEmail) {
+        // Security check: Use dual storage to ensure user is logged in
+        const finalName = userName || getFromStorage("name") || "Student";
+        const finalEmail = userEmail || getFromStorage("email") || "";
+
+        if (!finalEmail) {
             console.error("User must be logged in to join session");
             onExit();
             return;
@@ -117,24 +121,35 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
         try {
             // Explicitly request permissions before Jitsi starts - this "primes" the browser prompt
+            console.log("VideoRoom: Requesting media permissions...");
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-                // Stop the tracks immediately, we just wanted to trigger the system prompt
-                stream.getTracks().forEach(track => track.stop());
+                // Add a timeout to the permission request to prevent hanging forever on iOS
+                const permissionTimeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Permission request timed out")), 5000)
+                );
+
+                await Promise.race([
+                    navigator.mediaDevices.getUserMedia({ audio: true, video: true }),
+                    permissionTimeout
+                ]).then((stream: any) => {
+                    console.log("VideoRoom: Permissions granted.");
+                    stream.getTracks().forEach((track: any) => track.stop());
+                });
             } catch (permErr) {
-                console.warn("Pre-initialization permission request failed or denied:", permErr);
-                // We'll still try to load Jitsi as it has its own internal error handling
+                console.warn("VideoRoom: Pre-initialization permission request failed or timed out:", permErr);
             }
 
+            console.log("VideoRoom: Loading Jitsi script...");
             await loadJitsiScript();
+            console.log("VideoRoom: Jitsi script loaded.");
 
             // Use jitsi.riot.im (Element's Jitsi) - no lobby enforcement
             const domain = "jitsi.riot.im";
             // Simple room name without special characters
-            const roomName = `skillup${session.roomId.replace(/-/g, '')} `;
+            const roomName = `skillup${session.roomId.replace(/-/g, '')}`;
 
             // Generate a unique user ID based on email + random suffix to allow multi-device joins
-            const userId = `${btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}_${Math.random().toString(36).substring(2, 6)} `;
+            const userId = `${btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}_${Math.random().toString(36).substring(2, 6)}`;
 
             const options = {
                 roomName,
@@ -142,8 +157,8 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 height: "100%",
                 parentNode: jitsiContainerRef.current,
                 userInfo: {
-                    displayName: isHost ? `${userName} (Host)` : userName,
-                    email: userEmail,
+                    displayName: isHost ? `${finalName} (Host)` : finalName,
+                    email: finalEmail,
                     id: userId, // Unique user ID to prevent duplicates
                 },
                 // Set proper meeting subject to show session title
@@ -151,8 +166,8 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 configOverwrite: {
                     prejoinPageEnabled: false,
                     prejoinConfig: { enabled: false },
-                    startWithAudioMuted: !isHost,
-                    startWithVideoMuted: !isHost,
+                    startWithAudioMuted: false, // Changed to false to fix iOS CoreAudio error
+                    startWithVideoMuted: false, // Changed to false to fix iOS CoreAudio error
                     disableModeratorIndicator: !isHost,
                     enableWelcomePage: false,
                     enableClosePage: false,
@@ -242,6 +257,11 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current.addListener("videoConferenceJoined", () => {
                 setIsInitializing(false);
+                // Programmatically mute non-hosts after join to ensure audio session is ready
+                if (!isHost) {
+                    jitsiApiRef.current.executeCommand('toggleAudio');
+                    jitsiApiRef.current.executeCommand('toggleVideo');
+                }
             });
 
             jitsiApiRef.current.addListener("participantJoined", () => {
@@ -309,12 +329,16 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 bgcolor: "#0f172a",
                 overflow: "hidden",
                 touchAction: "none",
+                pb: "env(safe-area-inset-bottom, 0px)", // Safe area for home indicator
             }}
         >
             {/* Header Bar */}
             <Box
                 sx={{
                     height: { xs: 48, sm: 56 }, // Shorter header on mobile
+                    // Add safe area top padding + actual header height
+                    pt: "env(safe-area-inset-top, 0px)",
+                    boxSizing: "content-box", // Ensure padding adds to height
                     bgcolor: "#1e293b",
                     borderBottom: "1px solid rgba(71, 85, 105, 0.4)",
                     px: { xs: 1.5, sm: 2 },

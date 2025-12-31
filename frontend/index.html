@@ -29,8 +29,8 @@
       margin: 0;
       padding: 0;
       height: 100%;
-      background-color: #ffffff;
-      /* Default white for landing */
+      background-color: #020617;
+      /* Match splash screen background to avoid flicker */
     }
 
     /* Target root AND body for portal theme to ensure zero gaps */
@@ -83,7 +83,7 @@
     (function () {
       const updateTheme = () => {
         const hash = window.location.hash;
-        const isPortal = hash.includes('/student') || hash.includes('/dashboard');
+        const isPortal = hash.includes('/student') || hash.includes('/dashboard') || hash.includes('/login') || hash.includes('/signup');
         const root = document.documentElement;
 
         // Manage theme classes and Backgrounds
@@ -130,6 +130,18 @@
   <script>
     (function () {
       const checkLoader = () => {
+        // Detect if running in Capacitor native app
+        const isCapacitor = window.Capacitor !== undefined ||
+          (typeof window.AndroidBridge !== 'undefined') ||
+          (typeof webkit !== 'undefined' && webkit.messageHandlers);
+
+        // Skip web loader in Capacitor - native splash handles this
+        if (isCapacitor) {
+          const loader = document.getElementById('instant-loader');
+          if (loader) loader.remove();
+          return;
+        }
+
         const hash = window.location.hash;
         const isPortal = hash.includes('/student') || hash.includes('/dashboard');
         const loader = document.getElementById('instant-loader');

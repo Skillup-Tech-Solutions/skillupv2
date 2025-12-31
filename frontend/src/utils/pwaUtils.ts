@@ -1,6 +1,24 @@
+import Cookies from 'js-cookie';
+
 /**
  * PWA Utility functions for enhancing native-like experience
  */
+
+/**
+ * Helper to get value from dual storage (Cookie or LocalStorage)
+ * This is critical for native apps where cookies can be unreliable
+ */
+export const getFromStorage = (key: string) => {
+    return Cookies.get(key) || localStorage.getItem(key);
+};
+
+/**
+ * Checks if the app is running inside Capacitor (native Android/iOS)
+ */
+export const isCapacitor = () => {
+    return !!(window as any).Capacitor?.isNativePlatform?.() ||
+        !!(window as any).Capacitor?.isNative;
+};
 
 /**
  * Triggers haptic feedback if supported by the device

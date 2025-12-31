@@ -44,7 +44,7 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
                 backdropFilter: 'blur(16px) saturate(180%)',
                 borderTop: '0.5px solid rgba(255, 255, 255, 0.1)',
                 display: { xs: 'block', lg: 'none' }, // match layout breakpoints
-                paddingBottom: 'env(safe-area-inset-bottom)', // for PWA on iOS
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)', // for PWA on iOS
                 boxShadow: '0 -4px 20px -5px rgba(0, 0, 0, 0.5)',
             }}
             elevation={0}

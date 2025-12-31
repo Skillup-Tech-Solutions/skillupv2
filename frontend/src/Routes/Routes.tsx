@@ -128,6 +128,7 @@ import Layout from "../Components/Layout";
 import StudentLayout from "../Components/StudentLayout";
 import WebsiteLayout from "../Components/WebsiteLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import CapacitorHomeRedirect from "./CapacitorHomeRedirect";
 
 // ========== LAZY LOADED PAGES ==========
 // Using lazyRetry for automatic retry with page reload on chunk loading failures
@@ -193,21 +194,28 @@ const routes = createHashRouter([
   { path: "/connection-error", element: <OfflinePage type="error" /> },
 
   // Public Website Routes (lazy loaded)
+  // In Capacitor (native app), CapacitorHomeRedirect will skip landing and go to login
   {
     path: "/",
-    element: <WebsiteLayout />,
+    element: <CapacitorHomeRedirect />,
     children: [
-      { path: "/", element: <LazyLoad><WebHome /></LazyLoad> },
-      { path: "/about", element: <LazyLoad><WebAbout /></LazyLoad> },
-      { path: "/contact", element: <LazyLoad><WebContactUs /></LazyLoad> },
-      { path: "/careers", element: <LazyLoad><WebCarrers /></LazyLoad> },
-      { path: "/services/courses", element: <LazyLoad><WebCoursesPage /></LazyLoad> },
-      { path: "/itservices", element: <LazyLoad><WebItServices /></LazyLoad> },
-      { path: "/itservices/detail", element: <LazyLoad><WebItServiceDetail /></LazyLoad> },
-      { path: "/services", element: <LazyLoad><WebServicesPage /></LazyLoad> },
-      { path: "/services/details", element: <LazyLoad><WebServiceDetail /></LazyLoad> },
-      { path: "/services/category", element: <LazyLoad><WebCategory /></LazyLoad> },
-      { path: "/services/courses/syllabus", element: <LazyLoad><WebSyllabusView /></LazyLoad> },
+      {
+        path: "/",
+        element: <WebsiteLayout />,
+        children: [
+          { path: "/", element: <LazyLoad><WebHome /></LazyLoad> },
+          { path: "/about", element: <LazyLoad><WebAbout /></LazyLoad> },
+          { path: "/contact", element: <LazyLoad><WebContactUs /></LazyLoad> },
+          { path: "/careers", element: <LazyLoad><WebCarrers /></LazyLoad> },
+          { path: "/services/courses", element: <LazyLoad><WebCoursesPage /></LazyLoad> },
+          { path: "/itservices", element: <LazyLoad><WebItServices /></LazyLoad> },
+          { path: "/itservices/detail", element: <LazyLoad><WebItServiceDetail /></LazyLoad> },
+          { path: "/services", element: <LazyLoad><WebServicesPage /></LazyLoad> },
+          { path: "/services/details", element: <LazyLoad><WebServiceDetail /></LazyLoad> },
+          { path: "/services/category", element: <LazyLoad><WebCategory /></LazyLoad> },
+          { path: "/services/courses/syllabus", element: <LazyLoad><WebSyllabusView /></LazyLoad> },
+        ],
+      },
     ],
   },
 
