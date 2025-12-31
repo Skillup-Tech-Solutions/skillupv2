@@ -164,6 +164,8 @@ const SalarySetup = lazyRetry(() => import("../Pages/Admin/Payroll/SalarySetup")
 const PayrollManagement = lazyRetry(() => import("../Pages/Admin/Payroll/PayrollManagement"));
 const PaymentSettings = lazyRetry(() => import("../Pages/Admin/PaymentSettings"));
 const PaymentManagement = lazyRetry(() => import("../Pages/Admin/PaymentManagement"));
+const NotificationManagement = lazyRetry(() => import("../Pages/NotificationManagement"));
+const Profile = lazyRetry(() => import("../Pages/Profile"));
 
 // Student pages - Lazy
 const StudentDashboard = lazyRetry(() => import("../Pages/Student/StudentDashboard"));
@@ -244,6 +246,8 @@ const routes = createHashRouter([
       { path: "payroll/settings", element: <LazyLoad><PayrollManagement /></LazyLoad> },
       { path: "payment/settings", element: <LazyLoad><PaymentSettings /></LazyLoad> },
       { path: "payment-management", element: <LazyLoad><PaymentManagement /></LazyLoad> },
+      { path: "notifications", element: <LazyLoad><NotificationManagement /></LazyLoad> },
+      { path: "profile", element: <LazyLoad><Profile /></LazyLoad> },
     ],
   },
 

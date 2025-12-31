@@ -101,6 +101,15 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
         authService.set("skRefreshToken", newRefreshToken);
       }
 
+      // Update cached user info if provided
+      if (response.data.user) {
+        const u = response.data.user;
+        if (u.email) authService.set("email", u.email);
+        if (u.name) authService.set("name", u.name);
+        if (u.role) authService.set("role", u.role);
+        if (u.mobile) authService.set("mobile", u.mobile);
+      }
+
       processQueue(null, newAccessToken);
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);

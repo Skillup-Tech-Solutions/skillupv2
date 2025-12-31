@@ -51,5 +51,8 @@
     
     <!-- Wake Lock to prevent sleep during calls -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Push Notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
 </manifest>

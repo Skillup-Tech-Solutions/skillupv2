@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { MdEdit, MdAttachMoney, MdHistory, MdSearch, MdRefresh, MdBusiness, MdPerson } from "react-icons/md";
 import { FaUserPlus, FaUserTie, FaUsers } from "react-icons/fa";
+import { AndroidLogo, AppleLogo, Desktop } from "@phosphor-icons/react";
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetEmployees, useCreateEmployee, useUpdateEmployeeProfile } from "../../../Hooks/employee";
@@ -320,6 +321,23 @@ const EmployeeManagement = () => {
         return filtered;
     }, [employees, tabValue, searchTerm]);
 
+    const getDeviceIcon = (fcmTokens: any[]) => {
+        if (!fcmTokens || fcmTokens.length === 0) return null;
+        return (
+            <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                {fcmTokens.some(t => t.platform === 'android') && (
+                    <Tooltip title="Android Registered"><AndroidLogo size={16} weight="duotone" style={{ color: "#3ddc84" }} /></Tooltip>
+                )}
+                {fcmTokens.some(t => t.platform === 'ios') && (
+                    <Tooltip title="iOS Registered"><AppleLogo size={16} weight="duotone" style={{ color: "#f8fafc" }} /></Tooltip>
+                )}
+                {fcmTokens.some(t => t.platform === 'web') && (
+                    <Tooltip title="Web Registered"><Desktop size={16} weight="duotone" style={{ color: "#60a5fa" }} /></Tooltip>
+                )}
+            </Box>
+        );
+    };
+
     const columns: GridColDef[] = [
         {
             field: "employeeId",
@@ -367,6 +385,13 @@ const EmployeeManagement = () => {
                     <Typography sx={{ fontSize: "12px", fontWeight: 600, color: "#60a5fa" }}>{params.row.department || "-"}</Typography>
                 </Box>
             )
+        },
+        {
+            field: "firebase",
+            headerName: "Firebase",
+            width: 100,
+            sortable: false,
+            renderCell: (params) => getDeviceIcon(params.row.user?.fcmTokens)
         },
         {
             field: "status",

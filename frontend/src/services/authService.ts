@@ -2,7 +2,7 @@ import Cookies from 'js-cookie';
 import { Preferences } from '@capacitor/preferences';
 
 const TOKEN_EXPIRY_DAYS = 7;
-const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name'];
+const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile'];
 
 // Check if running in Capacitor native app - more robust check
 const isCapacitorNative = () => {
@@ -165,6 +165,7 @@ export const authService = {
         email: string;
         role: string;
         name: string;
+        mobile?: string;
     }) {
         this.set('skToken', data.accessToken);
         if (data.refreshToken) {
@@ -173,6 +174,9 @@ export const authService = {
         this.set('email', data.email);
         this.set('role', data.role);
         this.set('name', data.name);
+        if (data.mobile) {
+            this.set('mobile', data.mobile);
+        }
     },
 
     // Clear all auth data (logout)
@@ -235,6 +239,7 @@ export const authService = {
             email: this.get('email'),
             role: this.get('role'),
             name: this.get('name'),
+            mobile: this.get('mobile'),
         };
     },
 
@@ -244,6 +249,7 @@ export const authService = {
             email: await this.getAsync('email'),
             role: await this.getAsync('role'),
             name: await this.getAsync('name'),
+            mobile: await this.getAsync('mobile'),
         };
     }
 };

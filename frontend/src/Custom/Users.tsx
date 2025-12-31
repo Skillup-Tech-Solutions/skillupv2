@@ -26,6 +26,9 @@ import {
   GraduationCap,
   Pause,
   Play,
+  AndroidLogo,
+  AppleLogo,
+  Desktop,
 } from "@phosphor-icons/react";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -248,6 +251,23 @@ const Users = () => {
     );
   };
 
+  const getDeviceIcon = (fcmTokens: any[]) => {
+    if (!fcmTokens || fcmTokens.length === 0) return null;
+    return (
+      <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+        {fcmTokens.some(t => t.platform === 'android') && (
+          <Tooltip title="Android Registered"><AndroidLogo size={16} weight="duotone" style={{ color: "#3ddc84" }} /></Tooltip>
+        )}
+        {fcmTokens.some(t => t.platform === 'ios') && (
+          <Tooltip title="iOS Registered"><AppleLogo size={16} weight="duotone" style={{ color: "#f8fafc" }} /></Tooltip>
+        )}
+        {fcmTokens.some(t => t.platform === 'web') && (
+          <Tooltip title="Web Registered"><Desktop size={16} weight="duotone" style={{ color: "#60a5fa" }} /></Tooltip>
+        )}
+      </Box>
+    );
+  };
+
   const getRoleBadge = (role: string) => {
     const lowerRole = role?.toLowerCase() || "user";
     const configs: Record<string, { bg: string; color: string; border: string; icon: React.ReactNode }> = {
@@ -283,6 +303,10 @@ const Users = () => {
       renderCell: (p) => <Box sx={{ fontSize: "12px", color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.value}</Box>
     },
     { field: "mobile", headerName: "Mobile", width: 130, renderCell: (p) => <Box sx={{ fontFamily: "'JetBrains Mono', monospace", color: "#f8fafc" }}>{p.value}</Box> },
+    {
+      field: "firebase", headerName: "Firebase", width: 100, sortable: false,
+      renderCell: (p) => getDeviceIcon(p.row.fcmTokens)
+    },
     { field: "role", headerName: "Role", width: 120, renderCell: (p) => getRoleBadge(p.row.role) },
     { field: "status", headerName: "Status", width: 140, renderCell: (p) => getStatusBadge(p.row.status || "Active") },
     {

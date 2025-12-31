@@ -29,6 +29,7 @@ const employeeRoutes = require('./routes/employeeRoutes');
 const payrollRoutes = require('./routes/payrollRoutes');
 const employeePortalRoutes = require('./routes/employeePortalRoutes');
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const cron = require("node-cron");
 const StudentAssignment = require("./models/StudentAssignment");
 const Course = require("./models/Course");
@@ -174,6 +175,9 @@ app.use("/api/employee", employeePortalRoutes);
 
 // Live Session Routes
 app.use("/api/live-sessions", liveSessionRoutes);
+
+// Notification Routes
+app.use("/api/notifications", notificationRoutes);
 
 // Public routes
 app.use("/api", categoryRoutes);

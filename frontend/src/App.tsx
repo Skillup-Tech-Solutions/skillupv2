@@ -5,8 +5,12 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import routes from "./Routes/Routes";
 import { useEffect } from "react";
+import { analyticsService } from "./services/analyticsService";
 
 function App() {
+  useEffect(() => {
+    analyticsService.init();
+  }, []);
 
   // Automatic offline detection and redirection
   useEffect(() => {

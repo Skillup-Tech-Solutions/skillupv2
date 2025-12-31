@@ -8,6 +8,10 @@ import './Interceptors/Interceptor'
 import { registerSW } from 'virtual:pwa-register'
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { pushNotificationService } from './services/pushNotificationService';
+
+// Initialize push notifications
+pushNotificationService.init();
 
 // Configure Status Bar for native Android/iOS only
 const initializeStatusBar = async () => {

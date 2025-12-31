@@ -63,7 +63,7 @@ exports.verifyOtp = async (req, res) => {
     mobile: record.mobile,
     password: hashedPassword,
     status: "Active",
-    role: "user",
+    role: "student",
   });
   await sendPasswordMail(email, record.name, randomPassword);
   otpStore.delete(email);
@@ -173,7 +173,7 @@ exports.login = async (req, res) => {
       accessToken: accessToken,
       refreshToken: refreshToken,
       expiresIn: 900, // 15 minutes in seconds
-      user: { name: user.name, email: user.email, role: user.role, status: user.status }
+      user: { name: user.name, email: user.email, role: user.role, status: user.status, mobile: user.mobile }
     });
   } catch (err) {
     console.error(`[Auth] Login error for ${email}:`, err.message);

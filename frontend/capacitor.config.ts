@@ -21,7 +21,10 @@ const config: CapacitorConfig = {
             showSpinner: false,
             splashFullScreen: false,
             splashImmersive: false
-        }
+        },
+        PushNotifications: {
+            presentationOptions: ["badge", "sound", "alert"],
+        },
     }
 };
 

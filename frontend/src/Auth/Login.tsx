@@ -7,6 +7,8 @@ import { LoginSchema } from "../assets/Validation/Schema";
 import { useLoginApi } from "../Hooks/login";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import { authService } from "../services/authService";
+import { pushNotificationService } from "../services/pushNotificationService";
+import { analyticsService } from "../services/analyticsService";
 import { images } from "../assets/Images/Images";
 import {
   User,
@@ -60,7 +62,8 @@ const Login = () => {
             refreshToken: response.refreshToken,
             email: user.email,
             role: user.role,
-            name: user.name
+            name: user.name,
+            mobile: user.mobile
           });
 
           if (user.status !== "Active" && user.status !== "Self-Signed") {
@@ -69,6 +72,12 @@ const Login = () => {
           }
 
           CustomSnackBar.successSnackbar("Login Successfully");
+
+          // Analytics: Log Login
+          analyticsService.logEvent('login', { scheme: 'email', role: user.role });
+
+          // Push Notification: Register device with backend
+          pushNotificationService.registerWithBackend();
 
           if (user.role === "admin") {
             setTimeout(() => navigate("/dashboard"), 1000);

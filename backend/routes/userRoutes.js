@@ -174,7 +174,7 @@ router.post("/refresh-token", async (req, res) => {
     res.json({
       accessToken: accessToken,
       expiresIn: 900, // 15 minutes in seconds
-      user: { name: user.name, email: user.email, role: user.role, status: user.status }
+      user: { name: user.name, email: user.email, role: user.role, status: user.status, mobile: user.mobile }
     });
   } catch (err) {
     console.error("[Auth] Refresh token error:", err.message);

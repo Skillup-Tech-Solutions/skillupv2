@@ -8,6 +8,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { authService } from "../services/authService";
+import { pushNotificationService } from "../services/pushNotificationService";
 import { images } from "../assets/Images/Images";
 import {
   Gauge,
@@ -24,6 +25,7 @@ import {
   Gear,
   SignOut,
   VideoCamera,
+  Bell,
 } from "@phosphor-icons/react";
 import { useGetLiveNowSessionsApi } from "../Hooks/liveSessions";
 
@@ -43,7 +45,8 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
     setLogoutModalOpen(true);
   };
 
-  const HandleLogoutConfirm = () => {
+  const HandleLogoutConfirm = async () => {
+    await pushNotificationService.unregisterFromBackend();
     authService.clearAuth();
     setLogoutModalOpen(false);
     navigate("/");
@@ -71,6 +74,7 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
     { paths: ["/payroll"], label: "Payroll", icon: CurrencyDollar },
     { paths: ["/payment/settings"], label: "Payment Settings", icon: Gear },
     { paths: ["/payment-management"], label: "Payments", icon: CurrencyDollar },
+    { paths: ["/notifications"], label: "Notifications", icon: Bell },
   ] : [
     { paths: ["/employee/portal"], label: "My Payslips", icon: CurrencyDollar },
   ];

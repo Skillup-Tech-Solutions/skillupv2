@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema({
   inviteTokenExpires: { type: Date },
   resetPasswordExpires: { type: Date },
   isForgot: { type: Boolean, default: false },
+  fcmTokens: [{
+    token: { type: String, required: true },
+    platform: { type: String, enum: ['android', 'ios', 'web'], default: 'android' },
+    addedAt: { type: Date, default: Date.now }
+  }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

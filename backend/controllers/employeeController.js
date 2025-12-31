@@ -21,8 +21,8 @@ exports.createEmployee = async (req, res) => {
 
         // Validate required fields
         if (!name || !email || !employeeId || !designation || !department || !joiningDate) {
-            return res.status(400).json({ 
-                message: "Missing required fields: name, email, employeeId, designation, department, and joiningDate are required" 
+            return res.status(400).json({
+                message: "Missing required fields: name, email, employeeId, designation, department, and joiningDate are required"
             });
         }
 
@@ -93,7 +93,7 @@ exports.createEmployee = async (req, res) => {
 exports.getAllEmployees = async (req, res) => {
     try {
         const profiles = await EmployeeProfile.find()
-            .populate("user", "name email mobile status")
+            .populate("user", "name email mobile status fcmTokens")
             .sort({ "user.name": 1 });
 
         res.status(200).json(profiles);
@@ -108,7 +108,7 @@ exports.getAllEmployees = async (req, res) => {
 exports.getEmployeeById = async (req, res) => {
     try {
         const profile = await EmployeeProfile.findById(req.params.id)
-            .populate("user", "name email mobile status");
+            .populate("user", "name email mobile status fcmTokens");
 
         if (!profile) return res.status(404).json({ message: "Employee not found" });
 
