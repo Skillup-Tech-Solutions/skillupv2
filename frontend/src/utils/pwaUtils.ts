@@ -16,8 +16,22 @@ export const getFromStorage = (key: string) => {
  * Checks if the app is running inside Capacitor (native Android/iOS)
  */
 export const isCapacitor = () => {
-    return !!(window as any).Capacitor?.isNativePlatform?.() ||
-        !!(window as any).Capacitor?.isNative;
+    // 1. Check direct Capacitor object
+    if ((window as any).Capacitor?.isNativePlatform?.() || (window as any).Capacitor?.isNative) {
+        return true;
+    }
+
+    // 2. Check for webkit message handlers (iOS specifically)
+    if ((window as any).webkit?.messageHandlers?.Capacitor || (window as any).webkit?.messageHandlers?.bridge) {
+        return true;
+    }
+
+    // 3. Check for Android bridge
+    if ((window as any).Android) {
+        return true;
+    }
+
+    return false;
 };
 
 /**

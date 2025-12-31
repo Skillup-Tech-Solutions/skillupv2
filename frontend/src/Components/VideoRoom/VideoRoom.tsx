@@ -6,6 +6,7 @@ import type { LiveSession } from "../../Hooks/liveSessions";
 import { useLeaveSessionApi } from "../../Hooks/liveSessions";
 import Cookies from "js-cookie";
 import { getFromStorage } from "../../utils/pwaUtils";
+import { Capacitor } from "@capacitor/core";
 
 declare global {
     interface Window {
@@ -329,7 +330,12 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 bgcolor: "#0f172a",
                 overflow: "hidden",
                 touchAction: "none",
-                pb: "env(safe-area-inset-bottom, 0px)", // Safe area for home indicator
+                // Safe area for bottom navigation - Android: 16px, iOS: env(), Desktop: 0
+                pb: Capacitor.isNativePlatform()
+                    ? Capacitor.getPlatform() === 'android'
+                        ? "max(env(safe-area-inset-bottom, 0px), 16px)"
+                        : "env(safe-area-inset-bottom, 0px)"
+                    : 0,
             }}
         >
             {/* Header Bar */}
@@ -337,7 +343,12 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 sx={{
                     height: { xs: 48, sm: 56 }, // Shorter header on mobile
                     // Add safe area top padding + actual header height
-                    pt: "env(safe-area-inset-top, 0px)",
+                    // Android: min 24px, iOS: use env(), Desktop: 0
+                    pt: Capacitor.isNativePlatform()
+                        ? Capacitor.getPlatform() === 'android'
+                            ? "max(env(safe-area-inset-top, 0px), 24px)"
+                            : "env(safe-area-inset-top, 0px)"
+                        : 0,
                     boxSizing: "content-box", // Ensure padding adds to height
                     bgcolor: "#1e293b",
                     borderBottom: "1px solid rgba(71, 85, 105, 0.4)",

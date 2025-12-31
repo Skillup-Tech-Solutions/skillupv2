@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { authService } from "../services/authService";
 import { isCapacitor } from "../utils/pwaUtils";
+import { authService } from "../services/authService";
 
 /**
  * Wrapper for landing page routes.
@@ -13,22 +13,16 @@ const CapacitorHomeRedirect = () => {
         return <Outlet />;
     }
 
-    // Check if user is already logged in
-    const token = authService.getToken();
+    // Determine where to redirect Capacitor users
+    const isAuthenticated = authService.isAuthenticated();
     const role = authService.getRole();
 
-    if (token && role) {
-        // Redirect to dashboard based on role
-        if (role === "admin") {
-            return <Navigate to="/dashboard" replace />;
-        } else if (role === "student") {
-            return <Navigate to="/student/dashboard" replace />;
-        } else if (role === "employee") {
-            return <Navigate to="/employee/portal" replace />;
-        }
+    if (isAuthenticated) {
+        if (role === "admin") return <Navigate to="/dashboard" replace />;
+        if (role === "student") return <Navigate to="/student/dashboard" replace />;
+        if (role === "employee") return <Navigate to="/employee/portal" replace />;
     }
 
-    // Not logged in - redirect to login
     return <Navigate to="/login" replace />;
 };
 

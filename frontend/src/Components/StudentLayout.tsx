@@ -6,6 +6,8 @@ import StudentSidebar from "./StudentSidebar";
 import StudentBottomNav from "./Student/StudentBottomNav";
 import { authService } from "../services/authService";
 import { List, SignOut } from "@phosphor-icons/react";
+import { Capacitor } from "@capacitor/core";
+
 
 // Sidebar width constants matching frontend-ref
 const MIN_WIDTH = 60;
@@ -228,9 +230,16 @@ const StudentLayout = () => {
                         position: "sticky",
                         top: 0,
                         zIndex: 40,
-                        pt: "calc(env(safe-area-inset-top, 0px))", // Refined safe area
+                        // Safe area padding: uses env() for iOS, falls back to 24px for Android native
+                        // Desktop (non-native) gets 0 padding
+                        pt: Capacitor.isNativePlatform()
+                            ? Capacitor.getPlatform() === 'android'
+                                ? "max(env(safe-area-inset-top, 0px), 24px)"  // Android: minimum 24px for status bar
+                                : "env(safe-area-inset-top, 0px)"  // iOS: use safe area inset
+                            : 0,  // Desktop/Web: no padding
                     }}
                 >
+
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: { xs: 1.5, sm: 2 } }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                             {/* Show toggle button when sidebar is hidden on desktop */}

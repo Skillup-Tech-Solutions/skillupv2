@@ -9,6 +9,7 @@ import {
     List
 } from "@phosphor-icons/react";
 import { useGetLiveNowSessionsApi } from "../../Hooks/liveSessions";
+import { Capacitor } from "@capacitor/core";
 
 interface StudentBottomNavProps {
     onOpenSidebar: () => void;
@@ -32,6 +33,16 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
         return -1;
     };
 
+    // Calculate bottom padding for safe area
+    // Android native: use 16px minimum for navigation bar
+    // iOS: use env() for dynamic island/home indicator
+    // Desktop: no padding needed
+    const getBottomPadding = () => {
+        if (!Capacitor.isNativePlatform()) return 0;
+        if (Capacitor.getPlatform() === 'android') return "max(env(safe-area-inset-bottom, 0px), 16px)";
+        return "env(safe-area-inset-bottom, 0px)"; // iOS
+    };
+
     return (
         <Paper
             sx={{
@@ -44,11 +55,12 @@ const StudentBottomNav = ({ onOpenSidebar }: StudentBottomNavProps) => {
                 backdropFilter: 'blur(16px) saturate(180%)',
                 borderTop: '0.5px solid rgba(255, 255, 255, 0.1)',
                 display: { xs: 'block', lg: 'none' }, // match layout breakpoints
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)', // for PWA on iOS
+                paddingBottom: getBottomPadding(), // Safe area for Android/iOS native
                 boxShadow: '0 -4px 20px -5px rgba(0, 0, 0, 0.5)',
             }}
             elevation={0}
         >
+
             <BottomNavigation
                 showLabels
                 value={getActiveValue()}

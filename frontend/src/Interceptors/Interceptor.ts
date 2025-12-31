@@ -2,6 +2,7 @@ import axios from "axios";
 import { authService } from "../services/authService";
 import config from "../Config/Config";
 import "react-toastify/dist/ReactToastify.css";
+import { isCapacitor } from "../utils/pwaUtils";
 
 // Global settings
 axios.defaults.timeout = 25000;
@@ -38,25 +39,33 @@ const api = axios.create({
   baseURL: config.BASE_URL,
 });
 
-// Helper to get token from dual storage logic is now in authService
-const getToken = (key: string) => authService.get(key);
-
 // Shared token refresh handler for both axios and api
 const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | typeof api) => {
   const originalRequest = error.config;
 
   // Handle token expiration
   if (error.response?.status === 401 && !originalRequest._retry) {
-    const refreshToken = getToken("skRefreshToken");
+    const isNative = isCapacitor();
+    if (isNative) {
+      await authService.waitForReady();
+    }
+
+    const refreshToken = isNative
+      ? await authService.getRefreshTokenAsync()
+      : authService.getRefreshToken();
 
     // If no refresh token, redirect to login
     if (!refreshToken) {
-      authService.clearAuth();
-      window.location.href = "/#/login";
+      console.warn('[Interceptor] No refresh token found during 401 handling');
+
+      const currentHash = window.location.hash;
+      if (!currentHash.includes('login') && !currentHash.includes('signup') && currentHash !== '#/') {
+        authService.clearAuth();
+        window.location.href = "/#/login";
+      }
       return Promise.reject(error);
     }
 
-    // If already refreshing, queue this request
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -70,27 +79,38 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
     isRefreshing = true;
 
     try {
-      // Use a clean axios call without interceptors to avoid loops
+      console.log('[Interceptor] Attempting token refresh...');
       const response = await axios.post(`${config.BASE_URL}refresh-token`, {
         refreshToken: refreshToken
       });
 
-      const newAccessToken = response.data.accessToken;
+      // BACKEND might return accessToken or token
+      const newAccessToken = response.data.accessToken || response.data.token;
+      // ALSO save new refresh token if backend provides one
+      const newRefreshToken = response.data.refreshToken;
 
-      // Store new access token using authService
+      if (!newAccessToken) {
+        throw new Error('No access token returned from refresh');
+      }
+
+      console.log('[Interceptor] Token refresh successful');
+
+      // Update native storage
       authService.set("skToken", newAccessToken);
+      if (newRefreshToken) {
+        authService.set("skRefreshToken", newRefreshToken);
+      }
 
-      // Process queued requests
       processQueue(null, newAccessToken);
-
-      // Retry original request
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {
-      // Refresh failed, clear all auth data
+      console.error('[Interceptor] Token refresh failed:', refreshError);
       processQueue(refreshError, null);
-      authService.clearAuth();
-      window.location.href = "/#/login";
+      if (!window.location.hash.includes('login') && !window.location.hash.includes('signup')) {
+        authService.clearAuth();
+        window.location.href = "/#/login";
+      }
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
@@ -101,23 +121,14 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
     setTimeOutModal(true);
   }
 
-  // Handle network errors - redirect to offline page
   if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
-    // Save the intended URL before redirecting
-    const currentPath = window.location.hash.replace("#", "") || "/";
-    if (!currentPath.includes("/offline") && !currentPath.includes("/connection-error")) {
-      sessionStorage.setItem("intendedUrl", currentPath);
-    }
-
-    // Check if browser is offline or server is unreachable
     if (!navigator.onLine) {
-      // No internet connection
       if (!window.location.hash.includes("/offline")) {
         window.location.href = "/#/offline";
       }
     } else {
-      // Internet is available but server is unreachable
-      if (!window.location.hash.includes("/connection-error")) {
+      const currentPath = window.location.hash;
+      if (!currentPath.includes("/connection-error") && !currentPath.includes("/offline")) {
         window.location.href = "/#/connection-error";
       }
     }
@@ -126,12 +137,17 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
   return Promise.reject(error);
 };
 
-// ===== APPLY INTERCEPTORS TO BOTH axios AND api =====
-
 // Request interceptor for custom api instance
 api.interceptors.request.use(
-  (config) => {
-    const token = getToken("skToken");
+  async (config) => {
+    if (isCapacitor()) {
+      await authService.waitForReady();
+    }
+
+    const token = isCapacitor()
+      ? await authService.getTokenAsync()
+      : authService.getToken();
+
     setIsLoading(true);
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
@@ -144,7 +160,6 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for custom api instance
 api.interceptors.response.use(
   (response) => {
     setIsLoading(false);
@@ -157,11 +172,21 @@ api.interceptors.response.use(
 );
 
 // ===== GLOBAL AXIOS INTERCEPTORS =====
-// Apply same logic to global axios so all files using axios get token refresh
 
 axios.interceptors.request.use(
-  (config) => {
-    const token = getToken("skToken");
+  async (config) => {
+    if (config.url?.includes('login') || config.url?.includes('refresh-token') || config.url?.includes('student-signup')) {
+      return config;
+    }
+
+    if (isCapacitor()) {
+      await authService.waitForReady();
+    }
+
+    const token = isCapacitor()
+      ? await authService.getTokenAsync()
+      : authService.getToken();
+
     if (token && !config.headers["Authorization"]) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
@@ -177,6 +202,9 @@ axios.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (error.config?.url?.includes('refresh-token')) {
+      return Promise.reject(error);
+    }
     return handleTokenRefresh(error, axios);
   }
 );

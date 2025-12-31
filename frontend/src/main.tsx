@@ -6,40 +6,41 @@ import App from './App.tsx'
 import './Interceptors/Interceptor'
 // Import PWA registration from vite-plugin-pwa
 import { registerSW } from 'virtual:pwa-register'
-import Cookies from 'js-cookie'
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 
-// ========== CAPACITOR IMMEDIATE REDIRECT ==========
-// This runs BEFORE React renders to prevent landing page flash in native apps
-const isCapacitorNative = () => {
-  return !!(window as any).Capacitor?.isNativePlatform?.() ||
-    !!(window as any).Capacitor?.isNative;
+// Configure Status Bar for native Android/iOS only
+const initializeStatusBar = async () => {
+  // Only run on native platforms (not web/desktop)
+  if (!Capacitor.isNativePlatform()) {
+    return;
+  }
+
+  try {
+    // Set status bar style to light content (white icons on dark background)
+    await StatusBar.setStyle({ style: Style.Dark });
+
+    // Make status bar overlay the WebView (content draws behind it)
+    await StatusBar.setOverlaysWebView({ overlay: true });
+
+    // Set status bar background color to match app theme
+    if (Capacitor.getPlatform() === 'android') {
+      await StatusBar.setBackgroundColor({ color: '#020617' });
+    }
+
+    console.log('[StatusBar] Configured for native platform');
+  } catch (error) {
+    console.warn('[StatusBar] Configuration failed:', error);
+  }
 };
 
-// If in Capacitor and on the root path, redirect immediately before React mounts
-if (isCapacitorNative()) {
-  const currentHash = window.location.hash;
-  const isOnLandingPage = !currentHash || currentHash === '#/' || currentHash === '#';
+// Initialize status bar
+initializeStatusBar();
 
-  if (isOnLandingPage) {
-    const token = Cookies.get('skToken');
-    const role = Cookies.get('role');
+// React and and App initialization handles the routing logic correctly now.
+// Legacy synchronous redirects based on cookies have been removed 
+// to support asynchronous native storage initialization on iOS/Android.
 
-    if (token && role) {
-      // Logged in - go to dashboard
-      if (role === 'admin') {
-        window.location.hash = '#/dashboard';
-      } else if (role === 'student') {
-        window.location.hash = '#/student/dashboard';
-      } else if (role === 'employee') {
-        window.location.hash = '#/employee/dashboard';
-      }
-    } else {
-      // Not logged in - go to login
-      window.location.hash = '#/login';
-    }
-  }
-}
-// ========== END CAPACITOR REDIRECT ==========
 
 // Handle chunk load errors (happens after deployment when old chunks no longer exist)
 // This will auto-refresh the page once to get the latest version
@@ -81,6 +82,7 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
 
 // Register Service Worker with auto-update from vite-plugin-pwa
 // This replaces the manual service worker registration
