@@ -240,6 +240,8 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 # Firebase / GCP secrets
-backend/config/firebase-service-account.json
+firebase-service-account.json
+GoogleService-Info.plist
+google-services.json
 *.pem
 *.key
