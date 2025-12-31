@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema } from "../assets/Validation/Schema";
 import { useLoginApi } from "../Hooks/login";
 import CustomSnackBar from "../Custom/CustomSnackBar";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 import { images } from "../assets/Images/Images";
 import {
   User,
@@ -54,33 +54,14 @@ const Login = () => {
       {
         onSuccess: (response: any) => {
           const user = response.user;
-          const isProduction = window.location.protocol === 'https:';
-          const cookieOptions = {
-            path: "/",
-            sameSite: "strict" as const,
-            ...(isProduction && { secure: true })
-          };
-
-          // Dual Storage Strategy: Cookies + LocalStorage for native app persistence
-          const storeData = (key: string, value: string) => {
-            Cookies.set(key, value, cookieOptions);
-            localStorage.setItem(key, value);
-          };
-
-          storeData("email", user.email);
-          storeData("role", user.role);
-          storeData("name", user.name);
-
-          const accessToken = response.accessToken || response.token;
-          storeData("skToken", accessToken);
-
-          if (response.refreshToken) {
-            Cookies.set("skRefreshToken", response.refreshToken, {
-              ...cookieOptions,
-              expires: 7
-            });
-            localStorage.setItem("skRefreshToken", response.refreshToken);
-          }
+          // Use centralized authService for production-level persistence
+          authService.setTokens({
+            accessToken: response.accessToken || response.token,
+            refreshToken: response.refreshToken,
+            email: user.email,
+            role: user.role,
+            name: user.name
+          });
 
           if (user.status !== "Active" && user.status !== "Self-Signed") {
             CustomSnackBar.errorSnackbar("Your account is not active. Please contact admin.");

@@ -1,8 +1,8 @@
 import { Box, useMediaQuery } from "@mui/material";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 import { List } from "@phosphor-icons/react";
 
 // Sidebar width constants matching frontend-ref
@@ -14,8 +14,8 @@ const MAX_WIDTH = 280;
 const Layout = () => {
   const isMobile = useMediaQuery("(max-width:991px)");
   const navigate = useNavigate();
-  const userName = Cookies.get("name") || "Admin";
-  const userEmail = Cookies.get("email") || "admin@skillup.edu";
+  const userName = authService.getUserInfo().name || "Admin";
+  const userEmail = authService.getUserInfo().email || "admin@skillup.edu";
 
   // Resizable sidebar state
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);

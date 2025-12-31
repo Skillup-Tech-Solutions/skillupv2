@@ -4,7 +4,7 @@ import { triggerHaptic } from "../utils/pwaUtils";
 import { Outlet, useNavigate } from "react-router-dom";
 import StudentSidebar from "./StudentSidebar";
 import StudentBottomNav from "./Student/StudentBottomNav";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 import { List, SignOut } from "@phosphor-icons/react";
 
 // Sidebar width constants matching frontend-ref
@@ -16,8 +16,8 @@ const MAX_WIDTH = 280;
 const StudentLayout = () => {
     const isMobile = useMediaQuery("(max-width:991px)");
     const navigate = useNavigate();
-    const userName = Cookies.get("name") || "Student";
-    const userEmail = Cookies.get("email") || "student@campus.edu";
+    const userName = authService.getUserInfo().name || "Student";
+    const userEmail = authService.getUserInfo().email || "student@campus.edu";
 
     // Resizable sidebar state
     const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
@@ -288,8 +288,8 @@ const StudentLayout = () => {
                                 <Box
                                     onClick={async () => {
                                         try {
-                                            const accessToken = Cookies.get("skToken");
-                                            const refreshToken = Cookies.get("skRefreshToken");
+                                            const accessToken = authService.getToken();
+                                            const refreshToken = authService.getRefreshToken();
                                             if (accessToken) {
                                                 await fetch(`${import.meta.env.VITE_APP_BASE_URL}logout`, {
                                                     method: "POST",
@@ -301,11 +301,7 @@ const StudentLayout = () => {
                                                 }).catch(() => { });
                                             }
                                         } finally {
-                                            Cookies.remove("name");
-                                            Cookies.remove("role");
-                                            Cookies.remove("skToken");
-                                            Cookies.remove("skRefreshToken");
-                                            Cookies.remove("email");
+                                            authService.clearAuth();
                                             navigate("/");
                                         }
                                     }}

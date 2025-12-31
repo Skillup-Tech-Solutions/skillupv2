@@ -1,4 +1,4 @@
-import Cookies from 'js-cookie';
+import { authService } from '../services/authService';
 
 /**
  * PWA Utility functions for enhancing native-like experience
@@ -9,7 +9,7 @@ import Cookies from 'js-cookie';
  * This is critical for native apps where cookies can be unreliable
  */
 export const getFromStorage = (key: string) => {
-    return Cookies.get(key) || localStorage.getItem(key);
+    return authService.get(key);
 };
 
 /**

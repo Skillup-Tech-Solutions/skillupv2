@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 import { images } from "../assets/Images/Images";
 import {
   Gauge,
@@ -33,8 +33,8 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
-  const username = Cookies.get("name");
-  const role = Cookies.get("role");
+  const username = authService.getUserInfo().name;
+  const role = authService.getRole();
   const navigate = useNavigate();
   const location = useLocation();
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
@@ -44,10 +44,7 @@ const Sidebar = ({ isOpen, isMobile }: SidebarProps) => {
   };
 
   const HandleLogoutConfirm = () => {
-    Cookies.remove("name");
-    Cookies.remove("role");
-    Cookies.remove("skToken");
-    Cookies.remove("email");
+    authService.clearAuth();
     setLogoutModalOpen(false);
     navigate("/");
   };

@@ -7,7 +7,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 
 import {
     Gauge,
@@ -30,7 +30,7 @@ interface SidebarProps {
 
 const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
 
-    const role = Cookies.get("role");
+    const role = authService.getRole();
     const navigate = useNavigate();
     const location = useLocation();
     const [logoutModalOpen, setLogoutModalOpen] = useState(false);
@@ -41,8 +41,8 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
 
     const HandleLogoutConfirm = async () => {
         try {
-            const accessToken = Cookies.get("skToken");
-            const refreshToken = Cookies.get("skRefreshToken");
+            const accessToken = authService.getToken();
+            const refreshToken = authService.getRefreshToken();
 
             if (accessToken) {
                 await fetch(`${import.meta.env.VITE_APP_BASE_URL}logout`, {
@@ -55,11 +55,7 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
                 }).catch(() => { });
             }
         } finally {
-            Cookies.remove("name");
-            Cookies.remove("role");
-            Cookies.remove("skToken");
-            Cookies.remove("skRefreshToken");
-            Cookies.remove("email");
+            authService.clearAuth();
             setLogoutModalOpen(false);
             navigate("/");
         }

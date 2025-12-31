@@ -1,5 +1,5 @@
-import Cookies from 'js-cookie';
 import axios from "axios";
+import { authService } from "../services/authService";
 import config from "../Config/Config";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -38,10 +38,8 @@ const api = axios.create({
   baseURL: config.BASE_URL,
 });
 
-// Helper to get token from dual storage (Cookie or LocalStorage)
-const getToken = (key: string) => {
-  return Cookies.get(key) || localStorage.getItem(key);
-};
+// Helper to get token from dual storage logic is now in authService
+const getToken = (key: string) => authService.get(key);
 
 // Shared token refresh handler for both axios and api
 const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | typeof api) => {
@@ -53,8 +51,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
 
     // If no refresh token, redirect to login
     if (!refreshToken) {
-      Cookies.remove("skToken");
-      Cookies.remove("skRefreshToken");
+      authService.clearAuth();
       window.location.href = "/#/login";
       return Promise.reject(error);
     }
@@ -80,16 +77,8 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
 
       const newAccessToken = response.data.accessToken;
 
-      // Store new access token in both places
-      const isProduction = window.location.protocol === 'https:';
-      const cookieOptions = {
-        path: "/",
-        sameSite: "strict" as const,
-        ...(isProduction && { secure: true })
-      };
-
-      Cookies.set("skToken", newAccessToken, cookieOptions);
-      localStorage.setItem("skToken", newAccessToken);
+      // Store new access token using authService
+      authService.set("skToken", newAccessToken);
 
       // Process queued requests
       processQueue(null, newAccessToken);
@@ -98,12 +87,9 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {
-      // Refresh failed, clear tokens from both places
+      // Refresh failed, clear all auth data
       processQueue(refreshError, null);
-      ["skToken", "skRefreshToken", "email", "role", "name"].forEach(key => {
-        Cookies.remove(key);
-        localStorage.removeItem(key);
-      });
+      authService.clearAuth();
       window.location.href = "/#/login";
       return Promise.reject(refreshError);
     } finally {

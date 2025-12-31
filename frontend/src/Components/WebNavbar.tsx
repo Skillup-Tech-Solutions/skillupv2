@@ -12,6 +12,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { images } from "../assets/Images/Images";
+import { authService } from "../services/authService";
 
 const navItems = [
   { label: "Home", path: "/" },
@@ -55,6 +56,22 @@ const WebNavbar = () => {
   };
   const handleLogin = () => {
     navigate("/login");
+  };
+
+  // Check if user is authenticated
+  const isLoggedIn = authService.isAuthenticated();
+  const userRole = authService.getRole();
+
+  const handleDashboard = () => {
+    if (userRole === "admin") {
+      navigate("/dashboard");
+    } else if (userRole === "student") {
+      navigate("/student/dashboard");
+    } else if (userRole === "employee") {
+      navigate("/employee/portal");
+    } else {
+      navigate("/login");
+    }
   };
   return (
     <>
@@ -120,47 +137,71 @@ const WebNavbar = () => {
           </Box>
         )}
 
-        {/* Right - Signup + Login + Menu */}
+        {/* Right - Signup + Login / Dashboard */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Box
-            sx={{
-              ...navlinks,
-              minWidth: "100px",
-              background: "transparent",
-              border: "1px solid var(--webprimary)",
-              color: "var(--webprimary)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              textDecoration: "none",
-              "@media (max-width:600px)": {
-                minWidth: "70px",
-                fontSize: "10px",
-              },
-            }}
-            onClick={() => navigate("/student-signup")}
-          >
-            Sign Up
-          </Box>
-          <Box
-            sx={{
-              ...navlinks,
-              minWidth: "100px",
-              background: "var(--webprimary)",
-              color: "var(--white)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              textDecoration: "none",
-              "@media (max-width:600px)": {
-                minWidth: "70px",
-                fontSize: "10px",
-              },
-            }}
-            onClick={handleLogin}
-          >
-            Login
-          </Box>
+          {isLoggedIn ? (
+            <Box
+              sx={{
+                ...navlinks,
+                minWidth: "100px",
+                background: "var(--webprimary)",
+                color: "var(--white)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                textDecoration: "none",
+                "@media (max-width:600px)": {
+                  minWidth: "70px",
+                  fontSize: "10px",
+                },
+              }}
+              onClick={handleDashboard}
+            >
+              Dashboard
+            </Box>
+          ) : (
+            <>
+              <Box
+                sx={{
+                  ...navlinks,
+                  minWidth: "100px",
+                  background: "transparent",
+                  border: "1px solid var(--webprimary)",
+                  color: "var(--webprimary)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  "@media (max-width:600px)": {
+                    minWidth: "70px",
+                    fontSize: "10px",
+                  },
+                }}
+                onClick={() => navigate("/student-signup")}
+              >
+                Sign Up
+              </Box>
+              <Box
+                sx={{
+                  ...navlinks,
+                  minWidth: "100px",
+                  background: "var(--webprimary)",
+                  color: "var(--white)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  "@media (max-width:600px)": {
+                    minWidth: "70px",
+                    fontSize: "10px",
+                  },
+                }}
+                onClick={handleLogin}
+              >
+                Login
+              </Box>
+            </>
+          )}
 
           {isMobile && (
             <IconButton onClick={toggleDrawer}>

@@ -19,7 +19,7 @@ import { MdDownload, MdEmail, MdVisibility, MdReceipt, MdAttachMoney, MdCheckCir
 import { useGetPayslipHistory, useSendPayslipEmail, useGetEmployees } from "../../../Hooks/employee";
 import { useState, useMemo } from "react";
 import CustomSnackBar from "../../../Custom/CustomSnackBar";
-import Cookies from "js-cookie";
+import { authService } from "../../../services/authService";
 import axios from "axios";
 import {
     dataGridDarkStyles,
@@ -196,7 +196,7 @@ const PayslipHistory = () => {
     const handleDownload = async (payslipId: string) => {
         try {
             setDownloading(true);
-            const token = Cookies.get("skToken");
+            const token = authService.getToken();
             const downloadUrl = `${BASE_URL}admin/payroll/download/${payslipId}`;
 
             const newWindow = window.open();

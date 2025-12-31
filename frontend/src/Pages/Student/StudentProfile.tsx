@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Box, TextField, Button, Alert } from "@mui/material";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-import Cookies from "js-cookie";
+import { authService } from "../../services/authService";
 import { usePullToRefresh } from "../../utils/usePullToRefresh";
 import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
 import { ProfileSkeleton } from "../../Components/Student/PortalSkeletons";
@@ -32,7 +32,7 @@ interface UserProfile {
 }
 
 const StudentProfile = () => {
-    const token = Cookies.get("skToken");
+    const token = authService.getToken();
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({ name: "", mobile: "" });
@@ -79,7 +79,7 @@ const StudentProfile = () => {
             queryClient.invalidateQueries({ queryKey: ["student-profile"] });
             CustomSnackBar.successSnackbar("Profile updated successfully!");
             setIsEditing(false);
-            Cookies.set("name", formData.name, { path: "/" });
+            authService.set("name", formData.name);
         },
         onError: (error: any) => {
             CustomSnackBar.errorSnackbar(error.response?.data?.message || "Failed to update profile");
@@ -141,8 +141,8 @@ const StudentProfile = () => {
 
     const handleLogout = async () => {
         try {
-            const accessToken = Cookies.get("skToken");
-            const refreshToken = Cookies.get("skRefreshToken");
+            const accessToken = authService.getToken();
+            const refreshToken = authService.getRefreshToken();
 
             if (accessToken) {
                 await fetch(`${import.meta.env.VITE_APP_BASE_URL}logout`, {
@@ -155,11 +155,7 @@ const StudentProfile = () => {
                 }).catch(() => { });
             }
         } finally {
-            Cookies.remove("name");
-            Cookies.remove("role");
-            Cookies.remove("skToken");
-            Cookies.remove("skRefreshToken");
-            Cookies.remove("email");
+            authService.clearAuth();
             navigate("/");
         }
     };

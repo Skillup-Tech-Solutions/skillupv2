@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
+import api from "../Interceptors/Interceptor";
 import { Box } from "@mui/material";
 
 interface ProtectedRouteProps {
@@ -32,11 +33,8 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      // Helper to get from dual storage
-      const getFromStorage = (key: string) => Cookies.get(key) || localStorage.getItem(key);
-
-      const token = getFromStorage("skToken");
-      const cookieRole = getFromStorage("role");
+      const token = authService.getToken();
+      const cookieRole = authService.getRole();
 
       if (!token) {
         setIsAuthenticated(false);
@@ -67,7 +65,7 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
         const baseUrl = import.meta.env.VITE_APP_BASE_URL;
 
         if (cookieRole === "admin") {
-          // For admin, trust the cookie since the backend validates the token
+          // For admin, trust the cookie since the backend validates the token via axios/api interceptors
           const result = { isAuthenticated: true, role: "admin" };
           verificationCache = { token, result, timestamp: now };
           setIsAuthenticated(true);
@@ -77,38 +75,43 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
           return;
         }
 
-        // For students, verify via /student/me
-        const response = await fetch(`${baseUrl}student/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Use the centralized api (axios) instance to benefit from token refresh logic
+        const response = await api.get(`${baseUrl}student/me`);
+        const data: UserData = response.data;
 
-        let result: { isAuthenticated: boolean; role: string | null };
+        const result = {
+          isAuthenticated: true,
+          role: data?.role ?? cookieRole ?? null
+        };
 
-        if (response.ok) {
-          const data: UserData = await response.json();
-          result = { isAuthenticated: true, role: data?.role ?? cookieRole ?? null };
-          if (data?.role) {
-            Cookies.set("role", data.role, { path: "/" });
-          }
-        } else if (response.status === 403) {
-          // 403 means authenticated but wrong role (probably admin on student endpoint)
-          result = { isAuthenticated: true, role: cookieRole || "admin" };
-        } else {
-          // Token invalid or expired
-          result = { isAuthenticated: false, role: null };
-          Cookies.remove("skToken");
-          Cookies.remove("skRefreshToken");
-          Cookies.remove("role");
+        if (data?.role) {
+          authService.set("role", data.role);
         }
 
         // Update cache
         verificationCache = { token, result, timestamp: now };
         setIsAuthenticated(result.isAuthenticated);
         setVerifiedRole(result.role);
-      } catch {
-        // Network error - fall back to cookie
-        setIsAuthenticated(!!token);
-        setVerifiedRole(cookieRole || null);
+      } catch (error: any) {
+        // Handle verification failure
+        console.error("Verification failed:", error);
+
+        if (error.response?.status === 403) {
+          // Authenticated but wrong role
+          const result = { isAuthenticated: true, role: cookieRole || "admin" };
+          verificationCache = { token, result, timestamp: now };
+          setIsAuthenticated(true);
+          setVerifiedRole(result.role);
+        } else if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
+          // Network error - stay authenticated and fall back to stored data
+          setIsAuthenticated(!!token);
+          setVerifiedRole(cookieRole || null);
+        } else {
+          // Authentication actually failed (e.g. 401 or refresh failed)
+          // The interceptor might have already called clearAuth, but we'll be safe
+          setIsAuthenticated(false);
+          setVerifiedRole(null);
+        }
       } finally {
         setIsLoading(false);
         verifyingRef.current = false;

@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router-dom";
-import Cookies from "js-cookie";
+import { authService } from "../services/authService";
 import { isCapacitor } from "../utils/pwaUtils";
 
 /**
@@ -14,8 +14,8 @@ const CapacitorHomeRedirect = () => {
     }
 
     // Check if user is already logged in
-    const token = Cookies.get("skToken");
-    const role = Cookies.get("role");
+    const token = authService.getToken();
+    const role = authService.getRole();
 
     if (token && role) {
         // Redirect to dashboard based on role
@@ -24,7 +24,7 @@ const CapacitorHomeRedirect = () => {
         } else if (role === "student") {
             return <Navigate to="/student/dashboard" replace />;
         } else if (role === "employee") {
-            return <Navigate to="/employee/dashboard" replace />;
+            return <Navigate to="/employee/portal" replace />;
         }
     }
 
