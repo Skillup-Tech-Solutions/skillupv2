@@ -34,8 +34,8 @@ android {
         
         // Production-Grade versioning: MAJOR * 10000 + MINOR * 100 + PATCH
         // For example, version 1.0.1 translates to 10001
-        versionCode 10003
-        versionName "1.0.3"
+        versionCode 10004
+        versionName "1.0.4"
         
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
