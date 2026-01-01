@@ -8,6 +8,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
 import { authService } from "../services/authService";
+import { queryClient } from "../Hooks/ReactQueryProvider";
 
 import {
     Gauge,
@@ -55,6 +56,7 @@ const StudentSidebar = ({ isOpen, isMobile, onToggle }: SidebarProps) => {
                 }).catch(() => { });
             }
         } finally {
+            queryClient.clear();
             authService.clearAuth();
             setLogoutModalOpen(false);
             navigate("/");

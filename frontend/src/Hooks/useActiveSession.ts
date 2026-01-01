@@ -86,7 +86,8 @@ export const useActiveSession = (enabled: boolean = true) => {
             return response as ActiveSessionResponse;
         },
         enabled,
-        staleTime: 60000, // Consider data fresh for longer since socket updates it
+        staleTime: 30000, // 30 seconds - reduced to ensure fresher data
+        refetchOnMount: 'always', // Always refetch when component mounts
         select: (data) => {
             // Filter out if the active session is on THIS device
             if (data.hasActiveSession && data.activeOnDevice?.deviceId === currentDeviceId) {

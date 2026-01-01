@@ -16,7 +16,8 @@ const ReactQueryDevtools = import.meta.env.DEV
   )
   : () => null;
 
-const queryClient = new QueryClient({
+// Export queryClient so it can be cleared on login/logout
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,      // 5 minutes - data considered fresh

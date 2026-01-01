@@ -24,6 +24,7 @@ import { Capacitor } from "@capacitor/core";
 import AnnouncementDetailModal from "./Student/AnnouncementDetailModal";
 import { hapticFeedback } from "../utils/haptics";
 import ActiveSessionBanner from "./ActiveSessionBanner";
+import { queryClient } from "../Hooks/ReactQueryProvider";
 
 
 // Sidebar width constants matching frontend-ref
@@ -433,6 +434,7 @@ const StudentLayout = () => {
                                                 }).catch(() => { });
                                             }
                                         } finally {
+                                            queryClient.clear();
                                             authService.clearAuth();
                                             navigate("/");
                                         }

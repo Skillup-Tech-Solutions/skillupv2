@@ -9,6 +9,7 @@ import CustomSnackBar from "../Custom/CustomSnackBar";
 import { authService } from "../services/authService";
 import { pushNotificationService } from "../services/pushNotificationService";
 import { analyticsService } from "../services/analyticsService";
+import { queryClient } from "../Hooks/ReactQueryProvider";
 import { images } from "../assets/Images/Images";
 import { getDeviceInfo, storeDeviceId } from "../utils/deviceInfo";
 import {
@@ -72,6 +73,10 @@ const Login = () => {
       {
         onSuccess: (response: any) => {
           const user = response.user;
+
+          // Clear previous user's cached data
+          queryClient.clear();
+
           // Use centralized authService for production-level persistence
           authService.setTokens({
             accessToken: response.accessToken || response.token,
