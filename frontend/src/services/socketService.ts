@@ -7,6 +7,7 @@
 
 import { io, Socket } from 'socket.io-client';
 import config from '../Config/Config';
+import { authService } from './authService';
 
 // Socket instance (singleton)
 let socket: Socket | null = null;
@@ -43,11 +44,7 @@ const getSocketUrl = (): string => {
  * Get authentication token from storage
  */
 const getAuthToken = (): string | null => {
-    try {
-        return localStorage.getItem('skToken');
-    } catch {
-        return null;
-    }
+    return authService.getToken();
 };
 
 /**
@@ -257,6 +254,15 @@ export interface SessionUpdatedData {
     };
 }
 
+export interface ActiveSessionChangedData {
+    hasActiveSession: boolean;
+    session: any | null;
+    activeOnDevice: {
+        deviceId: string;
+        platform: string;
+    } | null;
+}
+
 // Type for all live session events
 export type LiveSessionEventData =
     | SessionStartedData
@@ -272,6 +278,11 @@ export const LIVE_SESSION_EVENTS = {
     PARTICIPANT_JOINED: 'session:participantJoined',
     PARTICIPANT_LEFT: 'session:participantLeft',
     UPDATED: 'session:updated'
+} as const;
+
+export const USER_SESSION_EVENTS = {
+    ACTIVE_CHANGED: 'session:active-changed',
+    TRANSFER_LEAVING: 'transfer:leaving'
 } as const;
 
 /**
@@ -318,6 +329,34 @@ export const unsubscribeFromLiveSessions = (): void => {
     Object.values(LIVE_SESSION_EVENTS).forEach(event => {
         unsubscribeFromEvent(event);
     });
+};
+
+/**
+ * Subscribe to active session change events
+ */
+export const subscribeToActiveSessionChanges = (callback: (data: ActiveSessionChangedData) => void): void => {
+    subscribeToEvent(USER_SESSION_EVENTS.ACTIVE_CHANGED, callback);
+};
+
+/**
+ * Unsubscribe from active session change events
+ */
+export const unsubscribeFromActiveSessionChanges = (callback: (data: ActiveSessionChangedData) => void): void => {
+    unsubscribeFromEvent(USER_SESSION_EVENTS.ACTIVE_CHANGED, callback);
+};
+
+/**
+ * Subscribe to transfer leaving events
+ */
+export const subscribeToTransferLeaving = (callback: (data: any) => void): void => {
+    subscribeToEvent(USER_SESSION_EVENTS.TRANSFER_LEAVING, callback);
+};
+
+/**
+ * Unsubscribe from transfer leaving events
+ */
+export const unsubscribeFromTransferLeaving = (callback: (data: any) => void): void => {
+    unsubscribeFromEvent(USER_SESSION_EVENTS.TRANSFER_LEAVING, callback);
 };
 
 // ============================================
@@ -485,25 +524,10 @@ export const TRANSFER_EVENTS = {
 export const subscribeToTransferEvents = (callbacks: {
     onTransferLeaving?: (data: TransferLeavingData) => void;
 }): void => {
-    // If socket not available, try to connect first
     if (!socket) {
-        console.log('[Socket] Socket not initialized for transfer events, attempting to connect...');
-        connectSocket();
-
-        // Wait a bit for connection and retry
-        setTimeout(() => {
-            if (socket) {
-                if (callbacks.onTransferLeaving) {
-                    subscribeToEvent(TRANSFER_EVENTS.LEAVING, callbacks.onTransferLeaving);
-                    console.log('[Socket] Subscribed to transfer events after reconnect');
-                }
-            } else {
-                console.warn('[Socket] Still cannot subscribe to transfer events - socket not available');
-            }
-        }, 1000);
+        console.warn('[Socket] Cannot subscribe to transfer events - socket not initialized');
         return;
     }
-
     if (callbacks.onTransferLeaving) {
         subscribeToEvent(TRANSFER_EVENTS.LEAVING, callbacks.onTransferLeaving);
     }

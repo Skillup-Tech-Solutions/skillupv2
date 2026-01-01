@@ -11,8 +11,8 @@ import { ForegroundService, Importance, ServiceType } from "@capawesome-team/cap
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { getDeviceId } from "../../utils/deviceInfo";
 import {
-    subscribeToTransferEvents,
-    unsubscribeFromTransferEvents,
+    subscribeToTransferLeaving,
+    unsubscribeFromTransferLeaving,
     type TransferLeavingData
 } from "../../services/socketService";
 
@@ -108,12 +108,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             }
         };
 
-        subscribeToTransferEvents({
-            onTransferLeaving: handleTransferLeaving
-        });
+        subscribeToTransferLeaving(handleTransferLeaving);
 
         return () => {
-            unsubscribeFromTransferEvents();
+            unsubscribeFromTransferLeaving(handleTransferLeaving);
         };
     }, [currentDeviceId, session._id]);
 

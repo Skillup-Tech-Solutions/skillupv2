@@ -9,7 +9,8 @@ const {
     emitParticipantJoined,
     emitParticipantLeft,
     emitSessionUpdated,
-    emitTransferLeaving
+    emitTransferLeaving,
+    emitActiveSessionChanged
 } = require("../services/socketService");
 const pushNotificationService = require("../services/pushNotificationService");
 
@@ -469,7 +470,18 @@ exports.joinSession = async (req, res) => {
         const activeCount = session.participants.filter(p => !p.leftAt).length;
         emitParticipantJoined(session._id.toString(), activeCount, participant.name);
 
+        // Emit to all user's devices about their active session
+        emitActiveSessionChanged(userId, {
+            hasActiveSession: true,
+            session: enrichSession(session),
+            activeOnDevice: {
+                deviceId: participant.deviceId,
+                platform: participant.platform
+            }
+        });
+
         res.json({
+            status: true,
             success: true,
             session: enrichSession(session),
             roomId: session.roomId
@@ -511,6 +523,13 @@ exports.leaveSession = async (req, res) => {
             // Emit socket event for real-time participant count update
             const activeCount = session.participants.filter(p => !p.leftAt).length;
             emitParticipantLeft(session._id.toString(), activeCount, participantName);
+
+            // Emit to all user's devices that they no longer have an active session
+            emitActiveSessionChanged(userId, {
+                hasActiveSession: false,
+                session: null,
+                activeOnDevice: null
+            });
         }
 
         res.json({
@@ -628,7 +647,8 @@ exports.requestTransferHere = async (req, res) => {
         const oldPlatform = currentParticipant.platform;
 
         // Emit socket event to tell the OLD device to exit
-        emitTransferLeaving(req.user.id, oldDeviceId, {
+        // Use userId (hashed) as both rooms are now joined but we prefer consistency
+        emitTransferLeaving(userId, oldDeviceId, {
             sessionId: session._id.toString(),
             sessionTitle: session.title,
             transferredTo: platform || 'another device'
@@ -638,18 +658,30 @@ exports.requestTransferHere = async (req, res) => {
         currentParticipant.leftAt = new Date();
 
         // Add new participant entry for this device
-        session.participants.push({
+        const newParticipant = {
             userId: userId,
             name: req.user?.name || "Guest",
             email: req.user?.email || "",
             deviceId: deviceId,
             platform: platform || "web",
             joinedAt: new Date()
-        });
+        };
+        session.participants.push(newParticipant);
 
         await session.save();
 
+        // Emit to all user's devices about their active session changing device
+        emitActiveSessionChanged(userId, {
+            hasActiveSession: true,
+            session: enrichSession(session),
+            activeOnDevice: {
+                deviceId: newParticipant.deviceId,
+                platform: newParticipant.platform
+            }
+        });
+
         res.json({
+            status: true,
             success: true,
             message: "Session transferred successfully",
             session: enrichSession(session),

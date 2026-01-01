@@ -27,6 +27,7 @@ import {
     ArrowSquareOut,
     Devices,
     Warning,
+    ArrowsClockwise,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import {
@@ -41,6 +42,7 @@ import {
 } from "../../Hooks/liveSessions";
 import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
+import { useRequestTransferHere } from "../../Hooks/useActiveSession";
 
 interface LiveSessionsTabProps {
     sessionType: "COURSE" | "PROJECT" | "INTERNSHIP";
@@ -109,6 +111,7 @@ const LiveSessionsTab = ({
     const { mutate: endSession, isPending: isEnding } = useEndSessionApi();
     const { mutate: deleteSession, isPending: isDeleting } = useDeleteSessionApi();
     const { mutate: joinSession } = useJoinSessionApi();
+    const { mutate: requestTransfer, isPending: isTransferring } = useRequestTransferHere();
 
     // Enable real-time updates via Socket.IO
     // This automatically updates participant counts in real-time
@@ -169,6 +172,23 @@ const LiveSessionsTab = ({
             setPendingJoinSession(null);
             setShowJoinConfirm(false);
             setIsAlreadyIn(false);
+        }
+    };
+
+    const handleTransfer = () => {
+        if (pendingJoinSession) {
+            requestTransfer(pendingJoinSession._id, {
+                onSuccess: (data) => {
+                    // Success is handled by useRequestTransferHere (it updates cache)
+                    // But we also want to transition the UI to the video room
+                    if ((data.status || (data as any).success) && data.session) {
+                        setActiveSession(data.session);
+                        setPendingJoinSession(null);
+                        setShowJoinConfirm(false);
+                        setIsAlreadyIn(false);
+                    }
+                }
+            });
         }
     };
 
@@ -245,27 +265,73 @@ const LiveSessionsTab = ({
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5 }}>
-                    <Button
-                        onClick={() => setShowJoinConfirm(false)}
-                        sx={{ color: "#94a3b8", fontWeight: 600, textTransform: "none" }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={confirmJoin}
-                        variant="contained"
-                        sx={{
-                            bgcolor: "#3b82f6",
-                            color: "#fff",
-                            fontWeight: 700,
-                            textTransform: "none",
-                            px: 3,
-                            "&:hover": { bgcolor: "#2563eb" }
-                        }}
-                    >
-                        {isAlreadyIn ? "Join as Second Device" : "Join Now"}
-                    </Button>
+                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5, flexDirection: isAlreadyIn ? "column" : "row", alignItems: "stretch" }}>
+                    {isAlreadyIn ? (
+                        <>
+                            <Button
+                                onClick={handleTransfer}
+                                variant="contained"
+                                disabled={isTransferring}
+                                startIcon={isTransferring ? <CircularProgress size={20} color="inherit" /> : <ArrowsClockwise size={20} />}
+                                sx={{
+                                    bgcolor: "#3b82f6",
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    textTransform: "none",
+                                    py: 1.2,
+                                    "&:hover": { bgcolor: "#2563eb" }
+                                }}
+                            >
+                                {isTransferring ? "Transferring..." : "Transfer to This Device"}
+                            </Button>
+                            <Button
+                                onClick={confirmJoin}
+                                variant="outlined"
+                                disabled={isTransferring}
+                                startIcon={<Devices size={20} />}
+                                sx={{
+                                    color: "#94a3b8",
+                                    borderColor: "rgba(71, 85, 105, 0.4)",
+                                    fontWeight: 600,
+                                    textTransform: "none",
+                                    py: 1,
+                                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", borderColor: "rgba(71, 85, 105, 0.6)" }
+                                }}
+                            >
+                                Join as Second Device
+                            </Button>
+                            <Button
+                                onClick={() => setShowJoinConfirm(false)}
+                                disabled={isTransferring}
+                                sx={{ color: "#64748b", fontWeight: 500, fontSize: "13px", textTransform: "none", mt: 1 }}
+                            >
+                                Cancel
+                            </Button>
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                onClick={() => setShowJoinConfirm(false)}
+                                sx={{ color: "#94a3b8", fontWeight: 600, textTransform: "none" }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={confirmJoin}
+                                variant="contained"
+                                sx={{
+                                    bgcolor: "#3b82f6",
+                                    color: "#fff",
+                                    fontWeight: 700,
+                                    textTransform: "none",
+                                    px: 3,
+                                    "&:hover": { bgcolor: "#2563eb" }
+                                }}
+                            >
+                                Join Now
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
             {/* Header */}

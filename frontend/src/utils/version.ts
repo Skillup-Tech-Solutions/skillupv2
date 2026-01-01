@@ -29,10 +29,10 @@ export interface UpdateInfo {
 
 // App version from package.json - this is the single source of truth
 // Updated during build process
-export const APP_VERSION = '3.0.1';
-export const BUILD_NUMBER = 30001;
+export const APP_VERSION = '3.0.2';
+export const BUILD_NUMBER = 30002;
 export const BUILD_DATE = '2026-01-01';
-export const GIT_COMMIT = 'dc3d72b';
+export const GIT_COMMIT = '64df2e6';
 export const ENV = 'production';
 
 /**

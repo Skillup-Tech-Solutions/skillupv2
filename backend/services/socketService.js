@@ -13,6 +13,7 @@
 
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 let io = null;
 
@@ -71,8 +72,21 @@ const initSocket = (server) => {
         console.log(`[Socket] Client connected: ${socket.id} (user: ${userId})`);
 
         // Join user-specific room if authenticated
-        if (socket.user?.id) {
-            socket.join(`user:${socket.user.id}`);
+        if (socket.user) {
+            const rawId = socket.user.id || socket.user._id;
+            if (rawId) {
+                // 1. Join raw ID room
+                socket.join(`user:${rawId}`);
+
+                // 2. Join hashed ID room (used for live session tracking)
+                const hashedId = crypto.createHash('md5')
+                    .update(socket.user.email || rawId)
+                    .digest('hex')
+                    .substring(0, 16);
+
+                socket.join(`user:${hashedId}`);
+                console.log(`[Socket] User ${socket.user.email} joined rooms: user:${rawId}, user:${hashedId}`);
+            }
         }
 
         // Join live sessions room for all session updates
@@ -367,6 +381,19 @@ const emitTransferLeaving = (userId, deviceId, data) => {
     });
 };
 
+/**
+ * Emit when a user's active session status changes
+ * This notifies all the user's connected devices about their session status
+ */
+const emitActiveSessionChanged = (userId, data) => {
+    console.log(`[Socket] Emitting session:active-changed to user: ${userId} (Room: user:${userId})`);
+    emitToUser(userId, 'session:active-changed', {
+        hasActiveSession: data.hasActiveSession,
+        session: data.session || null,
+        activeOnDevice: data.activeOnDevice || null
+    });
+};
+
 module.exports = {
     initSocket,
     getIO,
@@ -391,5 +418,6 @@ module.exports = {
     emitAnnouncementUpdated,
     emitAnnouncementDeleted,
     // Call Transfer
-    emitTransferLeaving
+    emitTransferLeaving,
+    emitActiveSessionChanged
 };
