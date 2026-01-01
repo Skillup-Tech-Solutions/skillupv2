@@ -155,6 +155,7 @@ const LiveSessionsTab = ({
     const handleJoin = (session: LiveSession) => {
         joinSession(session._id, {
             onSuccess: (data: any) => {
+                console.log("[LiveSession] Join response:", data);
                 if (data.alreadyActive) {
                     setPendingJoinSession(data.session || session);
                     setIsAlreadyIn(true);

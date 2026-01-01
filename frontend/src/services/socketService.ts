@@ -8,6 +8,7 @@
 import { io, Socket } from 'socket.io-client';
 import config from '../Config/Config';
 import { authService } from './authService';
+import { logger } from '../utils/logger';
 
 // Socket instance (singleton)
 let socket: Socket | null = null;
@@ -51,23 +52,31 @@ const getAuthToken = (): string | null => {
  * Connect to the Socket.IO server
  */
 export const connectSocket = (): Socket | null => {
-    // Return existing connection if available
-    if (socket?.connected) {
-        console.log('[Socket] Already connected');
+    const token = getAuthToken();
+    const socketUrl = getSocketUrl();
+
+    // If socket exists, just ensure it's connected
+    if (socket) {
+        if (socket.connected) {
+            logger.log('[Socket] Already connected');
+            return socket;
+        }
+
+        logger.log('[Socket] Re-connecting existing instance...');
+        // Update auth token in case it changed
+        socket.auth = { token };
+        socket.connect();
         return socket;
     }
 
     // Prevent multiple simultaneous connection attempts
     if (isConnecting) {
-        console.log('[Socket] Connection already in progress');
+        logger.log('[Socket] Connection already in progress');
         return socket;
     }
 
     isConnecting = true;
-    const token = getAuthToken();
-    const socketUrl = getSocketUrl();
-
-    console.log('[Socket] Connecting to:', socketUrl);
+    logger.log('[Socket] Initializing connection to:', socketUrl);
 
     socket = io(socketUrl, {
         auth: { token },
@@ -80,15 +89,30 @@ export const connectSocket = (): Socket | null => {
         autoConnect: true
     });
 
+    // Helper to re-attach all registered listeners
+    const reattachListeners = () => {
+        logger.log('[Socket] Auto-reattaching listeners...');
+        eventListeners.forEach((callbacks, event) => {
+            callbacks.forEach(callback => {
+                socket?.off(event, callback); // Prevent duplicates
+                socket?.on(event, callback);
+            });
+            logger.log(`[Socket] Restored ${callbacks.size} listeners for: ${event}`);
+        });
+    };
+
     // Connection event handlers
     socket.on('connect', () => {
-        console.log('[Socket] Connected successfully');
+        logger.log('[Socket] Connected successfully. ID:', socket?.id);
         isConnecting = false;
         reconnectAttempts = 0;
+
+        // Always re-attach listeners on connect to ensure they persist
+        reattachListeners();
     });
 
     socket.on('disconnect', (reason) => {
-        console.log('[Socket] Disconnected:', reason);
+        logger.log('[Socket] Disconnected:', reason);
 
         // If the server closed the connection, attempt to reconnect
         if (reason === 'io server disconnect') {
@@ -102,13 +126,14 @@ export const connectSocket = (): Socket | null => {
         reconnectAttempts++;
 
         if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            console.warn('[Socket] Max reconnection attempts reached');
+            logger.warn('[Socket] Max reconnection attempts reached');
         }
     });
 
     socket.on('reconnect', (attemptNumber) => {
-        console.log('[Socket] Reconnected after', attemptNumber, 'attempts');
+        logger.log('[Socket] Reconnected after', attemptNumber, 'attempts');
         reconnectAttempts = 0;
+        // Listeners are re-attached by 'connect' handler which triggers after reconnect
     });
 
     socket.on('reconnect_error', (error) => {
@@ -127,7 +152,7 @@ export const connectSocket = (): Socket | null => {
  */
 export const disconnectSocket = (): void => {
     if (socket) {
-        console.log('[Socket] Disconnecting...');
+        logger.log('[Socket] Disconnecting...');
         socket.disconnect();
         socket = null;
         isConnecting = false;
@@ -156,20 +181,25 @@ export const isSocketConnected = (): boolean => {
  * Subscribe to a socket event
  */
 export const subscribeToEvent = (event: string, callback: EventCallback): void => {
-    if (!socket) {
-        console.warn('[Socket] Cannot subscribe - socket not initialized');
-        return;
-    }
-
-    // Track the listener for cleanup
+    // 1. Always track the listener for cleanup/reconnections
     if (!eventListeners.has(event)) {
         eventListeners.set(event, new Set());
     }
     eventListeners.get(event)?.add(callback);
 
-    // Attach the listener
+    // 2. If socket isn't initialized yet, start the connection
+    if (!socket) {
+        logger.log(`[Socket] Lazy initializing for event: ${event}`);
+        connectSocket();
+        // connectSocket will call reattachListeners() once connected
+        return;
+    }
+
+    // 3. If socket exists, attach immediately
+    // Socket.IO handles the case where it's not yet 'connected' (it stores the listener)
+    socket.off(event, callback); // Prevent duplicates
     socket.on(event, callback);
-    console.log(`[Socket] Subscribed to: ${event}`);
+    logger.log(`[Socket] Subscribed to: ${event} (Immediate)`);
 };
 
 /**
@@ -186,7 +216,7 @@ export const unsubscribeFromEvent = (event: string, callback?: EventCallback): v
         socket.off(event);
         eventListeners.delete(event);
     }
-    console.log(`[Socket] Unsubscribed from: ${event}`);
+    logger.log(`[Socket] Unsubscribed from: ${event}`);
 };
 
 /**
@@ -194,11 +224,11 @@ export const unsubscribeFromEvent = (event: string, callback?: EventCallback): v
  */
 export const subscribeToSession = (sessionId: string): void => {
     if (!socket?.connected) {
-        console.warn('[Socket] Cannot subscribe to session - not connected');
+        logger.warn('[Socket] Cannot subscribe to session - not connected');
         return;
     }
     socket.emit('session:subscribe', sessionId);
-    console.log(`[Socket] Subscribed to session: ${sessionId}`);
+    logger.log(`[Socket] Subscribed to session: ${sessionId}`);
 };
 
 /**
@@ -207,7 +237,7 @@ export const subscribeToSession = (sessionId: string): void => {
 export const unsubscribeFromSession = (sessionId: string): void => {
     if (!socket?.connected) return;
     socket.emit('session:unsubscribe', sessionId);
-    console.log(`[Socket] Unsubscribed from session: ${sessionId}`);
+    logger.log(`[Socket] Unsubscribed from session: ${sessionId}`);
 };
 
 // ============================================
@@ -297,7 +327,7 @@ export const subscribeToLiveSessions = (callbacks: {
     onSessionUpdated?: (data: SessionUpdatedData) => void;
 }): void => {
     if (!socket) {
-        console.warn('[Socket] Cannot subscribe to live sessions - socket not initialized');
+        logger.warn('[Socket] Cannot subscribe to live sessions - socket not initialized');
         connectSocket();
         return;
     }
@@ -384,7 +414,7 @@ export const subscribeToNotifications = (
     onNotification: (data: NotificationData) => void
 ): void => {
     if (!socket) {
-        console.warn('[Socket] Cannot subscribe to notifications - socket not initialized');
+        logger.warn('[Socket] Cannot subscribe to notifications - socket not initialized');
         return;
     }
     subscribeToEvent(NOTIFICATION_EVENTS.NEW, onNotification);
@@ -425,7 +455,7 @@ export const subscribeToDeviceEvents = (callbacks: {
     onAllDevicesRevoked?: (data: AllDevicesRevokedData) => void;
 }): void => {
     if (!socket) {
-        console.warn('[Socket] Cannot subscribe to device events - socket not initialized');
+        logger.warn('[Socket] Cannot subscribe to device events - socket not initialized');
         return;
     }
     if (callbacks.onDeviceRevoked) {
@@ -479,7 +509,7 @@ export const subscribeToAnnouncements = (callbacks: {
     onDeleted?: (data: AnnouncementDeletedData) => void;
 }): void => {
     if (!socket) {
-        console.warn('[Socket] Cannot subscribe to announcements - socket not initialized');
+        logger.warn('[Socket] Cannot subscribe to announcements - socket not initialized');
         return;
     }
     if (callbacks.onNew) {

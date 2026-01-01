@@ -15,6 +15,7 @@ import {
     unsubscribeFromTransferLeaving,
     type TransferLeavingData
 } from "../../services/socketService";
+import { logger } from "../../utils/logger";
 
 declare global {
     interface Window {
@@ -97,14 +98,20 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     // Listen for transfer:leaving event (when call is transferred to another device)
     useEffect(() => {
         const handleTransferLeaving = (data: TransferLeavingData) => {
+            const isMatch = String(data.deviceId) === String(currentDeviceId) && String(data.sessionId) === String(session._id);
+            logger.log(`[VideoRoom] Received transfer:leaving event. Data:`, data, `Current Device ID: ${currentDeviceId}, Current Session ID: ${session._id}. Is a match for this device? ${isMatch}`);
+
             // Only exit if this is the device being transferred FROM
-            if (data.deviceId === currentDeviceId && data.sessionId === session._id) {
-                console.log('[VideoRoom] Call transferred to another device:', data.transferredTo);
+            // Use string comparison for IDs to be safe
+            if (isMatch) {
+                logger.log('[VideoRoom] MATCH! Call transferred to another device:', data.transferredTo);
                 setTransferMessage(`Session transferred to ${data.transferredTo}`);
                 // Auto-exit after a brief delay to show the message
                 setTimeout(() => {
                     handleExit(false);
                 }, 1500);
+            } else {
+                logger.log('[VideoRoom] Ignored transfer:leaving (ID mismatch)');
             }
         };
 
@@ -134,7 +141,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     const initJitsi = async () => {
         // Prevent duplicate initialization
         if (jitsiInitialized.current || jitsiApiRef.current) {
-            console.log("Jitsi already initialized, skipping...");
+            logger.log("Jitsi already initialized, skipping...");
             return;
         }
         if (!jitsiContainerRef.current) return;
@@ -144,7 +151,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
         const finalEmail = userEmail || getFromStorage("email") || "";
 
         if (!finalEmail) {
-            console.error("User must be logged in to join session");
+            logger.error("User must be logged in to join session");
             onExit();
             return;
         }
@@ -153,7 +160,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
         try {
             // Explicitly request permissions before Jitsi starts - this "primes" the browser prompt
-            console.log("VideoRoom: Requesting media permissions...");
+            logger.log("VideoRoom: Requesting media permissions...");
             try {
                 // Add a timeout to the permission request to prevent hanging forever on iOS
                 const permissionTimeout = new Promise((_, reject) =>
@@ -164,16 +171,16 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     navigator.mediaDevices.getUserMedia({ audio: true, video: true }),
                     permissionTimeout
                 ]).then((stream: any) => {
-                    console.log("VideoRoom: Permissions granted.");
+                    logger.log("VideoRoom: Permissions granted.");
                     stream.getTracks().forEach((track: any) => track.stop());
                 });
             } catch (permErr) {
                 console.warn("VideoRoom: Pre-initialization permission request failed or timed out:", permErr);
             }
 
-            console.log("VideoRoom: Loading Jitsi script...");
+            logger.log("VideoRoom: Loading Jitsi script...");
             await loadJitsiScript();
-            console.log("VideoRoom: Jitsi script loaded.");
+            logger.log("VideoRoom: Jitsi script loaded.");
 
             // Use jitsi.riot.im (Element's Jitsi) - no lobby enforcement
             const domain = "jitsi.riot.im";
@@ -335,7 +342,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
                     // 3. Register listener BEFORE starting the service
                     const listener = await ForegroundService.addListener('buttonClicked', (event) => {
-                        console.log('Foreground Service: Button clicked', event.buttonId);
+                        logger.log('Foreground Service: Button clicked', event.buttonId);
                         if (event.buttonId === 1) {
                             handleExit();
                         }
@@ -378,7 +385,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                         };
                     }
                 } catch (svcErr) {
-                    console.error("Foreground Service initialization failed:", svcErr);
+                    logger.error("Foreground Service initialization failed:", svcErr);
                 }
             } else if (Capacitor.getPlatform() === 'ios') {
                 // Keep local notification for iOS (since foreground services work differently there)
@@ -397,7 +404,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 });
             }
         } catch (err) {
-            console.error("Failed to load Jitsi:", err);
+            logger.error("Failed to load Jitsi:", err);
             setIsInitializing(false);
         }
     };

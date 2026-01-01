@@ -9,11 +9,12 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Button, IconButton, Snackbar, Alert } from '@mui/material';
 import { Phone, DeviceMobile, Desktop, X, ArrowsClockwise } from '@phosphor-icons/react';
 import { useActiveSession, useRequestTransferHere } from '../Hooks/useActiveSession';
+import { logger } from '../../utils/logger';
 import { getDeviceId } from '../utils/deviceInfo';
 import type { LiveSession } from '../Hooks/liveSessions';
 import {
-    subscribeToTransferEvents,
-    unsubscribeFromTransferEvents,
+    subscribeToTransferLeaving,
+    unsubscribeFromTransferLeaving,
     type TransferLeavingData
 } from '../services/socketService';
 import { Capacitor } from '@capacitor/core';
@@ -37,17 +38,16 @@ const ActiveSessionBanner = ({ onJoinSession }: ActiveSessionBannerProps) => {
         const handleTransferLeaving = (eventData: TransferLeavingData) => {
             // Only show message if this is the device being transferred FROM
             if (eventData.deviceId === currentDeviceId) {
+                logger.log('[Banner] Session transferred to another device:', eventData.transferredTo);
                 setTransferredTo(eventData.transferredTo);
                 setShowTransferredMessage(true);
             }
         };
 
-        subscribeToTransferEvents({
-            onTransferLeaving: handleTransferLeaving
-        });
+        subscribeToTransferLeaving(handleTransferLeaving);
 
         return () => {
-            unsubscribeFromTransferEvents();
+            unsubscribeFromTransferLeaving(handleTransferLeaving);
         };
     }, [currentDeviceId]);
 

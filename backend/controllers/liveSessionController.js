@@ -423,6 +423,9 @@ exports.joinSession = async (req, res) => {
             .digest('hex')
             .substring(0, 16);
 
+        const deviceId = req.body.deviceId || "unknown";
+        console.log(`[LiveSession] joinSession DEBUG: email=${req.user.email}, id=${req.user.id}, userId=${userId}, deviceId=${deviceId}`);
+
         // Check if user already joined (prevent duplicates)
         // Only return alreadyActive if their last entry HAS NOT left yet
         const existingParticipant = session.participants.find(
@@ -430,12 +433,27 @@ exports.joinSession = async (req, res) => {
         );
 
         if (existingParticipant) {
+            // IF it's the SAME device, just allow it (re-entry/refresh)
+            if (existingParticipant.deviceId === deviceId) {
+                console.log(`[LiveSession] User re-joining from same device: ${deviceId}`);
+                return res.json({
+                    status: true,
+                    success: true,
+                    session: enrichSession(session),
+                    roomId: session.roomId,
+                    alreadyActive: false, // Don't show dialog for same device
+                    message: "User re-joined from same device"
+                });
+            }
+
+            console.log(`[LiveSession] Conflict: User already active on device ${existingParticipant.deviceId}, now trying from ${deviceId}`);
             return res.json({
+                status: true,
                 success: true,
                 session: enrichSession(session),
                 roomId: session.roomId,
                 alreadyActive: true,
-                message: "User is already active in this session"
+                message: "User is already active in this session on another device"
             });
         }
 
@@ -510,29 +528,59 @@ exports.leaveSession = async (req, res) => {
             .digest('hex')
             .substring(0, 16);
 
-        // Find the active participant entry for this user
+        const deviceId = req.headers['x-device-id'] || req.body.deviceId;
+        console.log(`[LiveSession] leaveSession: user=${req.user.email}, userId=${userId}, deviceId=${deviceId || 'NOT_PROVIDED'}`);
+
+        // Find the specific active participant entry for this user ON THIS DEVICE
+        // If deviceId is missing, fallback to finding the first active one (legacy behavior)
         const participantIndex = session.participants.findIndex(
-            p => p.userId === userId && !p.leftAt
+            p => p.userId === userId && !p.leftAt && (deviceId ? p.deviceId === deviceId : true)
         );
 
         if (participantIndex !== -1) {
-            const participantName = session.participants[participantIndex].name;
-            session.participants[participantIndex].leftAt = new Date();
+            const entry = session.participants[participantIndex];
+            const participantName = entry.name;
+            const leavingDeviceId = entry.deviceId;
+
+            console.log(`[LiveSession] Marking entry left: ${participantName} on device ${leavingDeviceId}`);
+            entry.leftAt = new Date();
+            session.markModified('participants');
             await session.save();
 
             // Emit socket event for real-time participant count update
-            const activeCount = session.participants.filter(p => !p.leftAt).length;
+            const activeParticipants = session.participants.filter(p => !p.leftAt);
+            const activeCount = activeParticipants.length;
             emitParticipantLeft(session._id.toString(), activeCount, participantName);
 
-            // Emit to all user's devices that they no longer have an active session
-            emitActiveSessionChanged(userId, {
-                hasActiveSession: false,
-                session: null,
-                activeOnDevice: null
-            });
+            // Emit to all user's devices ONLY if they have NO MORE active entries in this session
+            const userHasOtherActiveDevices = activeParticipants.some(p => p.userId === userId);
+
+            if (!userHasOtherActiveDevices) {
+                console.log(`[LiveSession] User ${userId} has NO more active devices. Emitting active-changed: false`);
+                emitActiveSessionChanged(userId, {
+                    hasActiveSession: false,
+                    session: null,
+                    activeOnDevice: null
+                });
+            } else {
+                // If they still have other devices, emit update with the REMAINING active device
+                const otherActiveDevice = activeParticipants.find(p => p.userId === userId);
+                console.log(`[LiveSession] User ${userId} STILL active on device: ${otherActiveDevice.deviceId}. Emitting active-changed: true`);
+                emitActiveSessionChanged(userId, {
+                    hasActiveSession: true,
+                    session: enrichSession(session),
+                    activeOnDevice: {
+                        deviceId: otherActiveDevice.deviceId,
+                        platform: otherActiveDevice.platform
+                    }
+                });
+            }
+        } else {
+            console.log(`[LiveSession] leaveSession: No active entry found for userId=${userId}, deviceId=${deviceId}`);
         }
 
         res.json({
+            status: true,
             success: true,
             message: "Successfully left session"
         });
@@ -634,30 +682,36 @@ exports.requestTransferHere = async (req, res) => {
             return res.status(400).json({ error: "Session is not live" });
         }
 
-        // Find the user's current active participation
-        const currentParticipant = session.participants.find(
+        // Find all the user's current active participations
+        const activeParticipants = session.participants.filter(
             p => p.userId === userId && !p.leftAt
         );
 
-        if (!currentParticipant) {
+        if (activeParticipants.length === 0) {
+            console.log(`[LiveSession] transfer: No active participants found for user ${userId}`);
             return res.status(400).json({ error: "User is not currently in this session" });
         }
 
-        const oldDeviceId = currentParticipant.deviceId;
-        const oldPlatform = currentParticipant.platform;
+        console.log(`[LiveSession] requestTransferHere: Evicting all other active devices for user ${userId} to join on ${deviceId}`);
 
-        // Emit socket event to tell the OLD device to exit
-        // Use userId (hashed) as both rooms are now joined but we prefer consistency
-        emitTransferLeaving(userId, oldDeviceId, {
-            sessionId: session._id.toString(),
-            sessionTitle: session.title,
-            transferredTo: platform || 'another device'
+        // Mark all current entries as left and emit leaving events
+        session.participants.forEach(p => {
+            if (p.userId === userId && !p.leftAt && p.deviceId !== deviceId) {
+                console.log(`[LiveSession] Evicting device: ${p.deviceId} (${p.platform})`);
+
+                // Emit socket event to tell the OLD device to exit
+                emitTransferLeaving(userId, p.deviceId, {
+                    sessionId: session._id.toString(),
+                    sessionTitle: session.title,
+                    transferredTo: platform || 'another device'
+                });
+
+                // Mark the old participant as left
+                p.leftAt = new Date();
+            }
         });
 
-        // Mark the old participant as left
-        currentParticipant.leftAt = new Date();
-
-        // Add new participant entry for this device
+        // Add new participant entry for this device (or update existing if somehow found)
         const newParticipant = {
             userId: userId,
             name: req.user?.name || "Guest",
@@ -667,6 +721,7 @@ exports.requestTransferHere = async (req, res) => {
             joinedAt: new Date()
         };
         session.participants.push(newParticipant);
+        session.markModified('participants');
 
         await session.save();
 
@@ -687,8 +742,8 @@ exports.requestTransferHere = async (req, res) => {
             session: enrichSession(session),
             roomId: session.roomId,
             transferredFrom: {
-                deviceId: oldDeviceId,
-                platform: oldPlatform
+                deviceId: deviceId, // This is actually the TO device now in the context of this response, but frontend knows
+                platform: platform
             }
         });
     } catch (error) {

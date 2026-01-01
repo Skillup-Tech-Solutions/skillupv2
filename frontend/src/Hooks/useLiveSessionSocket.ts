@@ -18,6 +18,7 @@ import {
     type ParticipantUpdateData,
     type SessionUpdatedData
 } from '../services/socketService';
+import { logger } from '../utils/logger';
 import type { LiveSession } from './liveSessions';
 
 interface UseLiveSessionSocketOptions {
@@ -50,7 +51,7 @@ export const useLiveSessionSocket = (
 
     // Update live sessions in cache when session starts
     const handleSessionStarted = useCallback((data: SessionStartedData) => {
-        console.log('[Socket] Session started:', data.session.title);
+        logger.log('[Socket] Session started:', data.session.title);
 
         // Add the new session to the live sessions cache
         queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
@@ -79,7 +80,7 @@ export const useLiveSessionSocket = (
 
     // Update live sessions in cache when session ends
     const handleSessionEnded = useCallback((data: SessionEndedData) => {
-        console.log('[Socket] Session ended:', data.sessionId);
+        logger.log('[Socket] Session ended:', data.sessionId);
 
         // Remove session from live sessions cache
         queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
@@ -102,7 +103,7 @@ export const useLiveSessionSocket = (
 
     // Handle session cancellation (similar to ended)
     const handleSessionCancelled = useCallback((data: { sessionId: string }) => {
-        console.log('[Socket] Session cancelled:', data.sessionId);
+        logger.log('[Socket] Session cancelled:', data.sessionId);
 
         // Remove from live sessions
         queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
@@ -131,7 +132,7 @@ export const useLiveSessionSocket = (
 
     // Update participant count in cache
     const handleParticipantJoined = useCallback((data: ParticipantUpdateData) => {
-        console.log('[Socket] Participant joined:', data.participantName, 'Count:', data.activeParticipantsCount);
+        logger.log('[Socket] Participant joined:', data.participantName, 'Count:', data.activeParticipantsCount);
 
         // Update the specific session's participant count
         queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
@@ -155,7 +156,7 @@ export const useLiveSessionSocket = (
 
     // Update participant count when someone leaves
     const handleParticipantLeft = useCallback((data: ParticipantUpdateData) => {
-        console.log('[Socket] Participant left:', data.participantName, 'Count:', data.activeParticipantsCount);
+        logger.log('[Socket] Participant left:', data.participantName, 'Count:', data.activeParticipantsCount);
 
         // Update the specific session's participant count
         queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
@@ -179,7 +180,7 @@ export const useLiveSessionSocket = (
 
     // Handle session updates (title, time changes)
     const handleSessionUpdated = useCallback((data: SessionUpdatedData) => {
-        console.log('[Socket] Session updated:', data.session.title);
+        logger.log('[Socket] Session updated:', data.session.title);
 
         // Invalidate queries to refresh the data
         queryClient.invalidateQueries({ queryKey: ['liveSessions'] });
@@ -187,7 +188,7 @@ export const useLiveSessionSocket = (
 
     // Reconnect function
     const reconnect = useCallback(() => {
-        console.log('[Socket] Manual reconnect requested');
+        logger.log('[Socket] Manual reconnect requested');
         disconnectSocket();
         setTimeout(() => {
             connectSocket();
@@ -201,7 +202,7 @@ export const useLiveSessionSocket = (
             return;
         }
 
-        console.log('[Socket] Initializing live session socket...');
+        logger.log('[Socket] Initializing live session socket...');
 
         // Connect to socket
         connectSocket();
@@ -219,7 +220,7 @@ export const useLiveSessionSocket = (
 
         // Cleanup on unmount
         return () => {
-            console.log('[Socket] Cleaning up live session socket...');
+            logger.log('[Socket] Cleaning up live session socket...');
             unsubscribeFromLiveSessions();
             // Note: We don't disconnect the socket here because it might be used elsewhere
             // The socket will be disconnected when the user logs out
