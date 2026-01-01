@@ -132,6 +132,9 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
             response.responses.forEach((resp, idx) => {
                 if (!resp.success) {
                     const errorCode = resp.error?.code;
+                    const errorMessage = resp.error?.message;
+                    console.error(`[Push Service] Delivery failure for token ${uniqueTokens[idx]}: ${errorCode} - ${errorMessage}`);
+
                     if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/unregistered'].includes(errorCode)) {
                         tokensToRemove.push(uniqueTokens[idx]);
                     }
