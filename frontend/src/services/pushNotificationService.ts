@@ -30,8 +30,53 @@ export const pushNotificationService = {
         // 2. Add Listeners first!
         this.addListeners();
 
-        // 3. Register
+        // 3. Create Channels (Android requirement for sound/importance)
+        await this.createChannels();
+
+        // 4. Register
         await PushNotifications.register();
+    },
+
+    async createChannels() {
+        if (Capacitor.getPlatform() !== 'android') return;
+
+        try {
+            // High Priority / Alert Channel
+            await PushNotifications.createChannel({
+                id: 'skillup_alerts',
+                name: 'Alerts & Critical Updates',
+                description: 'Critical notifications about your courses and account',
+                importance: 5, // High importance
+                visibility: 1, // Public
+                sound: 'default',
+                vibration: true
+            });
+
+            // Normal Priority / Update Channel
+            await PushNotifications.createChannel({
+                id: 'skillup_updates',
+                name: 'App Updates',
+                description: 'General updates about new features and activities',
+                importance: 3, // Default importance
+                visibility: 1,
+                sound: 'default',
+                vibration: true
+            });
+
+            // Promotions Channel
+            await PushNotifications.createChannel({
+                id: 'skillup_promotions',
+                name: 'Offers & Promotions',
+                description: 'Notifications about new offers and program discounts',
+                importance: 2, // Low importance
+                visibility: 1,
+                sound: 'default'
+            });
+
+            console.log('[Push] Notification channels created');
+        } catch (error) {
+            console.error('[Push] Failed to create notification channels:', error);
+        }
     },
 
     addListeners() {

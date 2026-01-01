@@ -32,6 +32,7 @@ const employeePortalRoutes = require('./routes/employeePortalRoutes');
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const deviceSessionRoutes = require('./routes/deviceSessionRoutes');
+const versionRoutes = require('./routes/versionRoutes');
 const { initSocket } = require('./services/socketService');
 const cron = require("node-cron");
 const StudentAssignment = require("./models/StudentAssignment");
@@ -184,6 +185,9 @@ app.use("/api/notifications", notificationRoutes);
 
 // Device Session Routes
 app.use("/api/devices", deviceSessionRoutes);
+
+// Version Routes (public - for app update checks)
+app.use("/api/version", versionRoutes);
 
 // Public routes
 app.use("/api", categoryRoutes);

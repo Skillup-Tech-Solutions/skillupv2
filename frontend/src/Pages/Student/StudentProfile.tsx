@@ -22,6 +22,7 @@ import {
     Devices,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
+import AppVersionInfo from "../../Components/AppVersionInfo";
 
 interface UserProfile {
     _id: string;
@@ -754,6 +755,11 @@ const StudentProfile = () => {
                         →
                     </Box>
                 </Box>
+            </Box>
+
+            {/* App Information Section */}
+            <Box sx={{ mb: 3 }}>
+                <AppVersionInfo showPlatform showBuildDate />
             </Box>
 
             {/* Logout Section for Mobile/Easier Access */}

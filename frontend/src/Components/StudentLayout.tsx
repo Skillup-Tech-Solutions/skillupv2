@@ -19,9 +19,10 @@ import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
 import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import StickyBanner from "./StickyBanner";
-import { List, SignOut, Warning } from "@phosphor-icons/react";
+import { CaretLeft, List, SignOut, Warning } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import AnnouncementDetailModal from "./Student/AnnouncementDetailModal";
+import { hapticFeedback } from "../utils/haptics";
 
 
 // Sidebar width constants matching frontend-ref
@@ -385,6 +386,34 @@ const StudentLayout = () => {
                             </Box>
                         </Box>
                         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+                            {/* UI Back Button */}
+                            {location.pathname !== "/student/dashboard" && (
+                                <Box
+                                    onClick={() => {
+                                        hapticFeedback.impact();
+                                        navigate(-1);
+                                    }}
+                                    sx={{
+                                        p: 1,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: "#94a3b8",
+                                        cursor: "pointer",
+                                        transition: "all 0.2s",
+                                        borderRadius: "6px",
+                                        border: "1px solid rgba(148, 163, 184, 0.2)",
+                                        "&:hover": {
+                                            bgcolor: "rgba(148, 163, 184, 0.1)",
+                                            color: "#f8fafc",
+                                            borderColor: "rgba(148, 163, 184, 0.4)"
+                                        },
+                                    }}
+                                >
+                                    <CaretLeft size={20} weight="bold" />
+                                </Box>
+                            )}
+
                             {/* Sign Out on Mobile */}
                             {isMobile && (
                                 <Box

@@ -6,40 +6,10 @@ import App from './App.tsx'
 import './Interceptors/Interceptor'
 // Import PWA registration from vite-plugin-pwa
 import { registerSW } from 'virtual:pwa-register'
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
-import { pushNotificationService } from './services/pushNotificationService';
 
-// Initialize push notifications
-pushNotificationService.init();
 
-// Configure Status Bar for native Android/iOS only
-const initializeStatusBar = async () => {
-  // Only run on native platforms (not web/desktop)
-  if (!Capacitor.isNativePlatform()) {
-    return;
-  }
-
-  try {
-    // Set status bar style to light content (white icons on dark background)
-    await StatusBar.setStyle({ style: Style.Dark });
-
-    // Make status bar overlay the WebView (content draws behind it)
-    await StatusBar.setOverlaysWebView({ overlay: true });
-
-    // Set status bar background color to match app theme
-    if (Capacitor.getPlatform() === 'android') {
-      await StatusBar.setBackgroundColor({ color: '#020617' });
-    }
-
-    console.log('[StatusBar] Configured for native platform');
-  } catch (error) {
-    console.warn('[StatusBar] Configuration failed:', error);
-  }
-};
-
-// Initialize status bar
-initializeStatusBar();
+// StatusBar is now initialized lazily in App.tsx to improve hydration speed
 
 // React and and App initialization handles the routing logic correctly now.
 // Legacy synchronous redirects based on cookies have been removed 

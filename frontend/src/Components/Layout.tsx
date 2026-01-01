@@ -1,13 +1,14 @@
 import { Box, useMediaQuery } from "@mui/material";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import { authService } from "../services/authService";
-import { List } from "@phosphor-icons/react";
+import { CaretLeft, List } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
 import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
 import StickyBanner from "./StickyBanner";
+import { hapticFeedback } from "../utils/haptics";
 
 // Sidebar width constants matching frontend-ref
 const MIN_WIDTH = 60;
@@ -18,6 +19,7 @@ const MAX_WIDTH = 280;
 const Layout = () => {
   const isMobile = useMediaQuery("(max-width:991px)");
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Socket hooks for real-time updates (Cache invalidation secondary effect)
   const handleSessionStarted = useCallback((data: any) => {
@@ -290,94 +292,123 @@ const Layout = () => {
               </Box>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+              {/* UI Back Button */}
+              {location.pathname !== "/dashboard" && (
                 <Box
-                  component="p"
+                  onClick={() => {
+                    hapticFeedback.impact();
+                    navigate(-1);
+                  }}
                   sx={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    m: 0,
+                    p: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    borderRadius: "6px",
+                    border: "1px solid rgba(148, 163, 184, 0.2)",
+                    "&:hover": {
+                      bgcolor: "rgba(148, 163, 184, 0.1)",
+                      color: "#f8fafc",
+                      borderColor: "rgba(148, 163, 184, 0.4)"
+                    },
                   }}
                 >
-                  Logged in as
+                  <CaretLeft size={20} weight="bold" />
                 </Box>
+              )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                  <Box
+                    component="p"
+                    sx={{
+                      fontSize: "10px",
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.1em",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      m: 0,
+                    }}
+                  >
+                    Logged in as
+                  </Box>
+                  <Box
+                    component="p"
+                    sx={{
+                      fontSize: "14px",
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: "#cbd5e1",
+                      m: 0,
+                    }}
+                  >
+                    {userEmail}
+                  </Box>
+                </Box>
+                {/* Avatar */}
                 <Box
-                  component="p"
+                  onClick={() => navigate("/profile")}
                   sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
                     fontSize: "14px",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: "#cbd5e1",
-                    m: 0,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "transform 0.2s",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+                    "&:hover": { transform: "scale(1.05)" },
                   }}
                 >
-                  {userEmail}
+                  {userName?.charAt(0).toUpperCase() || "A"}
                 </Box>
-              </Box>
-              {/* Avatar */}
-              <Box
-                onClick={() => navigate("/profile")}
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  transition: "transform 0.2s",
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
-                  "&:hover": { transform: "scale(1.05)" },
-                }}
-              >
-                {userName?.charAt(0).toUpperCase() || "A"}
               </Box>
             </Box>
           </Box>
+
+          {/* Page Content */}
+          <Box sx={{ p: 3, flex: 1 }}>
+            {liveSessionBanner && (
+              <Box sx={{ mb: 3 }}>
+                <StickyBanner
+                  title="🔴 Session Now LIVE"
+                  message={`"${liveSessionBanner.title}" has started. View management for details.`}
+                  priority="medium"
+                  onClose={() => setLiveSessionBanner(null)}
+                  onAction={() => {
+                    setLiveSessionBanner(null);
+                    // Navigate to specific management tab based on type
+                    if (liveSessionBanner.type === 'COURSE') navigate('/courses');
+                    else if (liveSessionBanner.type === 'PROJECT') navigate('/projects');
+                    else if (liveSessionBanner.type === 'INTERNSHIP') navigate('/internships');
+                    else navigate('/dashboard');
+                  }}
+                  actionLabel="View Management"
+                />
+              </Box>
+            )}
+            <Outlet />
+          </Box>
         </Box>
 
-        {/* Page Content */}
-        <Box sx={{ p: 3, flex: 1 }}>
-          {liveSessionBanner && (
-            <Box sx={{ mb: 3 }}>
-              <StickyBanner
-                title="🔴 Session Now LIVE"
-                message={`"${liveSessionBanner.title}" has started. View management for details.`}
-                priority="medium"
-                onClose={() => setLiveSessionBanner(null)}
-                onAction={() => {
-                  setLiveSessionBanner(null);
-                  // Navigate to specific management tab based on type
-                  if (liveSessionBanner.type === 'COURSE') navigate('/courses');
-                  else if (liveSessionBanner.type === 'PROJECT') navigate('/projects');
-                  else if (liveSessionBanner.type === 'INTERNSHIP') navigate('/internships');
-                  else navigate('/dashboard');
-                }}
-                actionLabel="View Management"
-              />
-            </Box>
-          )}
-          <Outlet />
-        </Box>
+        {/* Overlay when resizing to prevent iframe capturing mouse */}
+        {isResizing && (
+          <Box
+            sx={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 100,
+              cursor: "ew-resize",
+            }}
+          />
+        )}
       </Box>
-
-      {/* Overlay when resizing to prevent iframe capturing mouse */}
-      {isResizing && (
-        <Box
-          sx={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 100,
-            cursor: "ew-resize",
-          }}
-        />
-      )}
     </Box>
   );
 };

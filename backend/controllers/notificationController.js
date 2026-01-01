@@ -122,6 +122,7 @@ exports.sendNotification = async (req, res) => {
 // Get History
 exports.getNotificationHistory = async (req, res) => {
     try {
+        const Notification = require('../models/Notification');
         const history = await Notification.find()
             .sort({ createdAt: -1 })
             .populate('sentBy', 'name email')
