@@ -199,7 +199,6 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     },
                     disableAudioLevels: false,
                     disableSpeakerSelection: true,
-                    gamepadServiceEnabled: false,
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone
@@ -264,12 +263,14 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
 
-            // Brave/Hardened Chromium Fix: Manually append display-capture to iframe allow attribute
-            const iframe = jitsiApiRef.current.getIFrame();
+            // Chrome/Brave Production Fix: Explicitly allow display-capture on the created iframe
+            // This bypasses strict Permission-Policy restrictions in Chromium-based browsers.
+            const iframe = jitsiContainerRef.current?.querySelector('iframe');
             if (iframe) {
                 const currentAllow = iframe.getAttribute('allow') || '';
                 if (!currentAllow.includes('display-capture')) {
-                    iframe.setAttribute('allow', `${currentAllow}${currentAllow ? '; ' : ''}display-capture`);
+                    iframe.setAttribute('allow', `${currentAllow} display-capture;`.trim());
+                    console.log("VideoRoom: Enforced display-capture permission on Jitsi iframe.");
                 }
             }
 
