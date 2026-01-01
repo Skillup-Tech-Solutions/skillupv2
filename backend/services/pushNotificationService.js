@@ -127,6 +127,18 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
 
             const response = await admin.messaging().sendEachForMulticast(message);
 
+            // Update stats in database
+            await Notification.updateOne(
+                { _id: notification._id },
+                {
+                    $set: {
+                        'deliveryStats.successCount': response.successCount,
+                        'deliveryStats.failureCount': response.failureCount,
+                        status: response.successCount > 0 ? 'sent' : 'failed'
+                    }
+                }
+            );
+
             // Clean up stale tokens
             const tokensToRemove = [];
             response.responses.forEach((resp, idx) => {
