@@ -485,10 +485,25 @@ export const TRANSFER_EVENTS = {
 export const subscribeToTransferEvents = (callbacks: {
     onTransferLeaving?: (data: TransferLeavingData) => void;
 }): void => {
+    // If socket not available, try to connect first
     if (!socket) {
-        console.warn('[Socket] Cannot subscribe to transfer events - socket not initialized');
+        console.log('[Socket] Socket not initialized for transfer events, attempting to connect...');
+        connectSocket();
+
+        // Wait a bit for connection and retry
+        setTimeout(() => {
+            if (socket) {
+                if (callbacks.onTransferLeaving) {
+                    subscribeToEvent(TRANSFER_EVENTS.LEAVING, callbacks.onTransferLeaving);
+                    console.log('[Socket] Subscribed to transfer events after reconnect');
+                }
+            } else {
+                console.warn('[Socket] Still cannot subscribe to transfer events - socket not available');
+            }
+        }, 1000);
         return;
     }
+
     if (callbacks.onTransferLeaving) {
         subscribeToEvent(TRANSFER_EVENTS.LEAVING, callbacks.onTransferLeaving);
     }
