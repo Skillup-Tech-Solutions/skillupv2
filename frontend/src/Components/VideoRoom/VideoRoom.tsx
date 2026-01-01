@@ -263,15 +263,12 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
 
-            // Chrome/Brave Production Fix: Explicitly allow display-capture on the created iframe
-            // This bypasses strict Permission-Policy restrictions in Chromium-based browsers.
-            const iframe = jitsiContainerRef.current?.querySelector('iframe');
+            // Chrome/Brave Production Fix: Explicitly allow screen sharing on the created iframe.
+            // Using the official getIFrame() method is more reliable.
+            const iframe = jitsiApiRef.current.getIFrame();
             if (iframe) {
-                const currentAllow = iframe.getAttribute('allow') || '';
-                if (!currentAllow.includes('display-capture')) {
-                    iframe.setAttribute('allow', `${currentAllow} display-capture;`.trim());
-                    console.log("VideoRoom: Enforced display-capture permission on Jitsi iframe.");
-                }
+                iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write;');
+                console.log("VideoRoom: Enforced display-capture permission via getIFrame().");
             }
 
             jitsiApiRef.current.addListener("videoConferenceJoined", () => {
