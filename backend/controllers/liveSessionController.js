@@ -10,6 +10,7 @@ const {
     emitParticipantLeft,
     emitSessionUpdated
 } = require("../services/socketService");
+const pushNotificationService = require("../services/pushNotificationService");
 
 // Get reference model based on session type
 const getReferenceModel = (sessionType) => {
@@ -225,6 +226,18 @@ exports.startSession = async (req, res) => {
         // Emit socket event for real-time update
         emitSessionStarted(session);
 
+        // Send push notification to everyone
+        await pushNotificationService.sendNotification({
+            title: "🔴 Session Live Now",
+            body: `"${session.title}" has started. Join now!`,
+            target: 'all',
+            data: {
+                type: 'live_session_started',
+                sessionId: session._id.toString(),
+                priority: 'alert'
+            }
+        }).catch(err => console.error("Session start push error:", err));
+
         res.json({
             success: true,
             message: "Session started successfully",
@@ -269,6 +282,18 @@ exports.endSession = async (req, res) => {
 
         // Emit socket event for real-time update
         emitSessionEnded(session._id, session);
+
+        // Send push notification to everyone
+        await pushNotificationService.sendNotification({
+            title: "🏁 Session Ended",
+            body: `"${session.title}" has concluded. Thank you for attending!`,
+            target: 'all',
+            data: {
+                type: 'live_session_ended',
+                sessionId: session._id.toString(),
+                priority: 'update'
+            }
+        }).catch(err => console.error("Session end push error:", err));
 
         res.json({
             success: true,

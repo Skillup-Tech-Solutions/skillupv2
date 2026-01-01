@@ -7,6 +7,7 @@ import { useLeaveSessionApi } from "../../Hooks/liveSessions";
 import Cookies from "js-cookie";
 import { getFromStorage } from "../../utils/pwaUtils";
 import { Capacitor } from "@capacitor/core";
+import { LocalNotifications } from "@capacitor/local-notifications";
 
 declare global {
     interface Window {
@@ -280,6 +281,67 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             jitsiApiRef.current.addListener("readyToClose", () => {
                 handleExit();
             });
+
+            // Show persistent notification if on native platform
+            if (Capacitor.isNativePlatform()) {
+                await LocalNotifications.requestPermissions();
+
+                // Register action types
+                await LocalNotifications.registerActionTypes({
+                    types: [
+                        {
+                            id: 'MEETING_ACTIONS',
+                            actions: [
+                                {
+                                    id: 'hangup',
+                                    title: 'Hang Up',
+                                    destructive: true,
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                await LocalNotifications.schedule({
+                    notifications: [
+                        {
+                            title: `🔴 Live: ${session.title}`,
+                            body: "Meeting in progress. Tap to return to session.",
+                            id: 100, // Unique ID for meeting notification
+                            ongoing: true,
+                            autoCancel: false,
+                            smallIcon: 'ic_stat_video_camera', // Ensure this exists or use default
+                            largeIcon: 'ic_launcher',
+                            iconColor: '#3b82f6',
+                            actionTypeId: 'MEETING_ACTIONS',
+                            extra: {
+                                sessionId: session._id
+                            }
+                        }
+                    ]
+                });
+
+                // Set up action listeners
+                const actionListener = await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
+                    if (notification.actionId === 'hangup') {
+                        handleExitClick();
+                    } else {
+                        // Default tap: bring app to foreground (this happens automatically)
+                        // But we can ensure routing here if needed
+                    }
+                });
+
+                // Cleanup listener when session ends
+                const currentJitsiApi = jitsiApiRef.current;
+                if (currentJitsiApi) {
+                    const originalDispose = currentJitsiApi.dispose;
+                    currentJitsiApi.dispose = function () {
+                        actionListener.remove();
+                        LocalNotifications.cancel({ notifications: [{ id: 100 }] });
+                        return originalDispose.apply(this, arguments as any);
+                    };
+                }
+            }
         } catch (err) {
             console.error("Failed to load Jitsi:", err);
             setIsInitializing(false);
@@ -287,6 +349,11 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     };
 
     const handleExit = (endForEveryone = false) => {
+        // Remove notification if on native platform
+        if (Capacitor.isNativePlatform()) {
+            LocalNotifications.cancel({ notifications: [{ id: 100 }] });
+        }
+
         if (jitsiApiRef.current) {
             jitsiApiRef.current.dispose();
             jitsiApiRef.current = null;
