@@ -38,7 +38,6 @@ import {
     useJoinSessionApi,
     type LiveSession,
 } from "../../Hooks/liveSessions";
-import { useRequestTransferHere } from "../../Hooks/useActiveSession";
 import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
 import { LiveSessionSkeleton } from "./PortalSkeletons";
@@ -64,7 +63,6 @@ const StudentLiveSessions = () => {
     const { data: upcomingData, isLoading: upcomingLoading, refetch: refetchUpcoming } = useGetUpcomingSessionsApi();
     const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useGetSessionHistoryApi();
     const { mutate: joinSession } = useJoinSessionApi();
-    const transferMutation = useRequestTransferHere();
 
     // Enable real-time updates via Socket.IO
     useLiveSessionSocket();
@@ -110,21 +108,6 @@ const StudentLiveSessions = () => {
             setPendingSession(null);
             setShowJoinDialog(false);
             setIsAlreadyActive(false);
-        }
-    };
-
-    const handleTransferAndJoin = async () => {
-        if (!pendingSession) return;
-        try {
-            const result = await transferMutation.mutateAsync(pendingSession._id);
-            if (result.session) {
-                setActiveSession(result.session);
-            }
-            setPendingSession(null);
-            setShowJoinDialog(false);
-            setIsAlreadyActive(false);
-        } catch (error) {
-            console.error('Transfer failed:', error);
         }
     };
 
@@ -223,62 +206,27 @@ const StudentLiveSessions = () => {
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5, flexWrap: 'wrap', justifyContent: isAlreadyActive ? 'space-between' : 'flex-end' }}>
+                <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5 }}>
                     <Button
                         onClick={() => setShowJoinDialog(false)}
                         sx={{ color: "#94a3b8", fontWeight: 600, textTransform: "none" }}
                     >
                         Cancel
                     </Button>
-                    {isAlreadyActive && (
-                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                            <Button
-                                onClick={handleTransferAndJoin}
-                                variant="contained"
-                                disabled={transferMutation.isPending}
-                                sx={{
-                                    bgcolor: "#22c55e",
-                                    color: "#fff",
-                                    fontWeight: 700,
-                                    textTransform: "none",
-                                    px: 2,
-                                    "&:hover": { bgcolor: "#16a34a" }
-                                }}
-                            >
-                                {transferMutation.isPending ? 'Transferring...' : 'Transfer Here'}
-                            </Button>
-                            <Button
-                                onClick={confirmJoin}
-                                variant="outlined"
-                                sx={{
-                                    borderColor: "rgba(59, 130, 246, 0.5)",
-                                    color: "#3b82f6",
-                                    fontWeight: 600,
-                                    textTransform: "none",
-                                    px: 2,
-                                    "&:hover": { bgcolor: "rgba(59, 130, 246, 0.1)", borderColor: "#3b82f6" }
-                                }}
-                            >
-                                Join Both Devices
-                            </Button>
-                        </Box>
-                    )}
-                    {!isAlreadyActive && (
-                        <Button
-                            onClick={confirmJoin}
-                            variant="contained"
-                            sx={{
-                                bgcolor: "#3b82f6",
-                                color: "#fff",
-                                fontWeight: 700,
-                                textTransform: "none",
-                                px: 3,
-                                "&:hover": { bgcolor: "#2563eb" }
-                            }}
-                        >
-                            Join Now
-                        </Button>
-                    )}
+                    <Button
+                        onClick={confirmJoin}
+                        variant="contained"
+                        sx={{
+                            bgcolor: "#3b82f6",
+                            color: "#fff",
+                            fontWeight: 700,
+                            textTransform: "none",
+                            px: 3,
+                            "&:hover": { bgcolor: "#2563eb" }
+                        }}
+                    >
+                        {isAlreadyActive ? "Join as Second Device" : "Join Now"}
+                    </Button>
                 </DialogActions>
             </Dialog>
             {/* Header */}
