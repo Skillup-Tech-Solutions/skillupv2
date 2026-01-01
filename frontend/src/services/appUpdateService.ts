@@ -40,7 +40,7 @@ export const checkForUpdates = async (): Promise<UpdateCheckResult> => {
         const appVersion = await getAppVersion();
 
         // Call backend API to get latest version info
-        const response = await api.get<VersionResponse>('/api/version/latest');
+        const response = await api.get<VersionResponse>('/version/latest');
         const versionInfo = response.data;
 
         const updateAvailable = isUpdateAvailable(appVersion.version, versionInfo.latestVersion);
