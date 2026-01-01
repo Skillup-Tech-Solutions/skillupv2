@@ -199,6 +199,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     },
                     disableAudioLevels: false,
                     disableSpeakerSelection: true,
+                    gamepadServiceEnabled: false,
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone
@@ -262,6 +263,15 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             };
 
             jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
+
+            // Brave/Hardened Chromium Fix: Manually append display-capture to iframe allow attribute
+            const iframe = jitsiApiRef.current.getIFrame();
+            if (iframe) {
+                const currentAllow = iframe.getAttribute('allow') || '';
+                if (!currentAllow.includes('display-capture')) {
+                    iframe.setAttribute('allow', `${currentAllow}${currentAllow ? '; ' : ''}display-capture`);
+                }
+            }
 
             jitsiApiRef.current.addListener("videoConferenceJoined", () => {
                 setIsInitializing(false);
