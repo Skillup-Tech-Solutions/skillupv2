@@ -46,6 +46,7 @@ import { Skeleton } from "@mui/material";
 import { usePullToRefresh } from "../../utils/usePullToRefresh";
 import PullToRefreshIndicator from "./PullToRefreshIndicator";
 import { useRequestTransferHere } from "../../Hooks/useActiveSession";
+import { logger } from "../../utils/logger";
 
 dayjs.extend(relativeTime);
 
@@ -94,7 +95,7 @@ const StudentLiveSessions = () => {
     const handleJoin = (session: LiveSession) => {
         joinSession(session._id, {
             onSuccess: (data: any) => {
-                console.log("[LiveSession] Join response:", data);
+                logger.log("[LiveSession] Join response:", data);
                 if (data.alreadyActive) {
                     setPendingSession(data.session || session);
                     setIsAlreadyActive(true);
