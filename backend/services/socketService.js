@@ -348,6 +348,25 @@ const emitAnnouncementDeleted = (announcementId) => {
     emitToAll('announcement:deleted', { id: announcementId });
 };
 
+// ============================================
+// Call Transfer Event Emitters
+// ============================================
+
+/**
+ * Emit when a call is being transferred away from a device
+ * This tells the old device to exit the VideoRoom
+ */
+const emitTransferLeaving = (userId, deviceId, data) => {
+    console.log(`[Socket] Emitting transfer:leaving to user: ${userId}, deviceId: ${deviceId}`);
+    emitToUser(userId, 'transfer:leaving', {
+        deviceId,
+        sessionId: data.sessionId,
+        sessionTitle: data.sessionTitle,
+        transferredTo: data.transferredTo,
+        message: `Session transferred to ${data.transferredTo}`
+    });
+};
+
 module.exports = {
     initSocket,
     getIO,
@@ -370,5 +389,7 @@ module.exports = {
     // Announcements
     emitAnnouncementCreated,
     emitAnnouncementUpdated,
-    emitAnnouncementDeleted
+    emitAnnouncementDeleted,
+    // Call Transfer
+    emitTransferLeaving
 };

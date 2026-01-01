@@ -63,11 +63,13 @@ const LiveSessionSchema = new mongoose.Schema({
         sparse: true
     },
 
-    // Participant Tracking (includes userId for deduplication)
+    // Participant Tracking (includes userId and device info for transfer feature)
     participants: [{
         userId: String, // Unique user identifier
         name: String,
         email: String,
+        deviceId: String, // Device identifier for multi-device support
+        platform: { type: String, enum: ['android', 'ios', 'web'], default: 'web' },
         joinedAt: { type: Date, default: Date.now },
         leftAt: Date
     }],

@@ -8,10 +8,12 @@ const roleAuth = require("../middleware/roleAuth");
 router.get("/live", auth, liveSessionController.getLiveSessions);
 router.get("/upcoming", auth, liveSessionController.getUpcomingSessions);
 router.get("/history", auth, liveSessionController.getSessionHistory);
+router.get("/my-active", auth, liveSessionController.getMyActiveSession); // Device transfer feature
 router.get("/reference/:type/:id", auth, liveSessionController.getSessionsByReference);
 router.get("/:id", auth, liveSessionController.getSession);
 router.post("/:id/join", auth, liveSessionController.joinSession);
 router.post("/:id/leave", auth, liveSessionController.leaveSession);
+router.post("/:id/transfer/here", auth, liveSessionController.requestTransferHere); // Device transfer feature
 
 // Admin routes
 router.get("/", auth, roleAuth.adminOnly, liveSessionController.getSessions);

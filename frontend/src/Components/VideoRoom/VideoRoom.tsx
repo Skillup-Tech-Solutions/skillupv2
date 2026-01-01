@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, useMediaQuery } from "@mui/material";
-import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving } from "@phosphor-icons/react";
+import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, useMediaQuery, Snackbar, Alert } from "@mui/material";
+import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving, ArrowsClockwise } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
 import { useLeaveSessionApi } from "../../Hooks/liveSessions";
 import Cookies from "js-cookie";
@@ -9,6 +9,12 @@ import { getFromStorage } from "../../utils/pwaUtils";
 import { Capacitor } from "@capacitor/core";
 import { ForegroundService, Importance, ServiceType } from "@capawesome-team/capacitor-android-foreground-service";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { getDeviceId } from "../../utils/deviceInfo";
+import {
+    subscribeToTransferEvents,
+    unsubscribeFromTransferEvents,
+    type TransferLeavingData
+} from "../../services/socketService";
 
 declare global {
     interface Window {
@@ -38,7 +44,9 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
         isHost ? Math.max(1, session.activeParticipantsCount || 0) : (session.activeParticipantsCount || 1)
     );
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [transferMessage, setTransferMessage] = useState<string | null>(null);
     const { mutate: leaveSessionApi } = useLeaveSessionApi();
+    const currentDeviceId = getDeviceId();
 
     // Securely get base URL from config for beacon
     const BASE_URL = import.meta.env.VITE_APP_BASE_URL;
@@ -85,6 +93,29 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             initJitsi();
         }
     }, [mounted, session.roomId]);
+
+    // Listen for transfer:leaving event (when call is transferred to another device)
+    useEffect(() => {
+        const handleTransferLeaving = (data: TransferLeavingData) => {
+            // Only exit if this is the device being transferred FROM
+            if (data.deviceId === currentDeviceId && data.sessionId === session._id) {
+                console.log('[VideoRoom] Call transferred to another device:', data.transferredTo);
+                setTransferMessage(`Session transferred to ${data.transferredTo}`);
+                // Auto-exit after a brief delay to show the message
+                setTimeout(() => {
+                    handleExit(false);
+                }, 1500);
+            }
+        };
+
+        subscribeToTransferEvents({
+            onTransferLeaving: handleTransferLeaving
+        });
+
+        return () => {
+            unsubscribeFromTransferEvents();
+        };
+    }, [currentDeviceId, session._id]);
 
     const loadJitsiScript = () => {
         return new Promise<void>((resolve, reject) => {
@@ -335,7 +366,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     // This ensures it pops back up if the user manages to clear it on some device skins.
                     const timerId = setInterval(async () => {
                         await ForegroundService.startForegroundService(notificationOptions);
-                    }, 100);
+                    }, 10000);
 
                     // 6. Cleanup registration
                     const currentJitsiApi = jitsiApiRef.current;
@@ -758,6 +789,21 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Transfer Notification */}
+            <Snackbar
+                open={!!transferMessage}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    severity="info"
+                    variant="filled"
+                    icon={<ArrowsClockwise size={20} />}
+                    sx={{ minWidth: 280 }}
+                >
+                    {transferMessage}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 

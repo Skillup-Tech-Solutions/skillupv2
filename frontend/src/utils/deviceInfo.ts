@@ -139,3 +139,22 @@ export const storeDeviceId = (deviceId: string): void => {
 export const clearDeviceId = (): void => {
     localStorage.removeItem(WEB_DEVICE_ID_KEY);
 };
+
+/**
+ * Get device ID synchronously (for hooks and API calls)
+ * Uses stored device ID from login (which includes native ID) or web fallback
+ */
+export const getDeviceId = (): string => {
+    // First, check if we have a stored device ID from login (native or web)
+    const storedId = localStorage.getItem(WEB_DEVICE_ID_KEY);
+    if (storedId) {
+        return storedId;
+    }
+    // Fallback: generate web device ID
+    return getWebDeviceId();
+};
+
+/**
+ * Get device platform synchronously
+ */
+export { getPlatform };

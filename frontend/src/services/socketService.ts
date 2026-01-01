@@ -462,3 +462,43 @@ export const unsubscribeFromAnnouncements = (): void => {
         unsubscribeFromEvent(event);
     });
 };
+
+// ============================================
+// Call Transfer Event Types
+// ============================================
+
+export interface TransferLeavingData {
+    deviceId: string;
+    sessionId: string;
+    sessionTitle: string;
+    transferredTo: string;
+    message: string;
+}
+
+export const TRANSFER_EVENTS = {
+    LEAVING: 'transfer:leaving'
+} as const;
+
+/**
+ * Subscribe to call transfer events (for auto-exit when call is transferred)
+ */
+export const subscribeToTransferEvents = (callbacks: {
+    onTransferLeaving?: (data: TransferLeavingData) => void;
+}): void => {
+    if (!socket) {
+        console.warn('[Socket] Cannot subscribe to transfer events - socket not initialized');
+        return;
+    }
+    if (callbacks.onTransferLeaving) {
+        subscribeToEvent(TRANSFER_EVENTS.LEAVING, callbacks.onTransferLeaving);
+    }
+};
+
+/**
+ * Unsubscribe from call transfer events
+ */
+export const unsubscribeFromTransferEvents = (): void => {
+    Object.values(TRANSFER_EVENTS).forEach(event => {
+        unsubscribeFromEvent(event);
+    });
+};

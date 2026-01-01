@@ -23,6 +23,7 @@ import { CaretLeft, List, SignOut, Warning } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import AnnouncementDetailModal from "./Student/AnnouncementDetailModal";
 import { hapticFeedback } from "../utils/haptics";
+import ActiveSessionBanner from "./ActiveSessionBanner";
 
 
 // Sidebar width constants matching frontend-ref
@@ -596,6 +597,9 @@ const StudentLayout = () => {
                 announcement={announcementForModal}
                 onClose={() => setAnnouncementForModal(null)}
             />
+
+            {/* Active Session Banner (for device-to-device call transfer) */}
+            <ActiveSessionBanner />
 
             {/* Bottom Navigation for Mobile */}
             <StudentBottomNav onOpenSidebar={() => setMobileOpen(true)} />

@@ -8,7 +8,8 @@ const {
     emitSessionCancelled,
     emitParticipantJoined,
     emitParticipantLeft,
-    emitSessionUpdated
+    emitSessionUpdated,
+    emitTransferLeaving
 } = require("../services/socketService");
 const pushNotificationService = require("../services/pushNotificationService");
 
@@ -421,34 +422,60 @@ exports.joinSession = async (req, res) => {
             .digest('hex')
             .substring(0, 16);
 
-        // Check if user already joined (prevent duplicates)
-        // Only return alreadyActive if their last entry HAS NOT left yet
+        const incomingDeviceId = req.body.deviceId || "unknown";
+        const incomingPlatform = req.body.platform || "web";
+
+        console.log(`[JoinSession] User ${userId} joining with deviceId: ${incomingDeviceId}, platform: ${incomingPlatform}`);
+
+        // Check if user is already active in this session on ANY device
         const existingParticipant = session.participants.find(
             p => p.userId === userId && !p.leftAt
         );
 
+        console.log(`[JoinSession] Existing participant:`, existingParticipant ? {
+            deviceId: existingParticipant.deviceId,
+            platform: existingParticipant.platform
+        } : 'none');
+
         if (existingParticipant) {
-            return res.json({
-                success: true,
-                session: enrichSession(session),
-                roomId: session.roomId,
-                alreadyActive: true,
-                message: "User is already active in this session"
-            });
+            // Check if it's a DIFFERENT device
+            const isDifferentDevice = existingParticipant.deviceId !== incomingDeviceId;
+            console.log(`[JoinSession] isDifferentDevice: ${isDifferentDevice} (existing: ${existingParticipant.deviceId}, incoming: ${incomingDeviceId})`);
+
+            if (isDifferentDevice) {
+                // User is active on another device - show transfer/join dialog
+                console.log(`[JoinSession] Returning alreadyActive: true for different device`);
+                return res.json({
+                    success: true,
+                    session: enrichSession(session),
+                    roomId: session.roomId,
+                    alreadyActive: true,
+                    activeOnDevice: {
+                        deviceId: existingParticipant.deviceId,
+                        platform: existingParticipant.platform
+                    },
+                    message: "User is already active in this session on another device"
+                });
+            } else {
+                // Same device - just return success (rejoin/refresh scenario)
+                console.log(`[JoinSession] Same device - returning alreadyActive: false`);
+                return res.json({
+                    success: true,
+                    session: enrichSession(session),
+                    roomId: session.roomId,
+                    alreadyActive: false,
+                    message: "Rejoining from same device"
+                });
+            }
         }
 
-        // Clean up any historical "stale" records for this specific user in this session
-        // (Just in case they crashed and are rejoining)
-        session.participants.forEach(p => {
-            if (p.userId === userId && !p.leftAt) {
-                p.leftAt = new Date();
-            }
-        });
-
+        // New join - add participant
         const participant = {
             userId: userId,
             name: req.user?.name || req.body.name || "Guest",
             email: req.user?.email || req.body.email || "",
+            deviceId: incomingDeviceId,
+            platform: incomingPlatform,
             joinedAt: new Date()
         };
 
@@ -516,6 +543,174 @@ exports.leaveSession = async (req, res) => {
         });
     } catch (error) {
         console.error("Error leaving session:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// ============================================
+// Device Transfer Feature
+// ============================================
+
+// Get user's active session (if any) - for detecting ongoing meetings on other devices
+exports.getMyActiveSession = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
+        const crypto = require("crypto");
+        const userId = crypto.createHash('md5')
+            .update(req.user.email || req.user.id)
+            .digest('hex')
+            .substring(0, 16);
+
+        // Find any LIVE session where this user is an active participant
+        const sessions = await LiveSession.find({
+            status: "LIVE",
+            "participants.userId": userId,
+            "participants.leftAt": null
+        });
+
+        // Filter to find sessions where user is truly active (no leftAt)
+        let activeSession = null;
+        let activeOnDevice = null;
+
+        for (const session of sessions) {
+            const participant = session.participants.find(
+                p => p.userId === userId && !p.leftAt
+            );
+            if (participant) {
+                activeSession = enrichSession(session);
+                activeOnDevice = {
+                    deviceId: participant.deviceId,
+                    platform: participant.platform,
+                    joinedAt: participant.joinedAt
+                };
+                break;
+            }
+        }
+
+        if (!activeSession) {
+            return res.json({
+                success: true,
+                hasActiveSession: false,
+                session: null,
+                activeOnDevice: null
+            });
+        }
+
+        res.json({
+            success: true,
+            hasActiveSession: true,
+            session: activeSession,
+            activeOnDevice
+        });
+    } catch (error) {
+        console.error("Error getting active session:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Request to transfer session to THIS device
+exports.requestTransferHere = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
+        const { deviceId, platform } = req.body;
+        if (!deviceId) {
+            return res.status(400).json({ error: "deviceId is required" });
+        }
+
+        const crypto = require("crypto");
+        const userId = crypto.createHash('md5')
+            .update(req.user.email || req.user.id)
+            .digest('hex')
+            .substring(0, 16);
+
+        const session = await LiveSession.findById(req.params.id);
+
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        if (session.status !== "LIVE") {
+            return res.status(400).json({ error: "Session is not live" });
+        }
+
+        // Find the user's current active participation (on any device)
+        const currentParticipant = session.participants.find(
+            p => p.userId === userId && !p.leftAt
+        );
+
+        console.log(`[TransferHere] User ${userId}, deviceId: ${deviceId}`);
+        console.log(`[TransferHere] Current participant:`, currentParticipant ? {
+            deviceId: currentParticipant.deviceId,
+            platform: currentParticipant.platform
+        } : 'none');
+
+        if (!currentParticipant) {
+            // User is not currently in session - maybe they already left or were never in
+            // In this case, just join them directly
+            console.log(`[TransferHere] No existing participant - joining directly`);
+
+            session.participants.push({
+                userId: userId,
+                name: req.user?.name || "Guest",
+                email: req.user?.email || "",
+                deviceId: deviceId,
+                platform: platform || "web",
+                joinedAt: new Date()
+            });
+
+            await session.save();
+
+            return res.json({
+                success: true,
+                message: "Joined session (no previous device to transfer from)",
+                session: enrichSession(session),
+                roomId: session.roomId
+            });
+        }
+
+        const oldDeviceId = currentParticipant.deviceId;
+        const oldPlatform = currentParticipant.platform;
+
+        // Emit socket event to tell the OLD device to exit
+        emitTransferLeaving(req.user.id, oldDeviceId, {
+            sessionId: session._id.toString(),
+            sessionTitle: session.title,
+            transferredTo: platform || 'another device'
+        });
+
+        // Mark the old participant as left
+        currentParticipant.leftAt = new Date();
+
+        // Add new participant entry for this device
+        session.participants.push({
+            userId: userId,
+            name: req.user?.name || "Guest",
+            email: req.user?.email || "",
+            deviceId: deviceId,
+            platform: platform || "web",
+            joinedAt: new Date()
+        });
+
+        await session.save();
+
+        res.json({
+            success: true,
+            message: "Session transferred successfully",
+            session: enrichSession(session),
+            roomId: session.roomId,
+            transferredFrom: {
+                deviceId: oldDeviceId,
+                platform: oldPlatform
+            }
+        });
+    } catch (error) {
+        console.error("Error transferring session:", error);
         res.status(500).json({ error: error.message });
     }
 };

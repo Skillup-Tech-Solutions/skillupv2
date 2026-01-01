@@ -4,6 +4,7 @@ import { apiUrls } from "../api/apiUrl";
 import type { ApiResponse } from "../Interface/interface";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import { CACHE_TIMES } from "./ReactQueryProvider";
+import { getDeviceId, getPlatform } from "../utils/deviceInfo";
 
 // Types
 export interface LiveSession {
@@ -297,11 +298,21 @@ export const useJoinSessionApi = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (sessionId: string) => {
-            const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/join`, "POST");
-            return response as ApiResponse & { session: LiveSession; roomId: string };
+            const deviceId = getDeviceId();
+            const platform = getPlatform();
+            console.log('[useJoinSessionApi] Joining with deviceId:', deviceId, 'platform:', platform);
+
+            const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/join`, "POST", {
+                deviceId,
+                platform
+            });
+
+            console.log('[useJoinSessionApi] Response:', response);
+            return response as ApiResponse & { session: LiveSession; roomId: string; alreadyActive?: boolean };
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
+            queryClient.invalidateQueries({ queryKey: ["activeSession"] });
         },
         onError: (error: any) => {
             console.error(error);

@@ -10,6 +10,7 @@ import { authService } from "../services/authService";
 import { pushNotificationService } from "../services/pushNotificationService";
 import { analyticsService } from "../services/analyticsService";
 import { images } from "../assets/Images/Images";
+import { getDeviceInfo, storeDeviceId } from "../utils/deviceInfo";
 import {
   User,
   Lock,
@@ -53,12 +54,11 @@ const Login = () => {
     setLoading(true);
 
     // Get device info for session tracking
-    let deviceInfo = null;
+    let deviceInfoData = null;
     try {
-      const { getDeviceInfo, storeDeviceId } = await import('../utils/deviceInfo');
-      deviceInfo = await getDeviceInfo();
+      deviceInfoData = await getDeviceInfo();
       // Store device ID for subsequent requests
-      storeDeviceId(deviceInfo.deviceId);
+      storeDeviceId(deviceInfoData.deviceId);
     } catch (err) {
       console.warn('[Login] Could not get device info:', err);
     }
@@ -67,7 +67,7 @@ const Login = () => {
       {
         email: data.email,
         password: data.password,
-        deviceInfo: deviceInfo
+        deviceInfo: deviceInfoData
       },
       {
         onSuccess: (response: any) => {
