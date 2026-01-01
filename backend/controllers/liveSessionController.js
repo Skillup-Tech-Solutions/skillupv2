@@ -422,60 +422,36 @@ exports.joinSession = async (req, res) => {
             .digest('hex')
             .substring(0, 16);
 
-        const incomingDeviceId = req.body.deviceId || "unknown";
-        const incomingPlatform = req.body.platform || "web";
-
-        console.log(`[JoinSession] User ${userId} joining with deviceId: ${incomingDeviceId}, platform: ${incomingPlatform}`);
-
-        // Check if user is already active in this session on ANY device
+        // Check if user already joined (prevent duplicates)
+        // Only return alreadyActive if their last entry HAS NOT left yet
         const existingParticipant = session.participants.find(
             p => p.userId === userId && !p.leftAt
         );
 
-        console.log(`[JoinSession] Existing participant:`, existingParticipant ? {
-            deviceId: existingParticipant.deviceId,
-            platform: existingParticipant.platform
-        } : 'none');
-
         if (existingParticipant) {
-            // Check if it's a DIFFERENT device
-            const isDifferentDevice = existingParticipant.deviceId !== incomingDeviceId;
-            console.log(`[JoinSession] isDifferentDevice: ${isDifferentDevice} (existing: ${existingParticipant.deviceId}, incoming: ${incomingDeviceId})`);
-
-            if (isDifferentDevice) {
-                // User is active on another device - show transfer/join dialog
-                console.log(`[JoinSession] Returning alreadyActive: true for different device`);
-                return res.json({
-                    success: true,
-                    session: enrichSession(session),
-                    roomId: session.roomId,
-                    alreadyActive: true,
-                    activeOnDevice: {
-                        deviceId: existingParticipant.deviceId,
-                        platform: existingParticipant.platform
-                    },
-                    message: "User is already active in this session on another device"
-                });
-            } else {
-                // Same device - just return success (rejoin/refresh scenario)
-                console.log(`[JoinSession] Same device - returning alreadyActive: false`);
-                return res.json({
-                    success: true,
-                    session: enrichSession(session),
-                    roomId: session.roomId,
-                    alreadyActive: false,
-                    message: "Rejoining from same device"
-                });
-            }
+            return res.json({
+                success: true,
+                session: enrichSession(session),
+                roomId: session.roomId,
+                alreadyActive: true,
+                message: "User is already active in this session"
+            });
         }
 
-        // New join - add participant
+        // Clean up any historical "stale" records for this specific user in this session
+        // (Just in case they crashed and are rejoining)
+        session.participants.forEach(p => {
+            if (p.userId === userId && !p.leftAt) {
+                p.leftAt = new Date();
+            }
+        });
+
         const participant = {
             userId: userId,
             name: req.user?.name || req.body.name || "Guest",
             email: req.user?.email || req.body.email || "",
-            deviceId: incomingDeviceId,
-            platform: incomingPlatform,
+            deviceId: req.body.deviceId || "unknown",
+            platform: req.body.platform || "web",
             joinedAt: new Date()
         };
 
@@ -639,39 +615,13 @@ exports.requestTransferHere = async (req, res) => {
             return res.status(400).json({ error: "Session is not live" });
         }
 
-        // Find the user's current active participation (on any device)
+        // Find the user's current active participation
         const currentParticipant = session.participants.find(
             p => p.userId === userId && !p.leftAt
         );
 
-        console.log(`[TransferHere] User ${userId}, deviceId: ${deviceId}`);
-        console.log(`[TransferHere] Current participant:`, currentParticipant ? {
-            deviceId: currentParticipant.deviceId,
-            platform: currentParticipant.platform
-        } : 'none');
-
         if (!currentParticipant) {
-            // User is not currently in session - maybe they already left or were never in
-            // In this case, just join them directly
-            console.log(`[TransferHere] No existing participant - joining directly`);
-
-            session.participants.push({
-                userId: userId,
-                name: req.user?.name || "Guest",
-                email: req.user?.email || "",
-                deviceId: deviceId,
-                platform: platform || "web",
-                joinedAt: new Date()
-            });
-
-            await session.save();
-
-            return res.json({
-                success: true,
-                message: "Joined session (no previous device to transfer from)",
-                session: enrichSession(session),
-                roomId: session.roomId
-            });
+            return res.status(400).json({ error: "User is not currently in this session" });
         }
 
         const oldDeviceId = currentParticipant.deviceId;

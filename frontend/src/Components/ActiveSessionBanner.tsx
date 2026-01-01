@@ -30,41 +30,15 @@ const ActiveSessionBanner = ({ onJoinSession }: ActiveSessionBannerProps) => {
     const [dismissed, setDismissed] = useState(false);
     const [showTransferredMessage, setShowTransferredMessage] = useState(false);
     const [transferredTo, setTransferredTo] = useState('');
-    const [recentlyTransferredFrom, setRecentlyTransferredFrom] = useState<string | null>(null);
     const currentDeviceId = getDeviceId();
-
-    // Check if we were recently transferred away from a session (suppress banner for that session)
-    useEffect(() => {
-        const stored = localStorage.getItem('recentlyTransferredFrom');
-        if (stored) {
-            try {
-                const { sessionId, timestamp } = JSON.parse(stored);
-                // Suppress for 30 seconds after being transferred
-                if (Date.now() - timestamp < 30000) {
-                    setRecentlyTransferredFrom(sessionId);
-                } else {
-                    localStorage.removeItem('recentlyTransferredFrom');
-                }
-            } catch {
-                localStorage.removeItem('recentlyTransferredFrom');
-            }
-        }
-    }, []);
 
     // Listen for transfer:leaving event (when THIS device should exit)
     useEffect(() => {
         const handleTransferLeaving = (eventData: TransferLeavingData) => {
-            // Only process if this is the device being transferred FROM
+            // Only show message if this is the device being transferred FROM
             if (eventData.deviceId === currentDeviceId) {
                 setTransferredTo(eventData.transferredTo);
                 setShowTransferredMessage(true);
-
-                // Remember this session so we don't show banner immediately after
-                localStorage.setItem('recentlyTransferredFrom', JSON.stringify({
-                    sessionId: eventData.sessionId,
-                    timestamp: Date.now()
-                }));
-                setRecentlyTransferredFrom(eventData.sessionId);
             }
         };
 
@@ -124,10 +98,8 @@ const ActiveSessionBanner = ({ onJoinSession }: ActiveSessionBannerProps) => {
         }
     };
 
-    // Don't show if loading, no active session, dismissed, or recently transferred away from this session
-    const shouldSuppressBanner = recentlyTransferredFrom && data?.session?._id === recentlyTransferredFrom;
-
-    if (isLoading || !data?.hasActiveSession || !data.session || dismissed || shouldSuppressBanner) {
+    // Don't show if loading, no active session, or dismissed
+    if (isLoading || !data?.hasActiveSession || !data.session || dismissed) {
         return (
             <>
                 {/* Snackbar for when call is transferred away */}

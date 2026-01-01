@@ -298,17 +298,11 @@ export const useJoinSessionApi = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (sessionId: string) => {
-            const deviceId = getDeviceId();
-            const platform = getPlatform();
-            console.log('[useJoinSessionApi] Joining with deviceId:', deviceId, 'platform:', platform);
-
             const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/join`, "POST", {
-                deviceId,
-                platform
+                deviceId: getDeviceId(),
+                platform: getPlatform()
             });
-
-            console.log('[useJoinSessionApi] Response:', response);
-            return response as ApiResponse & { session: LiveSession; roomId: string; alreadyActive?: boolean };
+            return response as ApiResponse & { session: LiveSession; roomId: string };
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["liveSessions"] });
