@@ -25,6 +25,7 @@ import { useCoursesMail } from "../Hooks/review";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import { primaryButtonStyle, outlinedButtonStyle } from "../assets/Styles/ButtonStyles";
 import emailjs from "emailjs-com";
+import { logger } from "../utils/logger";
 
 const style = {
   position: "absolute",
@@ -76,7 +77,7 @@ const WebCourses = () => {
     setOpen(true);
   };
   const handleSyllabus = (jobId: string) => {
-    console.log(jobId);
+    logger.log(jobId);
     navigate(`/services/courses/syllabus`, {
       state: { jobId },
     });

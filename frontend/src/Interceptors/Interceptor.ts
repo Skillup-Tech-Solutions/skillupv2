@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { isCapacitor } from "../utils/pwaUtils";
 import { APP_VERSION, BUILD_NUMBER, GIT_COMMIT, ENV } from "../utils/version";
 import { Capacitor } from "@capacitor/core";
+import { logger } from "../utils/logger";
 
 // Global settings
 axios.defaults.timeout = 25000;
@@ -58,7 +59,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
 
     // If no refresh token, redirect to login
     if (!refreshToken) {
-      console.warn('[Interceptor] No refresh token found during 401 handling');
+      logger.warn('[Interceptor] No refresh token found during 401 handling');
 
       const currentHash = window.location.hash;
       if (!currentHash.includes('login') && !currentHash.includes('signup') && currentHash !== '#/') {
@@ -81,7 +82,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
     isRefreshing = true;
 
     try {
-      console.log('[Interceptor] Attempting token refresh...');
+      logger.log('[Interceptor] Attempting token refresh...');
       const response = await axios.post(`${config.BASE_URL}refresh-token`, {
         refreshToken: refreshToken
       });
@@ -95,7 +96,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
         throw new Error('No access token returned from refresh');
       }
 
-      console.log('[Interceptor] Token refresh successful');
+      logger.log('[Interceptor] Token refresh successful');
 
       // Update native storage
       authService.set("skToken", newAccessToken);
@@ -116,7 +117,7 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {
-      console.error('[Interceptor] Token refresh failed:', refreshError);
+      logger.error('[Interceptor] Token refresh failed:', refreshError);
       processQueue(refreshError, null);
       if (!window.location.hash.includes('login') && !window.location.hash.includes('signup')) {
         authService.clearAuth();

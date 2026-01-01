@@ -15,6 +15,7 @@ import {
     type AllDevicesRevokedData
 } from '../services/socketService';
 import { getFromStorage } from '../utils/pwaUtils';
+import { logger } from '../utils/logger';
 
 interface UseDeviceSessionSocketOptions {
     /** Enable/disable the socket subscription */
@@ -36,7 +37,7 @@ export const useDeviceSessionSocket = (
     const currentDeviceId = getFromStorage('deviceId');
 
     const handleLogout = useCallback((message: string) => {
-        console.log('[Socket] Device revoked, logging out:', message);
+        logger.log('[Socket] Device revoked, logging out:', message);
 
         // Call custom callback if provided
         onRevoked?.(message);

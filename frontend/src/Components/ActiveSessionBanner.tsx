@@ -9,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Button, IconButton, Snackbar, Alert } from '@mui/material';
 import { Phone, DeviceMobile, Desktop, X, ArrowsClockwise } from '@phosphor-icons/react';
 import { useActiveSession, useRequestTransferHere } from '../Hooks/useActiveSession';
-import { logger } from '../../utils/logger';
+import { logger } from '../utils/logger';
 import { getDeviceId } from '../utils/deviceInfo';
 import type { LiveSession } from '../Hooks/liveSessions';
 import {

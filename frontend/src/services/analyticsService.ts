@@ -1,14 +1,15 @@
 import { FirebaseAnalytics } from '@capacitor-firebase/analytics';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 export const analyticsService = {
     async init() {
         if (!Capacitor.isNativePlatform()) return;
         try {
-            console.log('[Analytics] Initializing...');
+            logger.log('[Analytics] Initializing...');
             // No need for setCollectionEnabled as it's enabled by default
         } catch (error) {
-            console.error('[Analytics] Initialization failed:', error);
+            logger.error('[Analytics] Initialization failed:', error);
         }
     },
 
@@ -20,7 +21,7 @@ export const analyticsService = {
                 params: params || {},
             });
         } catch (error) {
-            console.error(`[Analytics] Failed to log event ${name}:`, error);
+            logger.error(`[Analytics] Failed to log event ${name}:`, error);
         }
     },
 
@@ -31,7 +32,7 @@ export const analyticsService = {
                 userId,
             });
         } catch (error) {
-            console.error('[Analytics] Failed to set user ID:', error);
+            logger.error('[Analytics] Failed to set user ID:', error);
         }
     },
 
@@ -45,9 +46,9 @@ export const analyticsService = {
                     firebase_screen_class: screenClass || 'FirebaseAnalytics',
                 },
             });
-            console.log(`[Analytics] Screen view logged: ${screenName}`);
+            logger.log(`[Analytics] Screen view logged: ${screenName}`);
         } catch (error) {
-            console.error('[Analytics] Failed to log screen view:', error);
+            logger.error('[Analytics] Failed to log screen view:', error);
         }
     }
 };

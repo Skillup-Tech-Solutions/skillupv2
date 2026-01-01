@@ -43,6 +43,7 @@ import {
 import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
 import { useRequestTransferHere } from "../../Hooks/useActiveSession";
+import { logger } from "../../utils/logger";
 
 interface LiveSessionsTabProps {
     sessionType: "COURSE" | "PROJECT" | "INTERNSHIP";
@@ -155,7 +156,7 @@ const LiveSessionsTab = ({
     const handleJoin = (session: LiveSession) => {
         joinSession(session._id, {
             onSuccess: (data: any) => {
-                console.log("[LiveSession] Join response:", data);
+                logger.log("[LiveSession] Join response:", data);
                 if (data.alreadyActive) {
                     setPendingJoinSession(data.session || session);
                     setIsAlreadyIn(true);

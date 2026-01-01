@@ -9,6 +9,7 @@ import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
 import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
 import StickyBanner from "./StickyBanner";
 import { hapticFeedback } from "../utils/haptics";
+import { logger } from "../utils/logger";
 
 // Sidebar width constants matching frontend-ref
 const MIN_WIDTH = 60;
@@ -45,7 +46,7 @@ const Layout = () => {
   useDeviceSessionSocket({
     onRevoked: useCallback((message: string) => {
       // Handle admin logout via socket
-      console.log('[Socket] Admin session revoked:', message);
+      logger.log('[Socket] Admin session revoked:', message);
     }, [])
   });
 

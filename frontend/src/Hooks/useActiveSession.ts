@@ -17,6 +17,7 @@ import {
     unsubscribeFromActiveSessionChanges,
     type ActiveSessionChangedData
 } from '../services/socketService';
+import { logger } from '../utils/logger';
 
 interface ActiveSessionResponse extends ApiResponse {
     status: boolean;
@@ -51,7 +52,7 @@ export const useActiveSession = (enabled: boolean = true) => {
         if (!enabled) return;
 
         const handleActiveSessionChange = (data: ActiveSessionChangedData) => {
-            console.log('[useActiveSession] Received socket update:', data);
+            logger.log('[useActiveSession] Received socket update:', data);
 
             // Format data to match ActiveSessionResponse and satisfy ApiResponse
             const newResponse: ActiveSessionResponse = {

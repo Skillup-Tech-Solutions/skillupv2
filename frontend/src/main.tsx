@@ -6,7 +6,7 @@ import App from './App.tsx'
 import './Interceptors/Interceptor'
 // Import PWA registration from vite-plugin-pwa
 import { registerSW } from 'virtual:pwa-register'
-import { Capacitor } from '@capacitor/core';
+import { logger } from './utils/logger';
 
 
 // StatusBar is now initialized lazily in App.tsx to improve hydration speed
@@ -29,7 +29,7 @@ window.addEventListener('error', (event) => {
     const now = Date.now();
     if (!lastRefresh || now - parseInt(lastRefresh) > 10000) {
       sessionStorage.setItem('chunk_error_refresh', now.toString());
-      console.log('[App] Chunk load error detected, refreshing page...');
+      logger.log('[App] Chunk load error detected, refreshing page...');
       window.location.reload();
     }
   }
@@ -45,7 +45,7 @@ window.addEventListener('unhandledrejection', (event) => {
     const now = Date.now();
     if (!lastRefresh || now - parseInt(lastRefresh) > 10000) {
       sessionStorage.setItem('chunk_error_refresh', now.toString());
-      console.log('[App] Chunk load error detected, refreshing page...');
+      logger.log('[App] Chunk load error detected, refreshing page...');
       window.location.reload();
     }
   }
@@ -69,10 +69,10 @@ if ('serviceWorker' in navigator) {
       }
     },
     onOfflineReady() {
-      console.log('[PWA] App ready to work offline');
+      logger.log('[PWA] App ready to work offline');
     },
     onRegistered(registration) {
-      console.log('[PWA] Service Worker registered:', registration?.scope);
+      logger.log('[PWA] Service Worker registered:', registration?.scope);
 
       // Check for updates periodically (every hour)
       if (registration) {
@@ -82,7 +82,7 @@ if ('serviceWorker' in navigator) {
       }
     },
     onRegisterError(error) {
-      console.error('[PWA] Service Worker registration failed:', error);
+      logger.error('[PWA] Service Worker registration failed:', error);
     }
   });
 }

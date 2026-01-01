@@ -175,7 +175,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     stream.getTracks().forEach((track: any) => track.stop());
                 });
             } catch (permErr) {
-                console.warn("VideoRoom: Pre-initialization permission request failed or timed out:", permErr);
+                logger.warn("VideoRoom: Pre-initialization permission request failed or timed out:", permErr);
             }
 
             logger.log("VideoRoom: Loading Jitsi script...");

@@ -1,6 +1,7 @@
 import { App } from '@capacitor/app';
 import type { URLOpenListenerEvent } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { logger } from './logger';
 
 /**
  * Deep Link Handler for SkillUp App
@@ -67,7 +68,7 @@ const parseDeepLinkUrl = (url: string): string | null => {
         const urlObj = new URL(url);
         return urlObj.pathname + urlObj.search + urlObj.hash;
     } catch (error) {
-        console.error('[DeepLink] Failed to parse URL:', url, error);
+        logger.error('[DeepLink] Failed to parse URL:', url, error);
         return null;
     }
 };
@@ -104,7 +105,7 @@ const navigateToRoute = (route: string): void => {
     // Since we use HashRouter, we need to set the hash
     const hashRoute = route.startsWith('#') ? route : `#${route}`;
 
-    console.log('[DeepLink] Navigating to:', hashRoute);
+    logger.log('[DeepLink] Navigating to:', hashRoute);
 
     // Use window.location.hash for HashRouter navigation
     window.location.hash = hashRoute;
@@ -114,16 +115,16 @@ const navigateToRoute = (route: string): void => {
  * Handle an incoming deep link URL
  */
 export const handleDeepLink = (url: string): void => {
-    console.log('[DeepLink] Received URL:', url);
+    logger.log('[DeepLink] Received URL:', url);
 
     const path = parseDeepLinkUrl(url);
     if (!path) {
-        console.warn('[DeepLink] Could not parse URL:', url);
+        logger.warn('[DeepLink] Could not parse URL:', url);
         return;
     }
 
     const route = getRouteForPath(path);
-    console.log('[DeepLink] Parsed path:', path, '-> Route:', route);
+    logger.log('[DeepLink] Parsed path:', path, '-> Route:', route);
 
     navigateToRoute(route);
 };
@@ -134,15 +135,15 @@ export const handleDeepLink = (url: string): void => {
  */
 export const initDeepLinkHandler = async (): Promise<void> => {
     if (!Capacitor.isNativePlatform()) {
-        console.log('[DeepLink] Not a native platform, skipping initialization');
+        logger.log('[DeepLink] Not a native platform, skipping initialization');
         return;
     }
 
-    console.log('[DeepLink] Initializing deep link handler...');
+    logger.log('[DeepLink] Initializing deep link handler...');
 
     // Listen for deep links while app is running
     App.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
-        console.log('[DeepLink] App URL opened:', event.url);
+        logger.log('[DeepLink] App URL opened:', event.url);
         handleDeepLink(event.url);
     });
 
@@ -150,17 +151,17 @@ export const initDeepLinkHandler = async (): Promise<void> => {
     try {
         const launchUrl = await App.getLaunchUrl();
         if (launchUrl?.url) {
-            console.log('[DeepLink] App launched with URL:', launchUrl.url);
+            logger.log('[DeepLink] App launched with URL:', launchUrl.url);
             // Small delay to ensure router is ready
             setTimeout(() => {
                 handleDeepLink(launchUrl.url);
             }, 500);
         }
     } catch (error) {
-        console.warn('[DeepLink] Could not get launch URL:', error);
+        logger.warn('[DeepLink] Could not get launch URL:', error);
     }
 
-    console.log('[DeepLink] Handler initialized');
+    logger.log('[DeepLink] Handler initialized');
 };
 
 /**
@@ -169,7 +170,7 @@ export const initDeepLinkHandler = async (): Promise<void> => {
 export const removeDeepLinkHandler = (): void => {
     if (Capacitor.isNativePlatform()) {
         App.removeAllListeners();
-        console.log('[DeepLink] Handler removed');
+        logger.log('[DeepLink] Handler removed');
     }
 };
 

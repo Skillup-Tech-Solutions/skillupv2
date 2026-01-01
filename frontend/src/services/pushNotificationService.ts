@@ -4,6 +4,7 @@ import { callApi } from '../api/apiService';
 import { toast } from 'react-toastify';
 import { authService } from './authService';
 import { analyticsService } from './analyticsService';
+import { logger } from '../utils/logger';
 
 const PUSH_TOKEN_KEY = 'fcm_push_token';
 
@@ -11,7 +12,7 @@ export const pushNotificationService = {
     // Initialize push notifications
     async init() {
         if (!Capacitor.isNativePlatform()) {
-            console.log('[Push] Not a native platform, skipping push init');
+            logger.log('[Push] Not a native platform, skipping push init');
             return;
         }
 
@@ -23,7 +24,7 @@ export const pushNotificationService = {
         }
 
         if (permStatus.receive !== 'granted') {
-            console.log('[Push] Permission was denied');
+            logger.log('[Push] Permission was denied');
             return;
         }
 
@@ -73,16 +74,16 @@ export const pushNotificationService = {
                 sound: 'default'
             });
 
-            console.log('[Push] Notification channels created');
+            logger.log('[Push] Notification channels created');
         } catch (error) {
-            console.error('[Push] Failed to create notification channels:', error);
+            logger.error('[Push] Failed to create notification channels:', error);
         }
     },
 
     addListeners() {
         // Registration success
         PushNotifications.addListener('registration', (token) => {
-            console.log('[Push] Registration success. Token:', token.value);
+            logger.log('[Push] Registration success. Token:', token.value);
             localStorage.setItem(PUSH_TOKEN_KEY, token.value);
 
             // Attempt to register with backend if logged in
@@ -91,12 +92,12 @@ export const pushNotificationService = {
 
         // Registration error
         PushNotifications.addListener('registrationError', (error) => {
-            console.error('[Push] Registration error:', error);
+            logger.error('[Push] Registration error:', error);
         });
 
         // Notification received (foreground)
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
-            console.log('[Push] Notification received:', notification);
+            logger.log('[Push] Notification received:', notification);
             analyticsService.logEvent('notification_foreground', {
                 message_id: notification.id,
                 title: notification.title,
@@ -117,7 +118,7 @@ export const pushNotificationService = {
 
         // Notification action performed (tap)
         PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-            console.log('[Push] Action performed:', notification);
+            logger.log('[Push] Action performed:', notification);
             analyticsService.logEvent('notification_open', {
                 actionId: notification.actionId,
                 message_id: notification.notification.id,
@@ -152,26 +153,26 @@ export const pushNotificationService = {
         const fcmToken = token || localStorage.getItem(PUSH_TOKEN_KEY);
 
         if (!fcmToken) {
-            console.log('[Push] No token to register');
+            logger.log('[Push] No token to register');
             return;
         }
 
         if (!authService.isAuthenticated()) {
-            console.log('[Push] User not authenticated, skipping backend registration');
+            logger.log('[Push] User not authenticated, skipping backend registration');
             return;
         }
 
         try {
-            console.log('[Push] Registering token with backend...');
+            logger.log('[Push] Registering token with backend...');
             const deviceId = localStorage.getItem('skillup_device_id');
             await callApi('/notifications/register-token', 'POST', {
                 token: fcmToken,
                 platform: Capacitor.getPlatform(),
                 deviceId: deviceId || undefined
             });
-            console.log('[Push] Token registered with backend successfully');
+            logger.log('[Push] Token registered with backend successfully');
         } catch (error) {
-            console.error('[Push] Failed to register token with backend:', error);
+            logger.error('[Push] Failed to register token with backend:', error);
         }
     },
 
@@ -186,9 +187,9 @@ export const pushNotificationService = {
                 token: fcmToken,
                 deviceId: deviceId || undefined
             });
-            console.log('[Push] Token unregistered');
+            logger.log('[Push] Token unregistered');
         } catch (error) {
-            console.error('[Push] Failed to unregister token', error);
+            logger.error('[Push] Failed to unregister token', error);
         }
     }
 };

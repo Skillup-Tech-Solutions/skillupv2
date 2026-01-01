@@ -11,6 +11,7 @@ import {
     unsubscribeFromNotifications,
     type NotificationData
 } from '../services/socketService';
+import { logger } from '../utils/logger';
 
 interface UseNotificationSocketOptions {
     /** Enable/disable the socket subscription */
@@ -28,7 +29,7 @@ export const useNotificationSocket = (
     const { enabled = true, onNotification } = options;
 
     const handleNotification = useCallback((data: NotificationData) => {
-        console.log('[Socket] In-app notification received:', data.notification.title);
+        logger.log('[Socket] In-app notification received:', data.notification.title);
         onNotification?.(data.notification);
     }, [onNotification]);
 

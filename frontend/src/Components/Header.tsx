@@ -14,6 +14,7 @@ import { marginBottom10 } from "../assets/Styles/LoginStyle";
 import CustomButton from "../Custom/CustomButton";
 import { useChangePasswordApi } from "../Hooks/user";
 import CustomSnackBar from "../Custom/CustomSnackBar";
+import { logger } from "../utils/logger";
 
 const style = {
   position: "absolute",
@@ -67,7 +68,7 @@ const Header = ({ onToggleSidebar, sidebarOpen, isMobile }: HeaderProps) => {
       ? `${username.substring(0, 10)}...`
       : username;
   const onsubmit = (data: any) => {
-    console.log("Password change data:", data);
+    logger.log("Password change data:", data);
     changePasswordApi(
       {
         email: email,
@@ -108,7 +109,7 @@ const Header = ({ onToggleSidebar, sidebarOpen, isMobile }: HeaderProps) => {
               )}
             </IconButton>
           </Tooltip>
-          <Typography variant="h4" sx={{"@media (max-width: 600px)": { display: "none" }}}>
+          <Typography variant="h4" sx={{ "@media (max-width: 600px)": { display: "none" } }}>
             Welcome Back , {displayUsername || "Admin"}
           </Typography>
         </Box>

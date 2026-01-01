@@ -27,6 +27,7 @@ import config from "../Config/Config";
 import { useCategoryMail } from "../Hooks/review";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import emailjs from "emailjs-com";
+import { logger } from "../utils/logger";
 
 // const mockCategoryData = [
 //   {
@@ -83,7 +84,7 @@ const WebCategory = () => {
     category: string;
   } | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  console.log(selectedFilter, "selectedFilter");
+  logger.log(selectedFilter, "selectedFilter");
 
   const location = useLocation();
   const categoryTitle = location.state;

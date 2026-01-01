@@ -1,5 +1,6 @@
 import Cookies from 'js-cookie';
 import { Preferences } from '@capacitor/preferences';
+import { logger } from '../utils/logger';
 
 const TOKEN_EXPIRY_DAYS = 7;
 const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile'];
@@ -37,7 +38,7 @@ const nativeStorage = {
         try {
             await Preferences.set({ key, value });
         } catch (e) {
-            console.warn('Native storage set failed:', e);
+            logger.warn('Native storage set failed:', e);
         }
     },
     async get(key: string): Promise<string | null> {
@@ -45,7 +46,7 @@ const nativeStorage = {
             const { value } = await Preferences.get({ key });
             return value;
         } catch (e) {
-            console.warn('Native storage get failed:', e);
+            logger.warn('Native storage get failed:', e);
             return null;
         }
     },
@@ -53,7 +54,7 @@ const nativeStorage = {
         try {
             await Preferences.remove({ key });
         } catch (e) {
-            console.warn('Native storage remove failed:', e);
+            logger.warn('Native storage remove failed:', e);
         }
     }
 };
@@ -77,12 +78,12 @@ const initializeCache = async (retryCount = 0): Promise<void> => {
         return;
     }
 
-    console.log('[authService] Capacitor detected, initializing cache from native storage...');
+    logger.log('[authService] Capacitor detected, initializing cache from native storage...');
 
     for (const key of AUTH_KEYS) {
         const value = await nativeStorage.get(key);
         if (value) {
-            console.log(`[authService] Restored ${key}`);
+            logger.log(`[authService] Restored ${key}`);
             storageCache[key] = value;
             // Also sync to localStorage for redundancy
             localStorage.setItem(key, value);

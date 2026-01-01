@@ -14,6 +14,7 @@ import {
     type AnnouncementData,
     type AnnouncementDeletedData
 } from '../services/socketService';
+import { logger } from '../utils/logger';
 
 interface UseAnnouncementSocketOptions {
     /** Enable/disable the socket subscription */
@@ -32,7 +33,7 @@ export const useAnnouncementSocket = (
     const queryClient = useQueryClient();
 
     const handleNew = useCallback((data: AnnouncementData) => {
-        console.log('[Socket] New announcement:', data.announcement.title);
+        logger.log('[Socket] New announcement:', data.announcement.title);
 
         // Invalidate relevant queries to refetch
         queryClient.invalidateQueries({ queryKey: ['announcements'] });
@@ -44,14 +45,14 @@ export const useAnnouncementSocket = (
     }, [queryClient, onNew]);
 
     const handleUpdated = useCallback((data: AnnouncementData) => {
-        console.log('[Socket] Announcement updated:', data.announcement.title);
+        logger.log('[Socket] Announcement updated:', data.announcement.title);
 
         // Invalidate queries to refetch
         queryClient.invalidateQueries({ queryKey: ['announcements'] });
     }, [queryClient]);
 
     const handleDeleted = useCallback((data: AnnouncementDeletedData) => {
-        console.log('[Socket] Announcement deleted:', data.id);
+        logger.log('[Socket] Announcement deleted:', data.id);
 
         // Invalidate queries to refetch
         queryClient.invalidateQueries({ queryKey: ['announcements'] });
