@@ -8,6 +8,7 @@ import LiveSessionsWidget from "../../Components/LiveSessionsWidget";
 import DashboardSkeleton from "../../Components/Student/DashboardSkeleton";
 import { usePullToRefresh } from "../../utils/usePullToRefresh";
 import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
+import { useAnnouncementSocket } from "../../Hooks/useAnnouncementSocket";
 import {
     GraduationCap,
     Books,
@@ -23,12 +24,27 @@ import {
     CheckCircle,
     Trophy,
     Star,
+    Eye,
 } from "@phosphor-icons/react";
+import AnnouncementDetailModal from "../../Components/Student/AnnouncementDetailModal";
+import { useState } from "react";
+import { Tooltip } from "@mui/material";
 
 const StudentDashboard = () => {
     const navigate = useNavigate();
     const token = Cookies.get("skToken");
     const userName = Cookies.get("name");
+
+    // Enable real-time announcement updates
+    useAnnouncementSocket();
+
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const handleViewAnnouncement = (announcement: any) => {
+        setSelectedAnnouncement(announcement);
+        setIsModalOpen(true);
+    };
 
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["student-dashboard"],
@@ -306,18 +322,36 @@ const StudentDashboard = () => {
                                 >
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                         {announcement.priority === "high" ? (
-                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f87171" }} />
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#f87171", boxShadow: "0 0 8px #f87171" }} />
                                         ) : announcement.priority === "medium" ? (
-                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#fbbf24" }} />
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#fbbf24", boxShadow: "0 0 8px #fbbf24" }} />
                                         ) : (
-                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#60a5fa" }} />
+                                            <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#60a5fa", boxShadow: "0 0 8px #60a5fa" }} />
                                         )}
-                                        <Box sx={{ color: "#cbd5e1", fontSize: { xs: "13px", md: "14px" }, maxWidth: { xs: 140, sm: 180, md: 200 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <Box sx={{ color: "#cbd5e1", fontSize: { xs: "13px", md: "14px" }, maxWidth: { xs: 120, sm: 160, md: 180 }, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {announcement.title}
                                         </Box>
                                     </Box>
-                                    <Box sx={{ fontSize: "11px", color: "#64748b" }}>
-                                        {new Date(announcement.createdAt).toLocaleDateString()}
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                        <Box sx={{ fontSize: "11px", color: "#64748b", display: { xs: "none", sm: "block" } }}>
+                                            {new Date(announcement.createdAt).toLocaleDateString()}
+                                        </Box>
+                                        <Tooltip title="View Details">
+                                            <Box
+                                                onClick={() => handleViewAnnouncement(announcement)}
+                                                sx={{
+                                                    p: 0.5,
+                                                    borderRadius: "4px",
+                                                    color: "#94a3b8",
+                                                    cursor: "pointer",
+                                                    transition: "all 0.2s",
+                                                    display: "flex",
+                                                    "&:hover": { bgcolor: "rgba(255, 255, 255, 0.05)", color: "#f8fafc" },
+                                                }}
+                                            >
+                                                <Eye size={18} weight="duotone" />
+                                            </Box>
+                                        </Tooltip>
                                     </Box>
                                 </Box>
                             ))}
@@ -587,6 +621,12 @@ const StudentDashboard = () => {
                     })}
                 </Box>
             </Box>
+
+            <AnnouncementDetailModal
+                open={isModalOpen}
+                announcement={selectedAnnouncement}
+                onClose={() => setIsModalOpen(false)}
+            />
         </Box>
     );
 };

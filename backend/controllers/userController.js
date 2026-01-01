@@ -106,7 +106,7 @@ const clearFailedAttempts = (email) => {
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, deviceInfo } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
@@ -147,6 +147,23 @@ exports.login = async (req, res) => {
     // Successful login - clear failed attempts
     clearFailedAttempts(email);
 
+    // Get IP and user agent for device tracking
+    const ipAddress = req.ip || req.connection?.remoteAddress || '';
+    const userAgent = req.headers['user-agent'] || '';
+
+    // Create or update device session if deviceInfo is provided
+    let deviceSession = null;
+    if (deviceInfo && deviceInfo.deviceId) {
+      const { createOrUpdateSession } = require("./deviceSessionController");
+      deviceSession = await createOrUpdateSession(
+        user._id,
+        deviceInfo,
+        ipAddress,
+        userAgent
+      );
+      console.log(`[Auth] Device session created/updated: ${deviceInfo.deviceId}`);
+    }
+
     // Generate access token (15 minutes)
     const accessToken = jwt.sign(
       { email: user.email, name: user.name, id: user._id, role: user.role },
@@ -158,13 +175,14 @@ exports.login = async (req, res) => {
     const refreshToken = crypto.randomBytes(64).toString('hex');
     const refreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    // Store refresh token in database
+    // Store refresh token in database with device session link
     const RefreshToken = require("../models/RefreshToken");
     await RefreshToken.create({
       token: refreshToken,
       userId: user._id,
-      userAgent: req.headers['user-agent'] || '',
-      ipAddress: req.ip || req.connection?.remoteAddress || '',
+      deviceSessionId: deviceSession?._id || null,
+      userAgent: userAgent,
+      ipAddress: ipAddress,
       expiresAt: refreshTokenExpiry
     });
 
@@ -173,6 +191,7 @@ exports.login = async (req, res) => {
       accessToken: accessToken,
       refreshToken: refreshToken,
       expiresIn: 900, // 15 minutes in seconds
+      deviceId: deviceInfo?.deviceId || null,
       user: { name: user.name, email: user.email, role: user.role, status: user.status, mobile: user.mobile }
     });
   } catch (err) {
@@ -180,7 +199,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "An error occurred during login" });
   }
 };
-
 
 
 exports.changePassword = async (req, res) => {

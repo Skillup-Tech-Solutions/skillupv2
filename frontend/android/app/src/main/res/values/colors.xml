@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="colorPrimary">#3b82f6</color>
+    <color name="colorPrimaryDark">#1e3a8a</color>
+    <color name="colorAccent">#60a5fa</color>
     <!-- Splash screen background color matching desktop loader -->
     <color name="splash_background">#020617</color>
+    <!-- Notification icon color (blue accent) -->
+    <color name="notification_color">#3b82f6</color>
 </resources>

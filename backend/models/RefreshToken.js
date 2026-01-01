@@ -17,6 +17,11 @@ const refreshTokenSchema = new mongoose.Schema({
         required: true,
         index: true
     },
+    deviceSessionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DeviceSession",
+        index: true
+    },
     userAgent: {
         type: String,
         default: ""

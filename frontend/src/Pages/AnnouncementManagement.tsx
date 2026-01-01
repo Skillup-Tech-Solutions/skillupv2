@@ -10,6 +10,8 @@ import {
     IconButton,
     MenuItem,
     CircularProgress,
+    Typography,
+    Chip,
 } from "@mui/material";
 import { Megaphone, Plus, PencilSimple, Trash, CheckCircle, XCircle } from "@phosphor-icons/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -419,22 +421,58 @@ const AnnouncementManagement = () => {
                                 fullWidth
                                 sx={textFieldStyles}
                             >
-                                <MenuItem value="all">All</MenuItem>
-                                <MenuItem value="students">Students Only</MenuItem>
-                                <MenuItem value="admins">Admins Only</MenuItem>
+                                <MenuItem value="all">🌍 Everyone (All Users)</MenuItem>
+                                <MenuItem value="students">🎓 Students Only</MenuItem>
+                                <MenuItem value="admins">🛠️ Admins Only</MenuItem>
                             </TextField>
                             <TextField
                                 select
-                                label="Priority"
+                                label="Priority Level"
                                 value={formData.priority}
                                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                                 fullWidth
                                 sx={textFieldStyles}
                             >
-                                <MenuItem value="low">Low</MenuItem>
-                                <MenuItem value="medium">Medium</MenuItem>
-                                <MenuItem value="high">High</MenuItem>
+                                <MenuItem value="low">⚪ Casual / Minor Update</MenuItem>
+                                <MenuItem value="medium">📢 Regular Announcement</MenuItem>
+                                <MenuItem value="high">🔥 High Importance / Urgent</MenuItem>
                             </TextField>
+
+                            {/* Live Preview Section */}
+                            <Box sx={{ mt: 1 }}>
+                                <Typography sx={{ fontSize: "11px", color: "#64748b", fontWeight: 700, textTransform: "uppercase", mb: 1, letterSpacing: "0.05em" }}>
+                                    Live Preview (How it looks to students)
+                                </Typography>
+                                <Box sx={{
+                                    p: 2,
+                                    bgcolor: "rgba(15, 23, 42, 0.8)",
+                                    border: "1px dashed rgba(71, 85, 105, 0.6)",
+                                    borderRadius: "8px",
+                                    position: "relative"
+                                }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                        <Chip
+                                            label={formData.priority}
+                                            size="small"
+                                            sx={{
+                                                fontSize: '10px',
+                                                height: '18px',
+                                                bgcolor: formData.priority === 'high' ? 'rgba(239, 68, 68, 0.2)' : formData.priority === 'medium' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                                                color: formData.priority === 'high' ? '#f87171' : formData.priority === 'medium' ? '#fbbf24' : '#60a5fa',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase'
+                                            }}
+                                        />
+                                        <Typography sx={{ color: "#64748b", fontSize: "11px" }}>Just now</Typography>
+                                    </Box>
+                                    <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "14px", mb: 0.5 }}>
+                                        {formData.title || "Announcement Title..."}
+                                    </Typography>
+                                    <Typography sx={{ color: "#94a3b8", fontSize: "13px", lineHeight: 1.5 }}>
+                                        {formData.content || "Content will appear here..."}
+                                    </Typography>
+                                </Box>
+                            </Box>
                         </Box>
                     </DialogContent>
                     <DialogActions sx={{ p: 0, pt: 3, gap: 1.5 }}>

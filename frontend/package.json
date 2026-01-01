@@ -17,6 +17,8 @@
   "dependencies": {
     "@capacitor-firebase/analytics": "^8.0.1",
     "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/device": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/push-notifications": "^8.0.0",
@@ -54,6 +56,7 @@
     "react-owl-carousel": "^2.3.3",
     "react-router-dom": "^7.6.2",
     "react-toastify": "^11.0.5",
+    "socket.io-client": "^4.8.3",
     "workbox-cacheable-response": "^7.4.0",
     "workbox-core": "^7.4.0",
     "workbox-expiration": "^7.4.0",

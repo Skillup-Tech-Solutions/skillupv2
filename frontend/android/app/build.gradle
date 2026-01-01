@@ -4,18 +4,26 @@ android {
     namespace "com.skillup.app"
     compileSdk rootProject.ext.compileSdkVersion
 
+    // Load keystore properties for signing
     def keystorePropertiesFile = rootProject.file('keystore.properties')
     def keystoreProperties = new Properties()
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
     }
 
+    // Signing configurations
     signingConfigs {
+        debug {
+            // Uses default debug keystore
+        }
         release {
             storeFile file(keystoreProperties['storeFile'] ?: 'skillup-release-key.keystore')
-            storePassword keystoreProperties['storePassword'] ?: 'password'
+            storePassword keystoreProperties['storePassword'] ?: ''
             keyAlias keystoreProperties['keyAlias'] ?: 'skillup-key-alias'
-            keyPassword keystoreProperties['keyPassword'] ?: 'password'
+            keyPassword keystoreProperties['keyPassword'] ?: ''
+            // Enable v1 and v2 signing for maximum compatibility
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
 
@@ -23,26 +31,76 @@ android {
         applicationId "com.skillup.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        
+        // Version management - increment versionCode for each release
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
+        
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Limit APK to common architectures (reduces APK size significantly)
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+        }
+        
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            // Files and dirs to omit from the packaged assets dir
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
     buildTypes {
-        release {
+        debug {
+            debuggable true
             minifyEnabled false
+            shrinkResources false
+        }
+        
+        release {
+            debuggable false
+            
+            // Enable code shrinking, obfuscation, and optimization
+            minifyEnabled true
+            shrinkResources true
+            
+            // Use R8 full mode for better optimization
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    // Java version compatibility
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    // Lint options for production builds
+    lint {
+        abortOnError false
+        checkReleaseBuilds true
+        warningsAsErrors false
+    }
+    
+    // Packaging options to avoid duplicate files
+    packaging {
+        resources {
+            excludes += [
+                'META-INF/NOTICE.md',
+                'META-INF/LICENSE.md',
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/LICENSE.txt',
+                'META-INF/NOTICE',
+                'META-INF/NOTICE.txt'
+            ]
         }
     }
 
     // Fix for Kotlin duplicate class errors (stdlib-jdk7/jdk8 vs stdlib)
     configurations.all {
-        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        resolutionStrategy.eachDependency { details ->
             if (details.requested.group == 'org.jetbrains.kotlin' && 
                 (details.requested.name == 'kotlin-stdlib-jdk7' || details.requested.name == 'kotlin-stdlib-jdk8')) {
                 details.useTarget "org.jetbrains.kotlin:kotlin-stdlib:${details.requested.version}"
@@ -52,7 +110,7 @@ android {
 }
 
 repositories {
-    flatDir{
+    flatDir {
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
@@ -63,6 +121,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    
+    // Testing dependencies
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
@@ -76,6 +136,7 @@ dependencies {
 
 apply from: 'capacitor.build.gradle'
 
+// Apply Google Services plugin if google-services.json exists
 try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {

@@ -3,6 +3,7 @@ import { VideoCamera, ArrowRight, Clock, Users, Sparkle } from "@phosphor-icons/
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { useGetLiveNowSessionsApi, useGetUpcomingSessionsApi, type LiveSession } from "../Hooks/liveSessions";
+import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
 
 interface LiveSessionsWidgetProps {
     variant?: "admin" | "student";
@@ -14,6 +15,9 @@ const LiveSessionsWidget = ({ variant = "student", maxItems = 3, hideSkeleton = 
     const navigate = useNavigate();
     const { data: liveData, isLoading: liveLoading } = useGetLiveNowSessionsApi();
     const { data: upcomingData, isLoading: upcomingLoading } = useGetUpcomingSessionsApi();
+
+    // Enable real-time updates (handles cache invalidation)
+    useLiveSessionSocket();
 
     const liveSessions = liveData?.sessions || [];
     const activeLiveSessionsCount = liveSessions.filter(s => (s.activeParticipantsCount || 0) > 0).length;

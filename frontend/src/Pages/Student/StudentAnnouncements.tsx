@@ -9,6 +9,7 @@ import { usePullToRefresh } from "../../utils/usePullToRefresh";
 import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndicator";
 import { AnnouncementSkeleton } from "../../Components/Student/PortalSkeletons";
 import { Skeleton } from "@mui/material";
+import { useAnnouncementSocket } from "../../Hooks/useAnnouncementSocket";
 import {
     Megaphone,
     CalendarBlank,
@@ -16,10 +17,18 @@ import {
     Sparkle,
     Warning,
     Info,
+    ArrowRight,
 } from "@phosphor-icons/react";
+import { useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import AnnouncementDetailModal from "../../Components/Student/AnnouncementDetailModal";
+import { Button } from "@mui/material";
 
 const StudentAnnouncements = () => {
     const token = Cookies.get("skToken");
+
+    // Enable real-time announcement updates
+    useAnnouncementSocket();
 
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ["student-announcements"],
@@ -31,6 +40,30 @@ const StudentAnnouncements = () => {
             return response.data;
         },
     });
+
+    const location = useLocation();
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Filter announcements and handle deep links
+    useEffect(() => {
+        if (data && data.length > 0) {
+            const queryParams = new URLSearchParams(location.search);
+            const announcementId = queryParams.get("id");
+            if (announcementId) {
+                const announcement = data.find((a: any) => a._id === announcementId);
+                if (announcement) {
+                    setSelectedAnnouncement(announcement);
+                    setIsModalOpen(true);
+                }
+            }
+        }
+    }, [data, location.search]);
+
+    const handleViewDetails = (announcement: any) => {
+        setSelectedAnnouncement(announcement);
+        setIsModalOpen(true);
+    };
 
     const { pullDistance, isRefreshing } = usePullToRefresh({
         onRefresh: async () => {
@@ -213,43 +246,72 @@ const StudentAnnouncements = () => {
                                         </Box>
                                     </Box>
 
-                                    {/* Content */}
+                                    {/* Content (Truncated) */}
                                     <Box
                                         sx={{
                                             color: "#94a3b8",
                                             fontSize: "14px",
-                                            lineHeight: 1.7,
+                                            lineHeight: 1.6,
                                             mb: 3,
-                                            whiteSpace: "pre-wrap",
+                                            display: "-webkit-box",
+                                            WebkitLineClamp: 3,
+                                            WebkitBoxOrient: "vertical",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
                                         }}
                                     >
                                         {announcement.content}
                                     </Box>
 
-                                    {/* Meta Info */}
+                                    {/* Footer Row with Meta & Action */}
                                     <Box
                                         sx={{
                                             display: "flex",
-                                            flexWrap: "wrap",
-                                            gap: 3,
-                                            pt: 2,
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 2,
+                                            pt: 2.5,
                                             borderTop: "1px solid rgba(71, 85, 105, 0.4)",
                                         }}
                                     >
-                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "12px" }}>
-                                            <CalendarBlank size={14} weight="duotone" />
-                                            {new Date(announcement.createdAt).toLocaleDateString("en-US", {
-                                                year: "numeric",
-                                                month: "short",
-                                                day: "numeric",
-                                            })}
-                                        </Box>
-                                        {announcement.createdBy?.name && (
-                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "12px" }}>
-                                                <User size={14} weight="duotone" />
-                                                {announcement.createdBy.name}
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "11px" }}>
+                                                <CalendarBlank size={13} weight="duotone" />
+                                                {new Date(announcement.createdAt).toLocaleDateString("en-US", {
+                                                    year: "numeric",
+                                                    month: "short",
+                                                    day: "numeric",
+                                                })}
                                             </Box>
-                                        )}
+                                            {announcement.createdBy?.name && (
+                                                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, color: "#64748b", fontSize: "11px" }}>
+                                                    <User size={13} weight="duotone" />
+                                                    {announcement.createdBy.name}
+                                                </Box>
+                                            )}
+                                        </Box>
+
+                                        <Button
+                                            onClick={() => handleViewDetails(announcement)}
+                                            size="small"
+                                            endIcon={<ArrowRight size={14} />}
+                                            sx={{
+                                                bgcolor: "rgba(59, 130, 246, 0.1)",
+                                                color: "#60a5fa",
+                                                fontSize: "12px",
+                                                fontWeight: 600,
+                                                textTransform: "none",
+                                                px: 1.5,
+                                                borderRadius: "6px",
+                                                border: "1px solid rgba(59, 130, 246, 0.2)",
+                                                "&:hover": {
+                                                    bgcolor: "rgba(59, 130, 246, 0.2)",
+                                                    borderColor: "rgba(59, 130, 246, 0.4)",
+                                                },
+                                            }}
+                                        >
+                                            View Details
+                                        </Button>
                                     </Box>
                                 </Box>
                             </Box>
@@ -257,6 +319,12 @@ const StudentAnnouncements = () => {
                     })}
                 </Box>
             )}
+
+            <AnnouncementDetailModal
+                open={isModalOpen}
+                announcement={selectedAnnouncement}
+                onClose={() => setIsModalOpen(false)}
+            />
         </Box>
     );
 };

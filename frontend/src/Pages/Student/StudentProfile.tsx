@@ -19,6 +19,7 @@ import {
     Sparkle,
     IdentificationBadge,
     SignOut,
+    Devices,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 
@@ -685,6 +686,72 @@ const StudentProfile = () => {
                         >
                             {passwordMutation.isPending ? "Updating..." : "Update Password"}
                         </Button>
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Device Management Section */}
+            <Box
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.4)",
+                    border: "1px solid rgba(71, 85, 105, 0.6)",
+                    borderRadius: "6px",
+                    p: { xs: 2, md: 3 },
+                    mb: 3,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                        bgcolor: "rgba(30, 41, 59, 0.6)",
+                        borderColor: "rgba(59, 130, 246, 0.5)",
+                    },
+                }}
+                onClick={() => navigate("/student/devices")}
+            >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box>
+                        <Box
+                            component="h2"
+                            sx={{
+                                fontSize: "16px",
+                                fontFamily: "'Chivo', sans-serif",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.05em",
+                                color: "#f8fafc",
+                                m: 0,
+                                mb: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <Devices size={20} weight="duotone" color="#3b82f6" />
+                            Manage Devices
+                        </Box>
+                        <Box
+                            component="p"
+                            sx={{
+                                color: "#64748b",
+                                fontSize: "13px",
+                                m: 0,
+                            }}
+                        >
+                            View and manage devices logged into your account
+                        </Box>
+                    </Box>
+                    <Box
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: "6px",
+                            bgcolor: "rgba(59, 130, 246, 0.2)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#3b82f6",
+                        }}
+                    >
+                        →
                     </Box>
                 </Box>
             </Box>

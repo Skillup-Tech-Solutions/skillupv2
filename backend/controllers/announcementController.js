@@ -1,4 +1,6 @@
 const Announcement = require("../models/Announcement");
+const { emitAnnouncementCreated, emitAnnouncementUpdated, emitAnnouncementDeleted } = require("../services/socketService");
+const { sendNotification: sendPushNotification } = require("../services/pushNotificationService");
 
 // Create announcement (Admin only)
 exports.createAnnouncement = async (req, res) => {
@@ -17,6 +19,30 @@ exports.createAnnouncement = async (req, res) => {
             createdBy: req.user.id,
             isActive: true
         });
+
+        // Emit real-time update to all connected clients
+        emitAnnouncementCreated({
+            _id: announcement._id,
+            title: announcement.title,
+            message: announcement.content,
+            isActive: announcement.isActive,
+            createdAt: announcement.createdAt
+        });
+
+        // Send Push Notification if active and targeting students or all
+        if (announcement.isActive && (targetAudience === 'all' || targetAudience === 'students')) {
+            sendPushNotification({
+                title: `New Announcement: ${announcement.title}`,
+                body: announcement.content,
+                target: 'all', // Broadcast to all students
+                data: {
+                    type: 'announcement',
+                    announcementId: announcement._id.toString(),
+                    priority: priority || 'medium'
+                },
+                senderId: req.user.id
+            }).catch(err => console.error('[Announcement Push] Failed:', err.message));
+        }
 
         res.status(201).json({
             message: "Announcement created successfully",
@@ -85,6 +111,15 @@ exports.updateAnnouncement = async (req, res) => {
             { new: true }
         );
 
+        // Emit real-time update
+        emitAnnouncementUpdated({
+            _id: updated._id,
+            title: updated.title,
+            message: updated.content,
+            isActive: updated.isActive,
+            updatedAt: updated.updatedAt
+        });
+
         res.status(200).json({ message: "Announcement updated successfully", announcement: updated });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -101,6 +136,9 @@ exports.deleteAnnouncement = async (req, res) => {
         }
 
         await Announcement.findByIdAndDelete(req.params.id);
+
+        // Emit real-time deletion
+        emitAnnouncementDeleted(req.params.id);
 
         res.status(200).json({ message: "Announcement deleted successfully" });
     } catch (err) {
@@ -122,6 +160,15 @@ exports.toggleAnnouncementStatus = async (req, res) => {
             { isActive: !announcement.isActive, updatedAt: Date.now() },
             { new: true }
         );
+
+        // Emit real-time update
+        emitAnnouncementUpdated({
+            _id: updated._id,
+            title: updated.title,
+            message: updated.content,
+            isActive: updated.isActive,
+            updatedAt: updated.updatedAt
+        });
 
         res.status(200).json({
             message: `Announcement ${updated.isActive ? "activated" : "deactivated"} successfully`,

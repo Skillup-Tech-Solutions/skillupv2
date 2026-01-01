@@ -51,8 +51,24 @@ const Login = () => {
 
   const onsubmit = async (data: any) => {
     setLoading(true);
+
+    // Get device info for session tracking
+    let deviceInfo = null;
+    try {
+      const { getDeviceInfo, storeDeviceId } = await import('../utils/deviceInfo');
+      deviceInfo = await getDeviceInfo();
+      // Store device ID for subsequent requests
+      storeDeviceId(deviceInfo.deviceId);
+    } catch (err) {
+      console.warn('[Login] Could not get device info:', err);
+    }
+
     loginFunction(
-      { email: data.email, password: data.password },
+      {
+        email: data.email,
+        password: data.password,
+        deviceInfo: deviceInfo
+      },
       {
         onSuccess: (response: any) => {
           const user = response.user;

@@ -2,6 +2,14 @@ const LiveSession = require("../models/LiveSession");
 const Course = require("../models/Course");
 const Project = require("../models/Project");
 const Internship = require("../models/Internship");
+const {
+    emitSessionStarted,
+    emitSessionEnded,
+    emitSessionCancelled,
+    emitParticipantJoined,
+    emitParticipantLeft,
+    emitSessionUpdated
+} = require("../services/socketService");
 
 // Get reference model based on session type
 const getReferenceModel = (sessionType) => {
@@ -214,6 +222,9 @@ exports.startSession = async (req, res) => {
         session.startedAt = new Date();
         await session.save();
 
+        // Emit socket event for real-time update
+        emitSessionStarted(session);
+
         res.json({
             success: true,
             message: "Session started successfully",
@@ -256,6 +267,9 @@ exports.endSession = async (req, res) => {
 
         await session.save();
 
+        // Emit socket event for real-time update
+        emitSessionEnded(session._id, session);
+
         res.json({
             success: true,
             message: "Session ended successfully",
@@ -282,6 +296,9 @@ exports.cancelSession = async (req, res) => {
 
         session.status = "CANCELLED";
         await session.save();
+
+        // Emit socket event for real-time update
+        emitSessionCancelled(session._id);
 
         res.json({
             success: true,
@@ -339,6 +356,9 @@ exports.updateSession = async (req, res) => {
         if (durationMinutes) session.durationMinutes = durationMinutes;
 
         await session.save();
+
+        // Emit socket event for real-time update
+        emitSessionUpdated(session);
 
         res.json({
             success: true,
@@ -417,6 +437,10 @@ exports.joinSession = async (req, res) => {
 
         await session.save();
 
+        // Emit socket event for real-time participant count update
+        const activeCount = session.participants.filter(p => !p.leftAt).length;
+        emitParticipantJoined(session._id.toString(), activeCount, participant.name);
+
         res.json({
             success: true,
             session: enrichSession(session),
@@ -452,8 +476,13 @@ exports.leaveSession = async (req, res) => {
         );
 
         if (participantIndex !== -1) {
+            const participantName = session.participants[participantIndex].name;
             session.participants[participantIndex].leftAt = new Date();
             await session.save();
+
+            // Emit socket event for real-time participant count update
+            const activeCount = session.participants.filter(p => !p.leftAt).length;
+            emitParticipantLeft(session._id.toString(), activeCount, participantName);
         }
 
         res.json({

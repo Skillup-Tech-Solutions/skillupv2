@@ -50,6 +50,8 @@ const NotificationManagement = () => {
     const [body, setBody] = useState("");
     const [target, setTarget] = useState("all");
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [priority, setPriority] = useState("alert"); // : alert, update, promo
+    const [imageUrl, setImageUrl] = useState(""); // Rich notification image
 
     const { data: history, isLoading: historyLoading, refetch } = useQuery({
         queryKey: ['notificationHistory'],
@@ -85,7 +87,11 @@ const NotificationManagement = () => {
             title,
             body,
             target,
-            targetUserIds: target === 'specific' ? selectedUsers : []
+            targetUserIds: target === 'specific' ? selectedUsers : [],
+            data: {
+                priority, // : alert, update, promo
+                ...(imageUrl && { imageUrl }) // Rich notification image
+            }
         });
     };
 
@@ -138,6 +144,48 @@ const NotificationManagement = () => {
             ),
         },
         {
+            field: "targetUserIds",
+            headerName: "Recipients",
+            width: 180,
+            renderCell: (params) => {
+                const users = params.value || [];
+
+                if (users.length === 0) {
+                    return <Typography sx={{ fontSize: "11px", color: "#475569" }}>No recipients</Typography>;
+                }
+
+                const displayNames = users.slice(0, 2).map((u: any) => u.name || u.email || 'Unknown').join(', ');
+                const remaining = users.length > 2 ? ` +${users.length - 2} more` : '';
+
+                return (
+                    <MuiTooltip
+                        arrow
+                        title={
+                            <Box sx={{ p: 0.5, maxHeight: 300, overflowY: 'auto' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: '#60a5fa' }}>
+                                    {params.row.target === 'all' ? 'Broadcast to' : 'Targeted'} ({users.length} users)
+                                </Typography>
+                                {users.slice(0, 20).map((u: any, i: number) => (
+                                    <Typography key={i} variant="caption" sx={{ display: 'block', color: '#f8fafc' }}>
+                                        • {u.name || 'Unknown'} <span style={{ color: '#64748b' }}>({u.email})</span>
+                                    </Typography>
+                                ))}
+                                {users.length > 20 && (
+                                    <Typography variant="caption" sx={{ display: 'block', color: '#94a3b8', mt: 1 }}>
+                                        ... and {users.length - 20} more
+                                    </Typography>
+                                )}
+                            </Box>
+                        }
+                    >
+                        <Typography sx={{ fontSize: "12px", color: "#94a3b8", cursor: 'help', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {displayNames}{remaining}
+                        </Typography>
+                    </MuiTooltip>
+                );
+            },
+        },
+        {
             field: "deliveryStats",
             headerName: "Delivery",
             width: 120,
@@ -184,7 +232,7 @@ const NotificationManagement = () => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <BellRinging size={28} weight="duotone" style={{ color: "#60a5fa" }} />
                     <Box component="h1" sx={{ fontSize: "24px", fontFamily: "'Chivo', sans-serif", fontWeight: 700, color: "#f8fafc", textTransform: "uppercase", letterSpacing: "0.05em", m: 0 }}>
-                        Push Notifications
+                        Mobile App Alerts
                     </Box>
                 </Box>
                 <MuiTooltip title="Refresh">
@@ -236,15 +284,15 @@ const NotificationManagement = () => {
                         />
                         <TextField
                             select
-                            label="Target Audience"
+                            label="Who should receive this?"
                             value={target}
                             onChange={(e) => setTarget(e.target.value)}
                             fullWidth
                             size="small"
                             sx={textFieldStyles}
                         >
-                            <MenuItem value="all">📢 Broadcast to All Users</MenuItem>
-                            <MenuItem value="specific">🎯 Target Specific Users</MenuItem>
+                            <MenuItem value="all">📢 Send to Everyone (Broadcast)</MenuItem>
+                            <MenuItem value="specific">🎯 Send to Specific Users</MenuItem>
                         </TextField>
 
                         {target === 'specific' && (
@@ -276,6 +324,87 @@ const NotificationManagement = () => {
                                 ))}
                             </TextField>
                         )}
+
+                        {/*  Priority Selection */}
+                        <TextField
+                            select
+                            label="Type of Alert (Priority)"
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                            fullWidth
+                            size="small"
+                            sx={textFieldStyles}
+                        >
+                            <MenuItem value="alert">🔴 IMPORTANT: Urgent / Deadlines</MenuItem>
+                            <MenuItem value="update">🟡 REGULAR: General News</MenuItem>
+                            <MenuItem value="promo">🟢 CASUAL: New Offers / Tips</MenuItem>
+                        </TextField>
+
+                        {/* Rich Notification Image URL */}
+                        <TextField
+                            label="Image Link (Optional)"
+                            placeholder="https://example.com/image.jpg"
+                            variant="outlined"
+                            fullWidth
+                            size="small"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            sx={textFieldStyles}
+                            helperText="If provided, students will see this image in the notification"
+                        />
+
+                        {/* Mobile Preview Section */}
+                        <Box sx={{ mt: 1 }}>
+                            <Typography sx={{ fontSize: "11px", color: "#64748b", fontWeight: 700, textTransform: "uppercase", mb: 1, letterSpacing: "0.1em" }}>
+                                Mobile Alert Preview
+                            </Typography>
+                            <Box sx={{
+                                p: 1.5,
+                                bgcolor: "#0f172a",
+                                border: "1px solid rgba(71, 85, 105, 0.4)",
+                                borderRadius: "12px",
+                                position: "relative",
+                                maxWidth: "100%",
+                                overflow: "hidden"
+                            }}>
+                                <Box sx={{ display: 'flex', gap: 1.5 }}>
+                                    <Box sx={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: "8px",
+                                        bgcolor: "#3b82f6",
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <BellRinging size={18} weight="fill" color="#fff" />
+                                    </Box>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "13px", mb: 0.2 }}>
+                                            {title || "Alert Title..."}
+                                        </Typography>
+                                        <Typography sx={{ color: "#94a3b8", fontSize: "12px", lineHeight: 1.4, mb: imageUrl ? 1 : 0 }}>
+                                            {body || "Your message will appear here..."}
+                                        </Typography>
+                                        {imageUrl && (
+                                            <Box
+                                                component="img"
+                                                src={imageUrl}
+                                                onError={(e: any) => e.target.style.display = 'none'}
+                                                sx={{
+                                                    width: '100%',
+                                                    height: 100,
+                                                    objectFit: 'cover',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid rgba(255,255,255,0.05)'
+                                                }}
+                                            />
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
 
                         <Button
                             variant="contained"

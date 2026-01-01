@@ -5,6 +5,9 @@ import Sidebar from "./Sidebar";
 import { authService } from "../services/authService";
 import { List } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
+import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
+import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
+import StickyBanner from "./StickyBanner";
 
 // Sidebar width constants matching frontend-ref
 const MIN_WIDTH = 60;
@@ -15,6 +18,35 @@ const MAX_WIDTH = 280;
 const Layout = () => {
   const isMobile = useMediaQuery("(max-width:991px)");
   const navigate = useNavigate();
+
+  // Socket hooks for real-time updates (Cache invalidation secondary effect)
+  const handleSessionStarted = useCallback((data: any) => {
+    setLiveSessionBanner({
+      title: data.session.title,
+      id: data.session._id,
+      type: data.session.sessionType
+    });
+  }, []);
+
+  const handleSessionEnded = useCallback((data: any) => {
+    setLiveSessionBanner((current) => {
+      if (current?.id === data.sessionId) return null;
+      return current;
+    });
+  }, []);
+
+  useLiveSessionSocket({
+    onSessionStarted: handleSessionStarted,
+    onSessionEnded: handleSessionEnded
+  });
+
+  useDeviceSessionSocket({
+    onRevoked: useCallback((message: string) => {
+      // Handle admin logout via socket
+      console.log('[Socket] Admin session revoked:', message);
+    }, [])
+  });
+
   const userName = authService.getUserInfo().name || "Admin";
   const userEmail = authService.getUserInfo().email || "admin@skillup.edu";
 
@@ -23,6 +55,7 @@ const Layout = () => {
   const [isResizing, setIsResizing] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [liveSessionBanner, setLiveSessionBanner] = useState<{ title: string; id: string; type: string } | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Load saved width from localStorage
@@ -311,6 +344,25 @@ const Layout = () => {
 
         {/* Page Content */}
         <Box sx={{ p: 3, flex: 1 }}>
+          {liveSessionBanner && (
+            <Box sx={{ mb: 3 }}>
+              <StickyBanner
+                title="🔴 Session Now LIVE"
+                message={`"${liveSessionBanner.title}" has started. View management for details.`}
+                priority="medium"
+                onClose={() => setLiveSessionBanner(null)}
+                onAction={() => {
+                  setLiveSessionBanner(null);
+                  // Navigate to specific management tab based on type
+                  if (liveSessionBanner.type === 'COURSE') navigate('/courses');
+                  else if (liveSessionBanner.type === 'PROJECT') navigate('/projects');
+                  else if (liveSessionBanner.type === 'INTERNSHIP') navigate('/internships');
+                  else navigate('/dashboard');
+                }}
+                actionLabel="View Management"
+              />
+            </Box>
+          )}
           <Outlet />
         </Box>
       </Box>

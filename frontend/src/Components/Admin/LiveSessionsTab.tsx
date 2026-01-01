@@ -39,6 +39,7 @@ import {
     type LiveSession,
     type CreateSessionPayload,
 } from "../../Hooks/liveSessions";
+import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
 
 interface LiveSessionsTabProps {
@@ -108,6 +109,10 @@ const LiveSessionsTab = ({
     const { mutate: endSession, isPending: isEnding } = useEndSessionApi();
     const { mutate: deleteSession, isPending: isDeleting } = useDeleteSessionApi();
     const { mutate: joinSession } = useJoinSessionApi();
+
+    // Enable real-time updates via Socket.IO
+    // This automatically updates participant counts in real-time
+    useLiveSessionSocket();
 
     const handleCreate = () => {
         const payload: CreateSessionPayload = {

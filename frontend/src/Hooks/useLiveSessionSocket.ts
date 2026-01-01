@@ -1,0 +1,235 @@
+/**
+ * useLiveSessionSocket Hook
+ * 
+ * React hook for real-time live session updates via Socket.IO.
+ * Automatically connects to socket, subscribes to events, and updates React Query cache.
+ */
+
+import { useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+    connectSocket,
+    disconnectSocket,
+    subscribeToLiveSessions,
+    unsubscribeFromLiveSessions,
+    isSocketConnected,
+    type SessionStartedData,
+    type SessionEndedData,
+    type ParticipantUpdateData,
+    type SessionUpdatedData
+} from '../services/socketService';
+import type { LiveSession } from './liveSessions';
+
+interface UseLiveSessionSocketOptions {
+    /** Enable/disable the socket connection */
+    enabled?: boolean;
+    /** Callback when a session starts */
+    onSessionStarted?: (data: SessionStartedData) => void;
+    /** Callback when a session ends */
+    onSessionEnded?: (data: SessionEndedData) => void;
+    /** Callback when participant count changes */
+    onParticipantUpdate?: (data: ParticipantUpdateData) => void;
+}
+
+interface UseLiveSessionSocketReturn {
+    /** Whether socket is currently connected */
+    isConnected: boolean;
+    /** Manually trigger reconnection */
+    reconnect: () => void;
+}
+
+/**
+ * Hook for real-time live session updates
+ */
+export const useLiveSessionSocket = (
+    options: UseLiveSessionSocketOptions = {}
+): UseLiveSessionSocketReturn => {
+    const { enabled = true, onSessionStarted, onSessionEnded, onParticipantUpdate } = options;
+    const queryClient = useQueryClient();
+    const isConnectedRef = useRef(false);
+
+    // Update live sessions in cache when session starts
+    const handleSessionStarted = useCallback((data: SessionStartedData) => {
+        console.log('[Socket] Session started:', data.session.title);
+
+        // Add the new session to the live sessions cache
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return { sessions: [data.session as unknown as LiveSession] };
+
+                // Check if session already exists
+                const exists = old.sessions.some(s => s._id === data.session._id);
+                if (exists) return old;
+
+                return {
+                    ...old,
+                    sessions: [data.session as unknown as LiveSession, ...old.sessions]
+                };
+            }
+        );
+
+        // Also invalidate to ensure fresh data
+        queryClient.invalidateQueries({ queryKey: ['liveSessions', 'live'] });
+        queryClient.invalidateQueries({ queryKey: ['liveSessions', 'upcoming'] });
+
+        // Call custom callback if provided
+        onSessionStarted?.(data);
+    }, [queryClient, onSessionStarted]);
+
+    // Update live sessions in cache when session ends
+    const handleSessionEnded = useCallback((data: SessionEndedData) => {
+        console.log('[Socket] Session ended:', data.sessionId);
+
+        // Remove session from live sessions cache
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.filter(s => s._id !== data.sessionId)
+                };
+            }
+        );
+
+        // Invalidate history to show the ended session
+        queryClient.invalidateQueries({ queryKey: ['liveSessions', 'history'] });
+
+        // Call custom callback if provided
+        onSessionEnded?.(data);
+    }, [queryClient, onSessionEnded]);
+
+    // Handle session cancellation (similar to ended)
+    const handleSessionCancelled = useCallback((data: { sessionId: string }) => {
+        console.log('[Socket] Session cancelled:', data.sessionId);
+
+        // Remove from live sessions
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.filter(s => s._id !== data.sessionId)
+                };
+            }
+        );
+
+        // Remove from upcoming sessions
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'upcoming', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.filter(s => s._id !== data.sessionId)
+                };
+            }
+        );
+    }, [queryClient]);
+
+    // Update participant count in cache
+    const handleParticipantJoined = useCallback((data: ParticipantUpdateData) => {
+        console.log('[Socket] Participant joined:', data.participantName, 'Count:', data.activeParticipantsCount);
+
+        // Update the specific session's participant count
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.map(s =>
+                        s._id === data.sessionId
+                            ? { ...s, activeParticipantsCount: data.activeParticipantsCount }
+                            : s
+                    )
+                };
+            }
+        );
+
+        // Call custom callback if provided
+        onParticipantUpdate?.(data);
+    }, [queryClient, onParticipantUpdate]);
+
+    // Update participant count when someone leaves
+    const handleParticipantLeft = useCallback((data: ParticipantUpdateData) => {
+        console.log('[Socket] Participant left:', data.participantName, 'Count:', data.activeParticipantsCount);
+
+        // Update the specific session's participant count
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.map(s =>
+                        s._id === data.sessionId
+                            ? { ...s, activeParticipantsCount: data.activeParticipantsCount }
+                            : s
+                    )
+                };
+            }
+        );
+
+        // Call custom callback if provided
+        onParticipantUpdate?.(data);
+    }, [queryClient, onParticipantUpdate]);
+
+    // Handle session updates (title, time changes)
+    const handleSessionUpdated = useCallback((data: SessionUpdatedData) => {
+        console.log('[Socket] Session updated:', data.session.title);
+
+        // Invalidate queries to refresh the data
+        queryClient.invalidateQueries({ queryKey: ['liveSessions'] });
+    }, [queryClient]);
+
+    // Reconnect function
+    const reconnect = useCallback(() => {
+        console.log('[Socket] Manual reconnect requested');
+        disconnectSocket();
+        setTimeout(() => {
+            connectSocket();
+            isConnectedRef.current = isSocketConnected();
+        }, 100);
+    }, []);
+
+    // Connect and subscribe on mount
+    useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
+        console.log('[Socket] Initializing live session socket...');
+
+        // Connect to socket
+        connectSocket();
+        isConnectedRef.current = isSocketConnected();
+
+        // Subscribe to all live session events
+        subscribeToLiveSessions({
+            onSessionStarted: handleSessionStarted,
+            onSessionEnded: handleSessionEnded,
+            onSessionCancelled: handleSessionCancelled,
+            onParticipantJoined: handleParticipantJoined,
+            onParticipantLeft: handleParticipantLeft,
+            onSessionUpdated: handleSessionUpdated
+        });
+
+        // Cleanup on unmount
+        return () => {
+            console.log('[Socket] Cleaning up live session socket...');
+            unsubscribeFromLiveSessions();
+            // Note: We don't disconnect the socket here because it might be used elsewhere
+            // The socket will be disconnected when the user logs out
+        };
+    }, [enabled, handleSessionStarted, handleSessionEnded, handleSessionCancelled, handleParticipantJoined, handleParticipantLeft, handleSessionUpdated]);
+
+    return {
+        isConnected: isConnectedRef.current,
+        reconnect
+    };
+};
+
+export default useLiveSessionSocket;

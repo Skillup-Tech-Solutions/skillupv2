@@ -193,6 +193,7 @@ router.post("/refresh-token", async (req, res) => {
 router.post("/logout", auth, async (req, res) => {
   const { refreshToken } = req.body;
   const accessToken = req.header("Authorization")?.replace("Bearer ", "");
+  const deviceId = req.headers['x-device-id'];
 
   try {
     // Revoke refresh token if provided
@@ -214,6 +215,20 @@ router.post("/logout", auth, async (req, res) => {
           reason: "logout",
           expiresAt: new Date(decoded.exp * 1000)
         });
+      }
+    }
+
+    // Revoke device session and clear FCM token
+    if (deviceId && req.user) {
+      const DeviceSession = require("../models/DeviceSession");
+      const session = await DeviceSession.findOne({
+        userId: req.user.id,
+        deviceId: deviceId,
+        isActive: true
+      });
+      if (session) {
+        await session.revoke();
+        console.log(`[Auth] Device session revoked: ${deviceId}`);
       }
     }
 

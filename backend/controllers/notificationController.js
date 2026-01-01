@@ -1,66 +1,57 @@
-const admin = require('firebase-admin');
-const User = require('../models/User');
-const Notification = require('../models/Notification');
 const path = require('path');
+const { sendNotification: sendPushNotification } = require('../services/pushNotificationService');
 
-// Initialize Firebase Admin - supports both ENV vars (production) and file (local dev)
-try {
-    if (!admin.apps.length) {
-        let credential;
 
-        // Option 1: Environment variable (for Render/production)
-        if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-            credential = admin.credential.cert(serviceAccount);
-            console.log('[Firebase] Using credentials from FIREBASE_SERVICE_ACCOUNT env var');
-        }
-        // Option 2: File-based (for local development)
-        else {
-            try {
-                const serviceAccount = require('../config/firebase-service-account.json');
-                credential = admin.credential.cert(serviceAccount);
-                console.log('[Firebase] Using credentials from firebase-service-account.json file');
-            } catch (fileError) {
-                console.warn('[Firebase] No credentials found - push notifications will not work');
-                console.warn('[Firebase] Set FIREBASE_SERVICE_ACCOUNT env var or add config/firebase-service-account.json');
-            }
-        }
-
-        if (credential) {
-            admin.initializeApp({ credential });
-            console.log('[Firebase] Admin SDK initialized successfully');
-        }
-    }
-} catch (error) {
-    console.error('[Firebase] Failed to initialize Admin SDK:', error.message);
-}
 
 // Register FCM Token
 exports.registerToken = async (req, res) => {
     try {
-        const { token, platform } = req.body;
+        const { token, platform, deviceId } = req.body;
         const userId = req.user.id || req.user._id;
 
         if (!token) {
             return res.status(400).json({ message: 'Token is required' });
         }
 
-        // 1. Cleanup: Remove this token from any other users (Token Leakage Fix)
-        await User.updateMany(
-            { fcmTokens: { $elemMatch: { token: token } } },
-            { $pull: { fcmTokens: { token: token } } }
+        const DeviceSession = require('../models/DeviceSession');
+
+        // 1. Clear this token from any other device sessions (Token Leakage Fix)
+        await DeviceSession.updateMany(
+            { fcmToken: token, _id: { $ne: null } },
+            { $set: { fcmToken: null } }
         );
 
-        // 2. Add token to current user if not already present
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        // 2. If deviceId is provided, update the specific device session
+        if (deviceId) {
+            const session = await DeviceSession.findOne({ userId, deviceId, isActive: true });
+            if (session) {
+                session.fcmToken = token;
+                if (platform) session.platform = platform;
+                await session.save();
+                console.log(`[FCM] Token registered for device: ${deviceId}`);
+                return res.status(200).json({ message: 'Token registered successfully' });
+            }
         }
 
-        const tokenExists = user.fcmTokens.some(t => t.token === token);
-        if (!tokenExists) {
-            user.fcmTokens.push({ token, platform: platform || 'android' });
-            await user.save();
+        // 3. Fallback: Find most recent active session for user and update it
+        const recentSession = await DeviceSession.findOne({ userId, isActive: true })
+            .sort({ lastActiveAt: -1 });
+
+        if (recentSession) {
+            recentSession.fcmToken = token;
+            if (platform) recentSession.platform = platform;
+            await recentSession.save();
+            console.log(`[FCM] Token registered for recent device: ${recentSession.deviceId}`);
+        } else {
+            // No session exists - create a temporary one (legacy support)
+            await DeviceSession.create({
+                userId,
+                deviceId: `legacy-${Date.now()}`,
+                deviceName: 'Legacy Device',
+                platform: platform || 'android',
+                fcmToken: token
+            });
+            console.log(`[FCM] Token registered for legacy device`);
         }
 
         res.status(200).json({ message: 'Token registered successfully' });
@@ -73,12 +64,24 @@ exports.registerToken = async (req, res) => {
 // Unregister FCM Token (Logout)
 exports.unregisterToken = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, deviceId } = req.body;
         const userId = req.user.id || req.user._id;
 
-        await User.findByIdAndUpdate(userId, {
-            $pull: { fcmTokens: { token: token } }
-        });
+        const DeviceSession = require('../models/DeviceSession');
+
+        if (deviceId) {
+            // Clear token from specific device
+            await DeviceSession.updateOne(
+                { userId, deviceId },
+                { $set: { fcmToken: null } }
+            );
+        } else if (token) {
+            // Clear token wherever it exists
+            await DeviceSession.updateMany(
+                { fcmToken: token },
+                { $set: { fcmToken: null } }
+            );
+        }
 
         res.status(200).json({ message: 'Token unregistered successfully' });
     } catch (error) {
@@ -87,7 +90,7 @@ exports.unregisterToken = async (req, res) => {
     }
 };
 
-// Send Notification
+
 exports.sendNotification = async (req, res) => {
     try {
         const { title, body, target, targetUserIds, data } = req.body;
@@ -97,51 +100,18 @@ exports.sendNotification = async (req, res) => {
             return res.status(400).json({ message: 'Title and body are required' });
         }
 
-        let query = {};
-        if (target === 'specific' && targetUserIds && targetUserIds.length > 0) {
-            query = { _id: { $in: targetUserIds } };
-        }
-
-        const users = await User.find(query).select('fcmTokens');
-        const tokens = users.flatMap(u => u.fcmTokens.map(t => t.token));
-        const uniqueTokens = [...new Set(tokens)];
-
-        if (uniqueTokens.length === 0) {
-            // Save empty notification to history anyway
-            await Notification.create({
-                title, body, target, targetUserIds, sentBy: senderId,
-                status: 'sent',
-                deliveryStats: { successCount: 0, failureCount: 0 },
-                data: data || {}
-            });
-            return res.status(200).json({ message: 'No devices found for delivery', stats: { successCount: 0, failureCount: 0 } });
-        }
-
-        const message = {
-            notification: { title, body },
-            data: data || {},
-            tokens: uniqueTokens,
-        };
-
-        const response = await admin.messaging().sendEachForMulticast(message);
-
-        // Save to history
-        await Notification.create({
-            title, body, target, targetUserIds, sentBy: senderId,
-            status: 'sent',
-            deliveryStats: {
-                successCount: response.successCount,
-                failureCount: response.failureCount
-            },
-            data: data || {}
+        const stats = await sendPushNotification({
+            title,
+            body,
+            target,
+            targetUserIds,
+            data,
+            senderId
         });
 
         res.status(200).json({
             message: 'Notification sent successfully',
-            stats: {
-                successCount: response.successCount,
-                failureCount: response.failureCount
-            }
+            stats
         });
     } catch (error) {
         console.error('[FCM] Send Error:', error);

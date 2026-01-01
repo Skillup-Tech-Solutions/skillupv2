@@ -1,12 +1,27 @@
-import { Box, useMediaQuery } from "@mui/material";
+import {
+    Box,
+    useMediaQuery,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Typography,
+    Button
+} from "@mui/material";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { triggerHaptic } from "../utils/pwaUtils";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import StudentSidebar from "./StudentSidebar";
 import StudentBottomNav from "./Student/StudentBottomNav";
 import { authService } from "../services/authService";
-import { List, SignOut } from "@phosphor-icons/react";
+import { useNotificationSocket } from "../Hooks/useNotificationSocket";
+import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
+import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
+import CustomSnackBar from "../Custom/CustomSnackBar";
+import StickyBanner from "./StickyBanner";
+import { List, SignOut, Warning } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
+import AnnouncementDetailModal from "./Student/AnnouncementDetailModal";
 
 
 // Sidebar width constants matching frontend-ref
@@ -18,6 +33,7 @@ const MAX_WIDTH = 280;
 const StudentLayout = () => {
     const isMobile = useMediaQuery("(max-width:991px)");
     const navigate = useNavigate();
+    const location = useLocation();
     const userName = authService.getUserInfo().name || "Student";
     const userEmail = authService.getUserInfo().email || "student@campus.edu";
 
@@ -30,6 +46,70 @@ const StudentLayout = () => {
     const [isDownloading, setIsDownloading] = useState(false);
     const [downloadFileName, setDownloadFileName] = useState("");
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    const [banner, setBanner] = useState<{ title: string; body: string; data?: any } | null>(null);
+    const [liveSessionBanner, setLiveSessionBanner] = useState<{ title: string; id: string } | null>(null);
+    const [modalNotification, setModalNotification] = useState<any>(null);
+    const [announcementForModal, setAnnouncementForModal] = useState<any>(null);
+
+    // Initialize Socket Hooks
+    useNotificationSocket({
+        onNotification: useCallback((notification: any) => {
+            const priority = (notification.data?.priority as string)?.toLowerCase() || 'low';
+
+            if (priority === 'high') {
+                if (notification.data?.announcementId) {
+                    setAnnouncementForModal({
+                        _id: notification.data.announcementId,
+                        title: notification.title,
+                        content: notification.body,
+                        priority: 'high',
+                        createdAt: new Date().toISOString(),
+                        createdBy: { name: "System" }
+                    });
+                } else {
+                    setModalNotification(notification);
+                }
+            } else if (priority === 'medium') {
+                setBanner({
+                    title: notification.title,
+                    body: notification.body,
+                    data: notification.data
+                });
+            } else {
+                CustomSnackBar.infoSnackbar(`${notification.title}: ${notification.body}`);
+            }
+
+            triggerHaptic(priority === 'high' ? 'heavy' : 'medium');
+        }, [])
+    });
+
+    const handleSessionStarted = useCallback((data: any) => {
+        setLiveSessionBanner({
+            title: data.session.title,
+            id: data.session._id
+        });
+        triggerHaptic('medium');
+    }, []);
+
+    const handleSessionEnded = useCallback((data: any) => {
+        setLiveSessionBanner((current) => {
+            if (current?.id === data.sessionId) return null;
+            return current;
+        });
+    }, []);
+
+    useLiveSessionSocket({
+        onSessionStarted: handleSessionStarted,
+        onSessionEnded: handleSessionEnded
+    });
+
+    useDeviceSessionSocket({
+        onRevoked: (message) => {
+            CustomSnackBar.warningSnackbar(message || "Your session has been terminated.");
+            triggerHaptic('heavy');
+        }
+    });
 
     // Load saved width from localStorage
     useEffect(() => {
@@ -119,6 +199,19 @@ const StudentLayout = () => {
     }, []);
 
     const showLabels = sidebarWidth >= 150 && !isHidden;
+
+    // Dynamic Title based on route
+    const getPageTitle = () => {
+        const path = location.pathname;
+        if (path === "/student/dashboard") return "Dashboard";
+        if (path === "/student/my-courses") return "My Courses";
+        if (path === "/student/my-internships") return "My Internships";
+        if (path === "/student/my-projects") return "My Projects";
+        if (path === "/student/announcements") return "Announcements";
+        if (path === "/student/profile") return "My Profile";
+        if (path === "/student/devices") return "Device Management";
+        return "Skillup";
+    };
 
     return (
         // min-h-screen bg-slate-950 flex
@@ -275,7 +368,7 @@ const StudentLayout = () => {
                                         m: 0,
                                     }}
                                 >
-                                    Dashboard
+                                    {getPageTitle()}
                                 </Box>
                                 <Box
                                     component="p"
@@ -383,60 +476,149 @@ const StudentLayout = () => {
                 </Box>
 
                 {/* Page Content */}
-                <Box className="animate-slide-up" sx={{ p: { xs: 2, sm: 3 }, flex: 1, pb: { xs: 10, lg: 3 } }}>
+                <Box
+                    className="animate-slide-up"
+                    sx={{
+                        p: { xs: 2, sm: 3 },
+                        flex: 1,
+                        pb: { xs: 10, lg: 3 },
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2
+                    }}
+                >
+                    {liveSessionBanner && (
+                        <StickyBanner
+                            title="🔴 Live Session Started"
+                            message={`${liveSessionBanner.title} is now LIVE! Join to participate.`}
+                            priority="medium"
+                            onClose={() => setLiveSessionBanner(null)}
+                            onAction={() => {
+                                setLiveSessionBanner(null);
+                                navigate(`/student/live-sessions`);
+                            }}
+                            actionLabel="Join Now"
+                        />
+                    )}
+                    {banner && (
+                        <StickyBanner
+                            title={banner.title}
+                            message={banner.body}
+                            priority="medium"
+                            onClose={() => setBanner(null)}
+                            onAction={banner.data?.announcementId ? () => {
+                                setBanner(null);
+                                navigate(`/student/announcements?id=${banner.data.announcementId}`);
+                            } : undefined}
+                            actionLabel="View Details"
+                        />
+                    )}
                     <Outlet />
                 </Box>
             </Box>
+
+            {/* Generic High Priority Notification Modal */}
+            <Dialog
+                open={!!modalNotification}
+                onClose={() => setModalNotification(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: '#0f172a',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '16px',
+                        backgroundImage: 'none'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5, color: '#f8fafc' }}>
+                    <Warning size={24} weight="fill" color="#ef4444" />
+                    <Typography sx={{ fontWeight: 700, fontSize: '18px' }}>Important Alert</Typography>
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, pb: 2 }}>
+                    <Typography sx={{ color: '#f8fafc', fontWeight: 600, mb: 1 }}>
+                        {modalNotification?.title}
+                    </Typography>
+                    <Typography sx={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6 }}>
+                        {modalNotification?.body}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2.5, pt: 0 }}>
+                    <Button
+                        fullWidth
+                        onClick={() => setModalNotification(null)}
+                        variant="contained"
+                        sx={{
+                            bgcolor: '#ef4444',
+                            color: '#fff',
+                            fontWeight: 700,
+                            '&:hover': { bgcolor: '#dc2626' }
+                        }}
+                    >
+                        Acknowledge
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Announcement Modal (triggered via high priority notification) */}
+            <AnnouncementDetailModal
+                open={!!announcementForModal}
+                announcement={announcementForModal}
+                onClose={() => setAnnouncementForModal(null)}
+            />
 
             {/* Bottom Navigation for Mobile */}
             <StudentBottomNav onOpenSidebar={() => setMobileOpen(true)} />
 
             {/* Download Progress Indicator */}
-            {isDownloading && (
-                <Box
-                    sx={{
-                        position: "fixed",
-                        bottom: isMobile ? 80 : 20,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        zIndex: 200,
-                        bgcolor: "rgba(15, 23, 42, 0.9)",
-                        backdropFilter: "blur(12px)",
-                        border: "1px solid rgba(59, 130, 246, 0.5)",
-                        borderRadius: "12px",
-                        px: 3,
-                        py: 1.5,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        minWidth: "280px",
-                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
-                        animation: "slideUp 0.3s ease-out",
-                        "@keyframes slideUp": {
-                            from: { transform: "translateX(-50%) translateY(20px)", opacity: 0 },
-                            to: { transform: "translateX(-50%) translateY(0)", opacity: 1 }
-                        }
-                    }}
-                >
+            {
+                isDownloading && (
                     <Box
                         sx={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            border: "2px solid rgba(59, 130, 246, 0.2)",
-                            borderTopColor: "#3b82f6",
-                            animation: "spin 1s linear infinite",
-                            "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                            position: "fixed",
+                            bottom: isMobile ? 80 : 20,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            zIndex: 200,
+                            bgcolor: "rgba(15, 23, 42, 0.9)",
+                            backdropFilter: "blur(12px)",
+                            border: "1px solid rgba(59, 130, 246, 0.5)",
+                            borderRadius: "12px",
+                            px: 3,
+                            py: 1.5,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            minWidth: "280px",
+                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+                            animation: "slideUp 0.3s ease-out",
+                            "@keyframes slideUp": {
+                                from: { transform: "translateX(-50%) translateY(20px)", opacity: 0 },
+                                to: { transform: "translateX(-50%) translateY(0)", opacity: 1 }
+                            }
                         }}
-                    />
-                    <Box sx={{ flex: 1 }}>
-                        <Box sx={{ color: "#f8fafc", fontSize: "13px", fontWeight: 600 }}>Downloading...</Box>
-                        <Box sx={{ color: "#94a3b8", fontSize: "11px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
-                            {downloadFileName}
+                    >
+                        <Box
+                            sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                border: "2px solid rgba(59, 130, 246, 0.2)",
+                                borderTopColor: "#3b82f6",
+                                animation: "spin 1s linear infinite",
+                                "@keyframes spin": { "0%": { transform: "rotate(0deg)" }, "100%": { transform: "rotate(360deg)" } },
+                            }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                            <Box sx={{ color: "#f8fafc", fontSize: "13px", fontWeight: 600 }}>Downloading...</Box>
+                            <Box sx={{ color: "#94a3b8", fontSize: "11px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
+                                {downloadFileName}
+                            </Box>
                         </Box>
                     </Box>
-                </Box>
-            )}
+                )
+            }
 
             {/* Network Status Indicator */}
             {!isOnline && (
@@ -484,7 +666,7 @@ const StudentLayout = () => {
                     }}
                 />
             )}
-        </Box>
+        </Box >
     );
 };
 

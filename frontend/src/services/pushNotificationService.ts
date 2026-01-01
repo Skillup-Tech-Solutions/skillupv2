@@ -81,20 +81,20 @@ export const pushNotificationService = {
             const data = notification.notification.data;
 
             if (data) {
-                // Handle navigation
                 if (data.url) {
-                    if (data.url.startsWith('http')) {
-                        window.location.href = data.url;
-                    } else {
-                        window.location.href = data.url;
-                    }
+                    window.location.hash = data.url.startsWith('#') ? data.url : `#${data.url}`;
+                } else if (data.type === 'announcement' && data.announcementId) {
+                    window.location.hash = `#/student/announcements?id=${data.announcementId}`;
                 } else if (data.action) {
                     switch (data.action) {
                         case 'home':
-                            window.location.href = '/dashboard';
+                            window.location.hash = '#/student/dashboard';
+                            break;
+                        case 'announcements':
+                            window.location.hash = '#/student/announcements';
                             break;
                         case 'events':
-                            window.location.href = '/live-sessions?tab=events';
+                            window.location.hash = '#/student/live-sessions';
                             break;
                     }
                 }
@@ -118,9 +118,11 @@ export const pushNotificationService = {
 
         try {
             console.log('[Push] Registering token with backend...');
+            const deviceId = localStorage.getItem('skillup_device_id');
             await callApi('/notifications/register-token', 'POST', {
                 token: fcmToken,
-                platform: Capacitor.getPlatform()
+                platform: Capacitor.getPlatform(),
+                deviceId: deviceId || undefined
             });
             console.log('[Push] Token registered with backend successfully');
         } catch (error) {
@@ -134,8 +136,10 @@ export const pushNotificationService = {
         if (!fcmToken || !authService.isAuthenticated()) return;
 
         try {
+            const deviceId = localStorage.getItem('skillup_device_id');
             await callApi('/notifications/unregister-token', 'POST', {
-                token: fcmToken
+                token: fcmToken,
+                deviceId: deviceId || undefined
             });
             console.log('[Push] Token unregistered');
         } catch (error) {

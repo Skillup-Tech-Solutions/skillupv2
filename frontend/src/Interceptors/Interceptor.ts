@@ -161,6 +161,13 @@ api.interceptors.request.use(
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
+    // Add device ID header for session tracking
+    const deviceId = localStorage.getItem('skillup_device_id');
+    if (deviceId) {
+      config.headers["x-device-id"] = deviceId;
+    }
+
     return config;
   },
   (error) => {
@@ -185,6 +192,11 @@ api.interceptors.response.use(
 axios.interceptors.request.use(
   async (config) => {
     if (config.url?.includes('login') || config.url?.includes('refresh-token') || config.url?.includes('student-signup')) {
+      // Add device ID even for login requests 
+      const deviceId = localStorage.getItem('skillup_device_id');
+      if (deviceId) {
+        config.headers["x-device-id"] = deviceId;
+      }
       return config;
     }
 
@@ -199,6 +211,13 @@ axios.interceptors.request.use(
     if (token && !config.headers["Authorization"]) {
       config.headers["Authorization"] = `Bearer ${token}`;
     }
+
+    // Add device ID header for session tracking
+    const deviceId = localStorage.getItem('skillup_device_id');
+    if (deviceId) {
+      config.headers["x-device-id"] = deviceId;
+    }
+
     return config;
   },
   (error) => {

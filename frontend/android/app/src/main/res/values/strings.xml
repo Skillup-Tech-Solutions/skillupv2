@@ -4,4 +4,20 @@
     <string name="title_activity_main">SkillUp</string>
     <string name="package_name">com.skillup.app</string>
     <string name="custom_url_scheme">com.skillup.app</string>
+    
+    <!-- Push Notification Channels ( multiple channels) -->
+    <!-- Default/Alerts Channel - HIGH priority (class reminders, payments, deadlines) -->
+    <string name="default_notification_channel_id">skillup_alerts</string>
+    <string name="default_notification_channel_name">Important Alerts</string>
+    <string name="default_notification_channel_description">Class reminders, payment alerts, and deadlines</string>
+    
+    <!-- Updates Channel - MEDIUM priority (announcements, course updates) -->
+    <string name="updates_channel_id">skillup_updates</string>
+    <string name="updates_channel_name">Updates</string>
+    <string name="updates_channel_description">Course announcements and platform updates</string>
+    
+    <!-- Promotions Channel - LOW priority (offers, new courses) -->
+    <string name="promotions_channel_id">skillup_promotions</string>
+    <string name="promotions_channel_name">Offers &amp; Promotions</string>
+    <string name="promotions_channel_description">Special offers and new course launches</string>
 </resources>

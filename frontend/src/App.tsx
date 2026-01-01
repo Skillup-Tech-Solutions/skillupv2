@@ -6,10 +6,17 @@ import "react-toastify/dist/ReactToastify.css";
 import routes from "./Routes/Routes";
 import { useEffect } from "react";
 import { analyticsService } from "./services/analyticsService";
+import { initDeepLinkHandler, removeDeepLinkHandler } from "./utils/deepLinkHandler";
 
 function App() {
+  // Initialize analytics and deep link handler
   useEffect(() => {
     analyticsService.init();
+    initDeepLinkHandler();
+
+    return () => {
+      removeDeepLinkHandler();
+    };
   }, []);
 
   // Automatic offline detection and redirection

@@ -37,6 +37,7 @@ import {
     useJoinSessionApi,
     type LiveSession,
 } from "../../Hooks/liveSessions";
+import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
 import { LiveSessionSkeleton } from "./PortalSkeletons";
 import { Skeleton } from "@mui/material";
@@ -60,6 +61,10 @@ const StudentLiveSessions = () => {
     const { data: upcomingData, isLoading: upcomingLoading, refetch: refetchUpcoming } = useGetUpcomingSessionsApi();
     const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useGetSessionHistoryApi();
     const { mutate: joinSession } = useJoinSessionApi();
+
+    // Enable real-time updates via Socket.IO
+    // This automatically updates the React Query cache when sessions start/end/update
+    useLiveSessionSocket();
 
     const { pullDistance, isRefreshing } = usePullToRefresh({
         onRefresh: async () => {

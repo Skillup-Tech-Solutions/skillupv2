@@ -177,6 +177,7 @@ const StudentAnnouncements = lazyRetry(() => import("../Pages/Student/StudentAnn
 const StudentProfile = lazyRetry(() => import("../Pages/Student/StudentProfile"));
 const SubmitProject = lazyRetry(() => import("../Pages/Student/SubmitProject"));
 const StudentLiveSessions = lazyRetry(() => import("../Components/Student/StudentLiveSessions"));
+const DeviceManagement = lazyRetry(() => import("../Pages/DeviceManagement"));
 
 // Employee pages - Lazy
 const EmployeePortal = lazyRetry(() => import("../Pages/Employee/EmployeePortal"));
@@ -265,6 +266,7 @@ const routes = createHashRouter([
       { path: "profile", element: <LazyLoad><StudentProfile /></LazyLoad> },
       { path: "submit-project/:projectId", element: <LazyLoad><SubmitProject /></LazyLoad> },
       { path: "live-sessions", element: <LazyLoad><StudentLiveSessions /></LazyLoad> },
+      { path: "devices", element: <LazyLoad><DeviceManagement /></LazyLoad> },
     ],
   },
 

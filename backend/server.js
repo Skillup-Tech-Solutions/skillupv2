@@ -1,5 +1,6 @@
 
 const express = require("express");
+const http = require("http");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -30,6 +31,8 @@ const payrollRoutes = require('./routes/payrollRoutes');
 const employeePortalRoutes = require('./routes/employeePortalRoutes');
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const deviceSessionRoutes = require('./routes/deviceSessionRoutes');
+const { initSocket } = require('./services/socketService');
 const cron = require("node-cron");
 const StudentAssignment = require("./models/StudentAssignment");
 const Course = require("./models/Course");
@@ -179,6 +182,9 @@ app.use("/api/live-sessions", liveSessionRoutes);
 // Notification Routes
 app.use("/api/notifications", notificationRoutes);
 
+// Device Session Routes
+app.use("/api/devices", deviceSessionRoutes);
+
 // Public routes
 app.use("/api", categoryRoutes);
 app.use("/api", reviewRoutes);
@@ -204,9 +210,14 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Create HTTP server and initialize Socket.IO
+const server = http.createServer(app);
+initSocket(server);
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Socket.IO enabled for real-time updates`);
 
   // Schedule Course Ending Reminder (Daily at 9:00 AM)
   cron.schedule("0 9 * * *", async () => {

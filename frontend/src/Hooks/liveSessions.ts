@@ -87,6 +87,7 @@ export const useGetSessionsByReferenceApi = (
 };
 
 // Get live sessions (currently active)
+// Note: Real-time updates via Socket.IO (useLiveSessionSocket hook)
 export const useGetLiveNowSessionsApi = (filters?: {
     sessionType?: string;
     referenceId?: string;
@@ -106,7 +107,7 @@ export const useGetLiveNowSessionsApi = (filters?: {
             const response = await callApi(url, "GET");
             return response as ApiResponse & { sessions: LiveSession[] };
         },
-        refetchInterval: 10000, // Refetch every 10 seconds to detect new live sessions
+        // No polling - real-time updates come via Socket.IO
         ...CACHE_TIMES.SHORT,
     });
 };
