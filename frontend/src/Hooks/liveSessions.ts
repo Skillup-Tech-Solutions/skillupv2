@@ -5,6 +5,8 @@ import type { ApiResponse } from "../Interface/interface";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import { CACHE_TIMES } from "./ReactQueryProvider";
 import { getDeviceId, getPlatform } from "../utils/deviceInfo";
+import { isCapacitor } from "../utils/pwaUtils";
+import { authService } from "../services/authService";
 
 // Types
 export interface LiveSession {
@@ -298,6 +300,9 @@ export const useJoinSessionApi = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (sessionId: string) => {
+            if (isCapacitor()) {
+                await authService.waitForReady();
+            }
             const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/join`, "POST", {
                 deviceId: getDeviceId(),
                 platform: getPlatform()

@@ -48,6 +48,53 @@ const getAuthToken = (): string | null => {
     return authService.getToken();
 };
 
+// Token refresh lock
+let isRefreshingToken = false;
+
+/**
+ * Attempt to refresh the auth token when socket auth fails
+ */
+const handleAuthError = async () => {
+    if (isRefreshingToken) return;
+    isRefreshingToken = true;
+
+    try {
+        const isNative = authService.isNative();
+        if (isNative) await authService.waitForReady();
+
+        const refreshToken = isNative ? await authService.getRefreshTokenAsync() : authService.getRefreshToken();
+
+        if (!refreshToken) {
+            logger.warn('[Socket] No refresh token available for socket recovery');
+            return;
+        }
+
+        logger.log('[Socket] Refreshing token for socket recovery...');
+        const response = await fetch(`${config.BASE_URL}refresh-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const newAccessToken = data.accessToken || data.token;
+
+            // Update storage
+            authService.set("skToken", newAccessToken); // Native storage handled by authService logic or Interceptor sync
+
+            logger.log('[Socket] Token refreshed successfully. Retrying connection...');
+            updateSocketAuth(newAccessToken);
+        } else {
+            logger.error('[Socket] Token refresh failed with status:', response.status);
+        }
+    } catch (e) {
+        logger.error('[Socket] Auto-refresh failed', e);
+    } finally {
+        isRefreshingToken = false;
+    }
+};
+
 /**
  * Connect to the Socket.IO server
  */
@@ -131,6 +178,14 @@ export const connectSocket = async (): Promise<Socket | null> => {
         socket.on('connect_error', (error) => {
             console.error('[Socket] Connection error:', error.message);
             isConnecting = false;
+
+            // Handle authentication errors
+            if (error.message === 'Authentication error') {
+                logger.warn('[Socket] Authentication failed - attempting refresh...');
+                handleAuthError();
+                return;
+            }
+
             reconnectAttempts++;
 
             if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
@@ -173,6 +228,23 @@ export const disconnectSocket = (): void => {
 
         // Clear all event listeners
         eventListeners.clear();
+    }
+};
+
+/**
+ * Update the socket authentication token
+ * Should be called when the token is refreshed by Interceptor
+ */
+export const updateSocketAuth = (token: string): void => {
+    if (socket) {
+        logger.log('[Socket] Updating auth token...');
+        socket.auth = { token };
+
+        // If connected, reconnect to establish session with new token
+        if (socket.connected) {
+            logger.log('[Socket] Reconnecting to apply new token...');
+            socket.disconnect().connect();
+        }
     }
 };
 

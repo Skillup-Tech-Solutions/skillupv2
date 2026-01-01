@@ -1,5 +1,7 @@
 import axios from "axios";
 import { authService } from "../services/authService";
+import { getStoredDeviceId } from "../utils/deviceInfo";
+import { updateSocketAuth } from "../services/socketService";
 import config from "../Config/Config";
 import "react-toastify/dist/ReactToastify.css";
 import { isCapacitor } from "../utils/pwaUtils";
@@ -114,6 +116,10 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
       }
 
       processQueue(null, newAccessToken);
+
+      // Update socket connection with new token
+      updateSocketAuth(newAccessToken);
+
       originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
       return axiosInstance(originalRequest);
     } catch (refreshError) {
@@ -166,7 +172,7 @@ api.interceptors.request.use(
     }
 
     // Add device ID header for session tracking
-    const deviceId = localStorage.getItem('skillup_device_id');
+    const deviceId = getStoredDeviceId();
     if (deviceId) {
       config.headers["x-device-id"] = deviceId;
     }
@@ -203,7 +209,7 @@ axios.interceptors.request.use(
   async (config) => {
     if (config.url?.includes('login') || config.url?.includes('refresh-token') || config.url?.includes('student-signup')) {
       // Add device ID even for login requests 
-      const deviceId = localStorage.getItem('skillup_device_id');
+      const deviceId = getStoredDeviceId();
       if (deviceId) {
         config.headers["x-device-id"] = deviceId;
       }
@@ -223,7 +229,7 @@ axios.interceptors.request.use(
     }
 
     // Add device ID header for session tracking
-    const deviceId = localStorage.getItem('skillup_device_id');
+    const deviceId = getStoredDeviceId();
     if (deviceId) {
       config.headers["x-device-id"] = deviceId;
     }

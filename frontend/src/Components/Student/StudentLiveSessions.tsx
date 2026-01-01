@@ -25,7 +25,6 @@ import {
     Buildings,
     ClockCounterClockwise,
     Devices,
-    Warning,
     ArrowsClockwise,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
@@ -216,17 +215,9 @@ const StudentLiveSessions = () => {
                 <DialogContent sx={{ px: 3, py: 2 }}>
                     <Typography sx={{ color: "#94a3b8", fontSize: "14px", lineHeight: 1.6 }}>
                         {isAlreadyActive
-                            ? "You are already active in this session on another device. Do you want to join as an additional connection?"
+                            ? "You are already active in this session on another device. Would you like to transfer the session here?"
                             : `Ready to join "${pendingSession?.title}"?`}
                     </Typography>
-                    {isAlreadyActive && (
-                        <Box sx={{ mt: 2, p: 1.5, bgcolor: "rgba(234, 179, 8, 0.1)", border: "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "6px", display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Warning size={18} color="#eab308" />
-                            <Typography sx={{ color: "#eab308", fontSize: "12px" }}>
-                                Joining from multiple devices is allowed but not recommended
-                            </Typography>
-                        </Box>
-                    )}
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 4, pt: 1, gap: 1.5, flexDirection: isAlreadyActive ? "column" : "row", alignItems: "stretch" }}>
                     {isAlreadyActive ? (
@@ -246,22 +237,6 @@ const StudentLiveSessions = () => {
                                 }}
                             >
                                 {isTransferring ? "Transferring..." : "Transfer to This Device"}
-                            </Button>
-                            <Button
-                                onClick={confirmJoin}
-                                variant="outlined"
-                                disabled={isTransferring}
-                                startIcon={<Devices size={20} />}
-                                sx={{
-                                    color: "#94a3b8",
-                                    borderColor: "rgba(71, 85, 105, 0.4)",
-                                    fontWeight: 600,
-                                    textTransform: "none",
-                                    py: 1,
-                                    "&:hover": { bgcolor: "rgba(255,255,255,0.05)", borderColor: "rgba(71, 85, 105, 0.6)" }
-                                }}
-                            >
-                                Join as Second Device
                             </Button>
                             <Button
                                 onClick={() => setShowJoinDialog(false)}

@@ -159,24 +159,6 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
         jitsiInitialized.current = true;
 
         try {
-            // Explicitly request permissions before Jitsi starts - this "primes" the browser prompt
-            logger.log("VideoRoom: Requesting media permissions...");
-            try {
-                // Add a timeout to the permission request to prevent hanging forever on iOS
-                const permissionTimeout = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Permission request timed out")), 5000)
-                );
-
-                await Promise.race([
-                    navigator.mediaDevices.getUserMedia({ audio: true, video: true }),
-                    permissionTimeout
-                ]).then((stream: any) => {
-                    logger.log("VideoRoom: Permissions granted.");
-                    stream.getTracks().forEach((track: any) => track.stop());
-                });
-            } catch (permErr) {
-                logger.warn("VideoRoom: Pre-initialization permission request failed or timed out:", permErr);
-            }
 
             logger.log("VideoRoom: Loading Jitsi script...");
             await loadJitsiScript();
@@ -308,6 +290,15 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 }
             });
 
+            // Failsafe: If not joined in 15 seconds, remove loading screen
+            // This prevents the spinner from blocking permission prompts or error messages if Jitsi gets stuck
+            setTimeout(() => {
+                if (jitsiInitialized.current && isInitializing) {
+                    logger.warn("VideoRoom: Jitsi join timed out or stalled. Removing spinner.");
+                    setIsInitializing(false);
+                }
+            }, 120000);
+
             jitsiApiRef.current.addListener("participantJoined", () => {
                 setParticipantCount((prev) => prev + 1);
             });
@@ -322,6 +313,14 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current.addListener("readyToClose", () => {
                 handleExit();
+            });
+
+            // Handle Jitsi generic errors to prevent infinite spinning
+            jitsiApiRef.current.addListener("errorOccurred", (err: any) => {
+                logger.error("VideoRoom: Jitsi error occurred:", err);
+                // detailed error might happen before join, so we should unblock
+                // But some errors are non-fatal (like avatar load failed), so checking error type is hard.
+                // We rely on the 15s timeout for general failsafe.
             });
 
             // Show persistent foreground service notification if on native Android
@@ -595,18 +594,36 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                             <Box className="animate-signal" sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.2)", animationDelay: "0.6s" }} />
                             <Box className="animate-signal" sx={{ position: "absolute", width: 80, height: 80, borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.1)", animationDelay: "1.2s" }} />
 
-                            {/* Outer Slow Ring */}
+                            {/* Outer Slow Ring - Enhanced */}
                             <Box
                                 sx={{
-                                    width: 140,
-                                    height: 140,
+                                    width: 160,
+                                    height: 160,
                                     borderRadius: "50%",
-                                    border: "1px dashed rgba(71, 85, 105, 0.4)",
-                                    animation: "spin 12s linear infinite",
+                                    border: "1px dashed rgba(71, 85, 105, 0.3)",
+                                    borderTop: "1px solid rgba(59, 130, 246, 0.4)",
+                                    borderBottom: "1px solid rgba(59, 130, 246, 0.4)",
+                                    animation: "spin 15s linear infinite",
+                                    boxShadow: "0 0 40px rgba(30, 58, 138, 0.15)"
                                 }}
                             />
 
-                            {/* Dual Concentric Rings */}
+                            {/* Third Ring Layer - New */}
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    width: 130,
+                                    height: 130,
+                                    borderRadius: "50%",
+                                    border: "1px solid transparent",
+                                    borderTopColor: "rgba(34, 211, 238, 0.4)",
+                                    borderRightColor: "rgba(34, 211, 238, 0.15)",
+                                    filter: "drop-shadow(0 0 3px rgba(34, 211, 238, 0.5))",
+                                    animation: "spin 8s linear infinite reverse",
+                                }}
+                            />
+
+                            {/* Dual Concentric Rings - Enhanced with Glow */}
                             <Box
                                 sx={{
                                     position: "absolute",
@@ -614,9 +631,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                                     height: 100,
                                     borderRadius: "50%",
                                     border: "2px solid transparent",
-                                    borderTopColor: "#3b82f6",
-                                    borderRightColor: "rgba(59, 130, 246, 0.3)",
-                                    animation: "spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite",
+                                    borderTopColor: "#60a5fa",
+                                    borderRightColor: "rgba(96, 165, 250, 0.3)",
+                                    filter: "drop-shadow(0 0 6px rgba(96, 165, 250, 0.7))",
+                                    animation: "spin 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite",
                                 }}
                             />
                             <Box
@@ -626,22 +644,56 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                                     height: 70,
                                     borderRadius: "50%",
                                     border: "2px solid transparent",
-                                    borderBottomColor: "#60a5fa",
-                                    borderLeftColor: "rgba(96, 165, 250, 0.3)",
-                                    animation: "spin 1s cubic-bezier(0.5, 0, 0.5, 1) infinite reverse",
+                                    borderBottomColor: "#3b82f6",
+                                    borderLeftColor: "rgba(59, 130, 246, 0.3)",
+                                    filter: "drop-shadow(0 0 6px rgba(59, 130, 246, 0.7))",
+                                    animation: "spin 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse",
                                 }}
                             />
 
-                            {/* Center Point */}
+                            {/* Orbiting Particles */}
+                            {[0, 1, 2, 3].map((i) => (
+                                <Box
+                                    key={i}
+                                    sx={{
+                                        position: "absolute",
+                                        width: 6,
+                                        height: 6,
+                                        bgcolor: i % 2 === 0 ? "#60a5fa" : "#22d3ee",
+                                        borderRadius: "50%",
+                                        boxShadow: `0 0 8px ${i % 2 === 0 ? "#60a5fa" : "#22d3ee"}`,
+                                        animation: `orbit ${3 + i * 0.5}s linear infinite`,
+                                        animationDelay: `${i * 0.75}s`,
+                                        transformOrigin: "center center",
+                                        left: "calc(50% - 3px)",
+                                        top: "calc(50% - 3px)",
+                                    }}
+                                />
+                            ))}
+
+                            {/* Center Point - High Intensity Glow */}
                             <Box
                                 sx={{
                                     position: "absolute",
-                                    width: 12,
-                                    height: 12,
+                                    width: 14,
+                                    height: 14,
                                     bgcolor: "#3b82f6",
                                     borderRadius: "50%",
-                                    boxShadow: "0 0 20px #3b82f6, 0 0 40px rgba(59, 130, 246, 0.4)",
+                                    boxShadow: "0 0 12px #3b82f6, 0 0 24px rgba(59, 130, 246, 0.7), 0 0 48px rgba(59, 130, 246, 0.4)",
                                     animation: "pulse-glow 2s ease-in-out infinite",
+                                }}
+                            />
+
+                            {/* Inner Core - Pulsing Ring */}
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: "50%",
+                                    border: "1px solid rgba(59, 130, 246, 0.4)",
+                                    animation: "pulse-glow 2s ease-in-out infinite",
+                                    animationDelay: "0.5s",
                                 }}
                             />
                         </Box>

@@ -60,9 +60,8 @@ const initSocket = (server) => {
             console.log(`[Socket] Authenticated user: ${decoded.email}`);
             next();
         } catch (err) {
-            console.log('[Socket] Invalid token - allowing connection without auth');
-            socket.user = null;
-            next();
+            console.log('[Socket] Invalid token - rejecting connection');
+            return next(new Error("Authentication error"));
         }
     });
 

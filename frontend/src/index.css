@@ -687,6 +687,16 @@ input[type=number] {
   }
 }
 
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @keyframes signal-wave {
   0% {
     transform: scale(0.5);
