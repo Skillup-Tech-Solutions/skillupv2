@@ -3,7 +3,7 @@ import { authService } from "../services/authService";
 import config from "../Config/Config";
 import "react-toastify/dist/ReactToastify.css";
 import { isCapacitor } from "../utils/pwaUtils";
-import { APP_VERSION, BUILD_NUMBER } from "../utils/version";
+import { APP_VERSION, BUILD_NUMBER, GIT_COMMIT, ENV } from "../utils/version";
 import { Capacitor } from "@capacitor/core";
 
 // Global settings
@@ -173,6 +173,8 @@ api.interceptors.request.use(
     // Add versioning headers (Production-Grade)
     config.headers["x-app-version"] = APP_VERSION;
     config.headers["x-build-code"] = BUILD_NUMBER.toString();
+    config.headers["x-build-hash"] = GIT_COMMIT;
+    config.headers["x-env"] = ENV;
     config.headers["x-platform"] = Capacitor.getPlatform();
 
     return config;
@@ -228,6 +230,8 @@ axios.interceptors.request.use(
     // Add versioning headers (Production-Grade)
     config.headers["x-app-version"] = APP_VERSION;
     config.headers["x-build-code"] = BUILD_NUMBER.toString();
+    config.headers["x-build-hash"] = GIT_COMMIT;
+    config.headers["x-env"] = ENV;
     config.headers["x-platform"] = Capacitor.getPlatform();
 
     return config;
