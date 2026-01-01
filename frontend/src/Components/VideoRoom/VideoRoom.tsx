@@ -261,10 +261,29 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 },
             };
 
+            // Chrome/Brave Production Fix: Use MutationObserver to enforce permission policy
+            // continuously, as Jitsi might recreate or modify the iframe.
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeName === 'IFRAME') {
+                                const iframe = node as HTMLIFrameElement;
+                                iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write;');
+                                console.log("VideoRoom: Enforced display-capture on new iframe via Observer.");
+                            }
+                        });
+                    }
+                });
+            });
+
+            if (jitsiContainerRef.current) {
+                observer.observe(jitsiContainerRef.current, { childList: true, subtree: true });
+            }
+
             jitsiApiRef.current = new window.JitsiMeetExternalAPI(domain, options);
 
-            // Chrome/Brave Production Fix: Explicitly allow screen sharing on the created iframe.
-            // Using the official getIFrame() method is more reliable.
+            // Also check immediately in case it's already there (race condition)
             const iframe = jitsiApiRef.current.getIFrame();
             if (iframe) {
                 iframe.setAttribute('allow', 'camera; microphone; display-capture; autoplay; clipboard-write;');
