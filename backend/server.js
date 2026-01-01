@@ -94,7 +94,9 @@ app.use(cors({
 app.use(express.json());
 
 const { generalLimiter } = require('./middleware/rateLimit');
+const versionCheck = require('./middleware/versionCheck');
 app.use('/api', generalLimiter);
+app.use('/api', versionCheck);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -11,6 +11,8 @@ import { App } from '@capacitor/app';
 export interface AppVersion {
     version: string;
     versionCode: number;
+    gitHash: string;
+    env: string;
     buildType: 'development' | 'production';
     platform: 'web' | 'android' | 'ios';
     buildDate: string;
@@ -27,8 +29,11 @@ export interface UpdateInfo {
 
 // App version from package.json - this is the single source of truth
 // Updated during build process
-const APP_VERSION = '1.0.0';
-const BUILD_DATE = '2026-01-01';
+export const APP_VERSION = '1.0.1';
+export const BUILD_NUMBER = 10001;
+export const BUILD_DATE = '2026-01-01';
+export const GIT_COMMIT = '886067a';
+export const ENV = 'production';
 
 /**
  * Calculate version code from semantic version string
@@ -51,14 +56,14 @@ export const getAppVersion = async (): Promise<AppVersion> => {
     const isDevelopment = import.meta.env.DEV;
 
     let version = APP_VERSION;
-    let versionCode = calculateVersionCode(APP_VERSION);
+    let versionCode = BUILD_NUMBER;
 
     // On native platforms, try to get version from native layer
     if (Capacitor.isNativePlatform()) {
         try {
             const appInfo = await App.getInfo();
             version = appInfo.version;
-            versionCode = parseInt(appInfo.build, 10) || calculateVersionCode(version);
+            versionCode = parseInt(appInfo.build, 10) || BUILD_NUMBER;
         } catch (error) {
             console.warn('[Version] Failed to get native app info:', error);
         }
@@ -67,6 +72,8 @@ export const getAppVersion = async (): Promise<AppVersion> => {
     return {
         version,
         versionCode,
+        gitHash: GIT_COMMIT,
+        env: ENV,
         buildType: isDevelopment ? 'development' : 'production',
         platform,
         buildDate: BUILD_DATE,

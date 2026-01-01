@@ -1,7 +1,7 @@
 {
   "name": "packaging-repository-tool",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,12 +11,12 @@
     "cap:sync": "npm run build && npx cap sync",
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
-    "cap:open:android": "npx cap open android",
-    "cap:open:ios": "npx cap open ios",
+    "android": "npx cap open android",
+    "ios": "npx cap open ios",
     "version:patch": "npm version patch --no-git-tag-version && npm run version:sync",
     "version:minor": "npm version minor --no-git-tag-version && npm run version:sync",
     "version:major": "npm version major --no-git-tag-version && npm run version:sync",
-    "version:sync": "node scripts/sync-version.js"
+    "version:sync": "node scripts/sync-version.cjs"
   },
   "dependencies": {
     "@capacitor-firebase/analytics": "^8.0.1",

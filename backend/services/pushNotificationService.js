@@ -47,12 +47,12 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
                 userId: { $in: targetUserIds },
                 isActive: true,
                 fcmToken: { $ne: null }
-            }).select('userId fcmToken deviceId');
+            }).select('userId fcmToken deviceId platform');
         } else {
             deviceSessions = await DeviceSession.find({
                 isActive: true,
                 fcmToken: { $ne: null }
-            }).select('userId fcmToken deviceId');
+            }).select('userId fcmToken deviceId platform');
         }
 
         const actualUserIds = [...new Set(deviceSessions.map(s => s.userId.toString()))];
@@ -86,7 +86,7 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
         }
 
         // 3. Send via FCM for background/push delivery
-        if (uniqueTokens.length > 0) {
+        if (deviceSessions.length > 0) {
             const channelMap = {
                 'alert': 'skillup_alerts',
                 'update': 'skillup_updates',
@@ -97,74 +97,95 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
             const channelId = channelMap[priority] || 'skillup_alerts';
             const imageUrl = data?.image || data?.imageUrl || null;
 
-            const message = {
-                notification: {
-                    title,
-                    body,
-                    ...(imageUrl && { image: imageUrl })
-                },
-                data: {
-                    ...data,
-                    click_action: 'FLUTTER_NOTIFICATION_CLICK',
-                    channel_id: channelId,
-                    priority: priority
-                },
-                android: {
-                    priority: priority === 'alert' ? 'high' : 'normal',
+            // Group tokens by platform for specialized payloads
+            const androidTokens = [...new Set(deviceSessions.filter(s => s.platform === 'android').map(s => s.fcmToken))];
+            const otherTokens = [...new Set(deviceSessions.filter(s => s.platform !== 'android').map(s => s.fcmToken))];
+
+            const results = { successCount: 0, failureCount: 0, tokensToRemove: [] };
+
+            const sendBatch = async (tokens, isAndroid) => {
+                if (tokens.length === 0) return;
+
+                const message = {
+                    // Critical: On Android, we avoid the 'image' field in the 'notification' block 
+                    // to prevent the OS from using it as a square thumbnail. 
+                    // Instead, we pass it in 'data' for our custom MessagingService.java.
                     notification: {
-                        channelId: channelId,
-                        icon: 'ic_notification',
-                        color: '#3b82f6',
-                        sound: 'default',
-                        ...(imageUrl && { imageUrl: imageUrl })
+                        title,
+                        body,
+                        ...(!isAndroid && imageUrl && { image: imageUrl })
+                    },
+                    data: {
+                        ...data,
+                        title, // Re-pass for reliability in custom service
+                        body,
+                        ...(imageUrl && { imageUrl: imageUrl, image: imageUrl }),
+                        click_action: 'FLUTTER_NOTIFICATION_CLICK',
+                        channel_id: channelId,
+                        priority: priority
+                    },
+                    android: {
+                        priority: priority === 'alert' ? 'high' : 'normal',
+                        notification: {
+                            channelId: channelId,
+                            icon: 'ic_notification',
+                            color: '#3b82f6',
+                            sound: 'default'
+                            // Note: intentionally omitting imageUrl here too for the custom builder
+                        }
+                    },
+                    apns: {
+                        payload: { aps: { sound: 'default', badge: 1 } }
+                    },
+                    tokens: tokens,
+                };
+
+                const response = await admin.messaging().sendEachForMulticast(message);
+                results.successCount += response.successCount;
+                results.failureCount += response.failureCount;
+
+                response.responses.forEach((resp, idx) => {
+                    if (!resp.success) {
+                        const errorCode = resp.error?.code;
+                        const errorMessage = resp.error?.message;
+                        console.error(`[Push Service] Delivery failure for ${isAndroid ? 'Android' : 'Other'} token ${tokens[idx]}: ${errorCode} - ${errorMessage}`);
+
+                        if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/unregistered'].includes(errorCode)) {
+                            results.tokensToRemove.push(tokens[idx]);
+                        }
                     }
-                },
-                apns: {
-                    payload: { aps: { sound: 'default', badge: 1 } }
-                },
-                tokens: uniqueTokens,
+                });
             };
 
-            const response = await admin.messaging().sendEachForMulticast(message);
+            await Promise.all([
+                sendBatch(androidTokens, true),
+                sendBatch(otherTokens, false)
+            ]);
 
             // Update stats in database
             await Notification.updateOne(
                 { _id: notification._id },
                 {
                     $set: {
-                        'deliveryStats.successCount': response.successCount,
-                        'deliveryStats.failureCount': response.failureCount,
-                        status: response.successCount > 0 ? 'sent' : 'failed'
+                        'deliveryStats.successCount': results.successCount,
+                        'deliveryStats.failureCount': results.failureCount,
+                        status: results.successCount > 0 ? 'sent' : 'failed'
                     }
                 }
             );
 
-            // Clean up stale tokens
-            const tokensToRemove = [];
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success) {
-                    const errorCode = resp.error?.code;
-                    const errorMessage = resp.error?.message;
-                    console.error(`[Push Service] Delivery failure for token ${uniqueTokens[idx]}: ${errorCode} - ${errorMessage}`);
-
-                    if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/unregistered'].includes(errorCode)) {
-                        tokensToRemove.push(uniqueTokens[idx]);
-                    }
-                }
-            });
-
-            if (tokensToRemove.length > 0) {
+            if (results.tokensToRemove.length > 0) {
                 await DeviceSession.updateMany(
-                    { fcmToken: { $in: tokensToRemove } },
+                    { fcmToken: { $in: results.tokensToRemove } },
                     { $set: { fcmToken: null } }
                 );
             }
 
             return {
                 success: true,
-                successCount: response.successCount,
-                failureCount: response.failureCount,
-                staleTokensRemoved: tokensToRemove.length
+                successCount: results.successCount,
+                failureCount: results.failureCount,
+                staleTokensRemoved: results.tokensToRemove.length
             };
         }
 

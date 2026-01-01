@@ -3,6 +3,8 @@ import { authService } from "../services/authService";
 import config from "../Config/Config";
 import "react-toastify/dist/ReactToastify.css";
 import { isCapacitor } from "../utils/pwaUtils";
+import { APP_VERSION, BUILD_NUMBER } from "../utils/version";
+import { Capacitor } from "@capacitor/core";
 
 // Global settings
 axios.defaults.timeout = 25000;
@@ -168,6 +170,11 @@ api.interceptors.request.use(
       config.headers["x-device-id"] = deviceId;
     }
 
+    // Add versioning headers (Production-Grade)
+    config.headers["x-app-version"] = APP_VERSION;
+    config.headers["x-build-code"] = BUILD_NUMBER.toString();
+    config.headers["x-platform"] = Capacitor.getPlatform();
+
     return config;
   },
   (error) => {
@@ -217,6 +224,11 @@ axios.interceptors.request.use(
     if (deviceId) {
       config.headers["x-device-id"] = deviceId;
     }
+
+    // Add versioning headers (Production-Grade)
+    config.headers["x-app-version"] = APP_VERSION;
+    config.headers["x-build-code"] = BUILD_NUMBER.toString();
+    config.headers["x-platform"] = Capacitor.getPlatform();
 
     return config;
   },

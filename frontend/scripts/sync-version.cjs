@@ -35,6 +35,22 @@ function calculateVersionCode(version) {
 /**
  * Get current date in YYYY-MM-DD format
  */
+const { execSync } = require('child_process');
+
+/**
+ * Get current git commit hash (short)
+ */
+function getGitHash() {
+    try {
+        return execSync('git rev-parse --short HEAD').toString().trim();
+    } catch (e) {
+        return 'unknown';
+    }
+}
+
+/**
+ * Get current date in YYYY-MM-DD format
+ */
 function getCurrentDate() {
     return new Date().toISOString().split('T')[0];
 }
@@ -78,7 +94,7 @@ function updateBuildGradle(version, versionCode) {
 /**
  * Update version.ts with new version constant
  */
-function updateVersionTs(version, buildDate) {
+function updateVersionTs(version, versionCode, buildDate, gitHash, env) {
     if (!fs.existsSync(versionTsPath)) {
         console.log('⚠️  version.ts not found, skipping frontend sync');
         return false;
@@ -92,14 +108,32 @@ function updateVersionTs(version, buildDate) {
         `const APP_VERSION = '${version}'`
     );
 
+    // Update BUILD_NUMBER constant
+    content = content.replace(
+        /const BUILD_NUMBER = \d+/,
+        `const BUILD_NUMBER = ${versionCode}`
+    );
+
     // Update BUILD_DATE constant
     content = content.replace(
         /const BUILD_DATE = '[^']+'/,
         `const BUILD_DATE = '${buildDate}'`
     );
 
+    // Update GIT_COMMIT constant
+    content = content.replace(
+        /const GIT_COMMIT = '[^']+'/,
+        `const GIT_COMMIT = '${gitHash}'`
+    );
+
+    // Update ENV constant
+    content = content.replace(
+        /const ENV = '[^']+'/,
+        `const ENV = '${env}'`
+    );
+
     fs.writeFileSync(versionTsPath, content, 'utf8');
-    console.log(`✅ Updated version.ts: APP_VERSION="${version}", BUILD_DATE="${buildDate}"`);
+    console.log(`✅ Updated version.ts: version=${version}, code=${versionCode}, date=${buildDate}, hash=${gitHash}, env=${env}`);
     return true;
 }
 
@@ -107,15 +141,19 @@ function updateVersionTs(version, buildDate) {
  * Main sync function
  */
 function syncVersions() {
-    console.log('🔄 Syncing app version...\n');
+    console.log('🔄 Syncing app version (Production Mode)...\n');
 
     const version = getPackageVersion();
     const versionCode = calculateVersionCode(version);
     const buildDate = getCurrentDate();
+    const gitHash = getGitHash();
+    const env = process.env.NODE_ENV || 'production';
 
-    console.log(`📦 Package version: ${version}`);
-    console.log(`📱 Version code: ${versionCode}`);
-    console.log(`📅 Build date: ${buildDate}\n`);
+    console.log(`📦 Package: ${version}`);
+    console.log(`🔢 Code:    ${versionCode} (Semantic Encoding)`);
+    console.log(`📅 Date:    ${buildDate}`);
+    console.log(`🌿 Git:     ${gitHash}`);
+    console.log(`🌍 Env:     ${env}\n`);
 
     let success = true;
 
@@ -129,13 +167,13 @@ function syncVersions() {
 
     // Update frontend
     try {
-        updateVersionTs(version, buildDate);
+        updateVersionTs(version, versionCode, buildDate, gitHash, env);
     } catch (error) {
         console.error('❌ Failed to update version.ts:', error.message);
         success = false;
     }
 
-    console.log('\n' + (success ? '✅ Version sync complete!' : '⚠️  Version sync completed with warnings'));
+    console.log('\n' + (success ? '✅ Production version sync complete!' : '⚠️  Version sync completed with warnings'));
 
     return success;
 }
