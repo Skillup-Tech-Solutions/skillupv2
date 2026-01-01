@@ -19,19 +19,35 @@ import {
 } from '../services/socketService';
 import { Capacitor } from '@capacitor/core';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 interface ActiveSessionBannerProps {
     onJoinSession?: (session: LiveSession, roomId: string) => void;
 }
 
 const ActiveSessionBanner = ({ onJoinSession }: ActiveSessionBannerProps) => {
-    const { data, isLoading } = useActiveSession();
-    const transferMutation = useRequestTransferHere();
     const navigate = useNavigate();
     const [dismissed, setDismissed] = useState(false);
+
+    // Wait for auth storage to be ready before doing anything
+    const [isAuthReady, setIsAuthReady] = useState(authService.isCacheReady());
+    const { data, isLoading: isSessionLoading } = useActiveSession(isAuthReady && !dismissed);
+    const transferMutation = useRequestTransferHere();
+
     const [showTransferredMessage, setShowTransferredMessage] = useState(false);
     const [transferredTo, setTransferredTo] = useState('');
     const currentDeviceId = getDeviceId();
+
+    // Check auth readiness on mount and when it changes
+    useEffect(() => {
+        if (!isAuthReady) {
+            authService.waitForReady().then(() => {
+                setIsAuthReady(true);
+            });
+        }
+    }, [isAuthReady]);
+
+    const isLoading = isSessionLoading || !isAuthReady;
 
     // Listen for transfer:leaving event (when THIS device should exit)
     useEffect(() => {

@@ -3,7 +3,7 @@ import { Preferences } from '@capacitor/preferences';
 import { logger } from '../utils/logger';
 
 const TOKEN_EXPIRY_DAYS = 7;
-const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile'];
+const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile', 'skillup_device_id'];
 
 // Check if running in Capacitor native app - more robust check
 const isCapacitorNative = () => {

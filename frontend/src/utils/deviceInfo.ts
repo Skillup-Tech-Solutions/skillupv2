@@ -1,6 +1,7 @@
 import { Device } from '@capacitor/device';
 import type { DeviceInfo as CapacitorDeviceInfo } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
+import { authService } from '../services/authService';
 
 /**
  * Device information structure for session tracking
@@ -11,7 +12,7 @@ export interface DeviceInfo {
     platform: 'android' | 'ios' | 'web';
 }
 
-// Storage key for web device ID
+// Storage key for web device ID (kept for legacy web compatibility)
 const WEB_DEVICE_ID_KEY = 'skillup_device_id';
 
 /**
@@ -30,14 +31,33 @@ const generateUUID = (): string => {
 };
 
 /**
- * Get or create a persistent device ID for web browsers
+ * Get or create a persistent device ID
+ * Synchronizes between authService (native Preferences) and localStorage
  */
-const getWebDeviceId = (): string => {
-    let deviceId = localStorage.getItem(WEB_DEVICE_ID_KEY);
+const getPersistentDeviceId = (sync: boolean = true): string => {
+    // 1. Try authService (synced with native Preferences)
+    let deviceId = authService.get(WEB_DEVICE_ID_KEY);
+
+    // 2. Fallback to localStorage
+    if (!deviceId) {
+        deviceId = localStorage.getItem(WEB_DEVICE_ID_KEY);
+    }
+
+    // 3. Generate new if still missing
     if (!deviceId) {
         deviceId = `web-${generateUUID()}`;
-        localStorage.setItem(WEB_DEVICE_ID_KEY, deviceId);
     }
+
+    // Sync back to both if requested
+    if (sync && deviceId) {
+        if (localStorage.getItem(WEB_DEVICE_ID_KEY) !== deviceId) {
+            localStorage.setItem(WEB_DEVICE_ID_KEY, deviceId);
+        }
+        if (authService.get(WEB_DEVICE_ID_KEY) !== deviceId) {
+            authService.set(WEB_DEVICE_ID_KEY, deviceId);
+        }
+    }
+
     return deviceId;
 };
 
@@ -83,16 +103,16 @@ const getDeviceName = (info: CapacitorDeviceInfo | null): string => {
 
 /**
  * Get complete device information for session tracking
- * Uses Capacitor Device plugin for native apps, localStorage UUID for web
+ * Uses Capacitor Device plugin for native apps, persistent UUID for web
  */
 export const getDeviceInfo = async (): Promise<DeviceInfo> => {
     const platform = getPlatform();
 
     try {
         if (platform === 'web') {
-            // Web browser - use localStorage-based ID
+            // Web browser - use persistent storage-based ID
             return {
-                deviceId: getWebDeviceId(),
+                deviceId: getPersistentDeviceId(),
                 deviceName: getDeviceName(null),
                 platform: 'web'
             };
@@ -102,8 +122,13 @@ export const getDeviceInfo = async (): Promise<DeviceInfo> => {
         const deviceId = await Device.getId();
         const deviceInfo = await Device.getInfo();
 
+        const finalId = deviceId.identifier;
+
+        // Sync native ID to authService/localStorage so it's available synchronously later
+        authService.set(WEB_DEVICE_ID_KEY, finalId);
+
         return {
-            deviceId: deviceId.identifier,
+            deviceId: finalId,
             deviceName: getDeviceName(deviceInfo),
             platform: platform
         };
@@ -112,7 +137,7 @@ export const getDeviceInfo = async (): Promise<DeviceInfo> => {
 
         // Fallback device info
         return {
-            deviceId: getWebDeviceId(),
+            deviceId: getPersistentDeviceId(),
             deviceName: 'Unknown Device',
             platform: platform
         };
@@ -123,13 +148,14 @@ export const getDeviceInfo = async (): Promise<DeviceInfo> => {
  * Get stored device ID from localStorage (for headers)
  */
 export const getStoredDeviceId = (): string | null => {
-    return localStorage.getItem(WEB_DEVICE_ID_KEY);
+    return authService.get(WEB_DEVICE_ID_KEY) || localStorage.getItem(WEB_DEVICE_ID_KEY);
 };
 
 /**
  * Store device ID after successful login
  */
 export const storeDeviceId = (deviceId: string): void => {
+    authService.set(WEB_DEVICE_ID_KEY, deviceId);
     localStorage.setItem(WEB_DEVICE_ID_KEY, deviceId);
 };
 
@@ -137,15 +163,16 @@ export const storeDeviceId = (deviceId: string): void => {
  * Clear device ID (on logout if needed)
  */
 export const clearDeviceId = (): void => {
+    authService.clearAuth(); // This clears all sync'd keys
     localStorage.removeItem(WEB_DEVICE_ID_KEY);
 };
 
 /**
  * Get device ID synchronously (for hooks and API calls)
- * Uses stored device ID or generates a new one for web
+ * Uses stored device ID or triggers a sync check
  */
 export const getDeviceId = (): string => {
-    return getWebDeviceId();
+    return getPersistentDeviceId(true);
 };
 
 /**

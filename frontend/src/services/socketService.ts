@@ -51,10 +51,7 @@ const getAuthToken = (): string | null => {
 /**
  * Connect to the Socket.IO server
  */
-export const connectSocket = (): Socket | null => {
-    const token = getAuthToken();
-    const socketUrl = getSocketUrl();
-
+export const connectSocket = async (): Promise<Socket | null> => {
     // If socket exists, just ensure it's connected
     if (socket) {
         if (socket.connected) {
@@ -64,7 +61,7 @@ export const connectSocket = (): Socket | null => {
 
         logger.log('[Socket] Re-connecting existing instance...');
         // Update auth token in case it changed
-        socket.auth = { token };
+        socket.auth = { token: getAuthToken() };
         socket.connect();
         return socket;
     }
@@ -76,75 +73,91 @@ export const connectSocket = (): Socket | null => {
     }
 
     isConnecting = true;
-    logger.log('[Socket] Initializing connection to:', socketUrl);
 
-    socket = io(socketUrl, {
-        auth: { token },
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
-        reconnectionDelay: RECONNECT_DELAY,
-        reconnectionDelayMax: 10000,
-        timeout: 20000,
-        autoConnect: true
-    });
+    try {
+        // On native platforms, wait for auth storage to be initialized
+        if (authService.isNative()) {
+            logger.log('[Socket] Waiting for auth readiness...');
+            await authService.waitForReady();
+        }
 
-    // Helper to re-attach all registered listeners
-    const reattachListeners = () => {
-        logger.log('[Socket] Auto-reattaching listeners...');
-        eventListeners.forEach((callbacks, event) => {
-            callbacks.forEach(callback => {
-                socket?.off(event, callback); // Prevent duplicates
-                socket?.on(event, callback);
-            });
-            logger.log(`[Socket] Restored ${callbacks.size} listeners for: ${event}`);
+        const token = getAuthToken();
+        const socketUrl = getSocketUrl();
+
+        logger.log('[Socket] Initializing connection to:', socketUrl);
+
+        socket = io(socketUrl, {
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: MAX_RECONNECT_ATTEMPTS,
+            reconnectionDelay: RECONNECT_DELAY,
+            reconnectionDelayMax: 10000,
+            timeout: 20000,
+            autoConnect: true
         });
-    };
 
-    // Connection event handlers
-    socket.on('connect', () => {
-        logger.log('[Socket] Connected successfully. ID:', socket?.id);
+        // Helper to re-attach all registered listeners
+        const reattachListeners = () => {
+            logger.log('[Socket] Auto-reattaching listeners...');
+            eventListeners.forEach((callbacks, event) => {
+                callbacks.forEach(callback => {
+                    socket?.off(event, callback); // Prevent duplicates
+                    socket?.on(event, callback);
+                });
+                logger.log(`[Socket] Restored ${callbacks.size} listeners for: ${event}`);
+            });
+        };
+
+        // Connection event handlers
+        socket.on('connect', () => {
+            logger.log('[Socket] Connected successfully. ID:', socket?.id);
+            isConnecting = false;
+            reconnectAttempts = 0;
+
+            // Always re-attach listeners on connect to ensure they persist
+            reattachListeners();
+        });
+
+        socket.on('disconnect', (reason) => {
+            logger.log('[Socket] Disconnected:', reason);
+
+            // If the server closed the connection, attempt to reconnect
+            if (reason === 'io server disconnect') {
+                socket?.connect();
+            }
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('[Socket] Connection error:', error.message);
+            isConnecting = false;
+            reconnectAttempts++;
+
+            if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                logger.warn('[Socket] Max reconnection attempts reached');
+            }
+        });
+
+        socket.on('reconnect', (attemptNumber) => {
+            logger.log('[Socket] Reconnected after', attemptNumber, 'attempts');
+            reconnectAttempts = 0;
+            // Listeners are re-attached by 'connect' handler which triggers after reconnect
+        });
+
+        socket.on('reconnect_error', (error) => {
+            console.error('[Socket] Reconnection error:', error.message);
+        });
+
+        socket.on('reconnect_failed', () => {
+            console.error('[Socket] Reconnection failed after max attempts');
+        });
+
+        return socket;
+    } catch (error) {
+        console.error('[Socket] Connection initialization failed:', error);
         isConnecting = false;
-        reconnectAttempts = 0;
-
-        // Always re-attach listeners on connect to ensure they persist
-        reattachListeners();
-    });
-
-    socket.on('disconnect', (reason) => {
-        logger.log('[Socket] Disconnected:', reason);
-
-        // If the server closed the connection, attempt to reconnect
-        if (reason === 'io server disconnect') {
-            socket?.connect();
-        }
-    });
-
-    socket.on('connect_error', (error) => {
-        console.error('[Socket] Connection error:', error.message);
-        isConnecting = false;
-        reconnectAttempts++;
-
-        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            logger.warn('[Socket] Max reconnection attempts reached');
-        }
-    });
-
-    socket.on('reconnect', (attemptNumber) => {
-        logger.log('[Socket] Reconnected after', attemptNumber, 'attempts');
-        reconnectAttempts = 0;
-        // Listeners are re-attached by 'connect' handler which triggers after reconnect
-    });
-
-    socket.on('reconnect_error', (error) => {
-        console.error('[Socket] Reconnection error:', error.message);
-    });
-
-    socket.on('reconnect_failed', () => {
-        console.error('[Socket] Reconnection failed after max attempts');
-    });
-
-    return socket;
+        return null;
+    }
 };
 
 /**
