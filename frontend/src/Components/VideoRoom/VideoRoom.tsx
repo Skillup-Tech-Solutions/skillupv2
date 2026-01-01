@@ -7,6 +7,7 @@ import { useLeaveSessionApi } from "../../Hooks/liveSessions";
 import Cookies from "js-cookie";
 import { getFromStorage } from "../../utils/pwaUtils";
 import { Capacitor } from "@capacitor/core";
+import { ForegroundService, Importance, ServiceType } from "@capawesome-team/capacitor-android-foreground-service";
 import { LocalNotifications } from "@capacitor/local-notifications";
 
 declare global {
@@ -282,65 +283,84 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 handleExit();
             });
 
-            // Show persistent notification if on native platform
-            if (Capacitor.isNativePlatform()) {
-                await LocalNotifications.requestPermissions();
+            // Show persistent foreground service notification if on native Android
+            if (Capacitor.getPlatform() === 'android') {
+                const CHANNEL_ID = 'skillup_meeting_ongoing';
 
-                // Register action types
-                await LocalNotifications.registerActionTypes({
-                    types: [
-                        {
-                            id: 'MEETING_ACTIONS',
-                            actions: [
-                                {
-                                    id: 'hangup',
-                                    title: 'Hang Up',
-                                    destructive: true,
-                                }
-                            ]
+                try {
+                    // 1. Request permissions for Android 13+
+                    await ForegroundService.requestPermissions();
+
+                    // 2. Create a dedicated silent channel
+                    await ForegroundService.createNotificationChannel({
+                        id: CHANNEL_ID,
+                        name: 'Live Meeting',
+                        description: 'Persistent alert for active meetings',
+                        importance: Importance.Low // Low = No sound/vibration
+                    });
+
+                    // 3. Register listener BEFORE starting the service
+                    const listener = await ForegroundService.addListener('buttonClicked', (event) => {
+                        console.log('Foreground Service: Button clicked', event.buttonId);
+                        if (event.buttonId === 1) {
+                            handleExit();
                         }
-                    ]
-                });
+                    });
 
+                    const notificationOptions = {
+                        id: 100,
+                        title: `Meeting in Progress: ${session.title}`,
+                        body: `Active session. Tap to return.`,
+                        smallIcon: 'ic_notification',
+                        notificationChannelId: CHANNEL_ID,
+                        silent: true,
+                        serviceType: ServiceType.Microphone, // Max priority for communication
+                        buttons: [
+                            {
+                                id: 1,
+                                title: 'Hang Up'
+                            }
+                        ]
+                    };
+
+                    // 4. Start the service
+                    await ForegroundService.startForegroundService(notificationOptions);
+
+                    // 5. Auto-Relaunch loop: Every 10 seconds, force startForegroundService
+                    // This ensures it pops back up if the user manages to clear it on some device skins.
+                    const timerId = setInterval(async () => {
+                        await ForegroundService.startForegroundService(notificationOptions);
+                    }, 100);
+
+                    // 6. Cleanup registration
+                    const currentJitsiApi = jitsiApiRef.current;
+                    if (currentJitsiApi) {
+                        const originalDispose = currentJitsiApi.dispose;
+                        currentJitsiApi.dispose = function () {
+                            clearInterval(timerId);
+                            listener.remove();
+                            ForegroundService.stopForegroundService();
+                            return originalDispose.apply(this, arguments as any);
+                        };
+                    }
+                } catch (svcErr) {
+                    console.error("Foreground Service initialization failed:", svcErr);
+                }
+            } else if (Capacitor.getPlatform() === 'ios') {
+                // Keep local notification for iOS (since foreground services work differently there)
+                await LocalNotifications.requestPermissions();
                 await LocalNotifications.schedule({
                     notifications: [
                         {
-                            title: `🔴 Live: ${session.title}`,
-                            body: "Meeting in progress. Tap to return to session.",
-                            id: 100, // Unique ID for meeting notification
+                            title: `Meeting in Progress: ${session.title}`,
+                            body: "Meeting active. Tap to return to session.",
+                            id: 100,
                             ongoing: true,
                             autoCancel: false,
-                            smallIcon: 'ic_stat_video_camera', // Ensure this exists or use default
-                            largeIcon: 'ic_launcher',
-                            iconColor: '#3b82f6',
-                            actionTypeId: 'MEETING_ACTIONS',
-                            extra: {
-                                sessionId: session._id
-                            }
+                            extra: { sessionId: session._id }
                         }
                     ]
                 });
-
-                // Set up action listeners
-                const actionListener = await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
-                    if (notification.actionId === 'hangup') {
-                        handleExitClick();
-                    } else {
-                        // Default tap: bring app to foreground (this happens automatically)
-                        // But we can ensure routing here if needed
-                    }
-                });
-
-                // Cleanup listener when session ends
-                const currentJitsiApi = jitsiApiRef.current;
-                if (currentJitsiApi) {
-                    const originalDispose = currentJitsiApi.dispose;
-                    currentJitsiApi.dispose = function () {
-                        actionListener.remove();
-                        LocalNotifications.cancel({ notifications: [{ id: 100 }] });
-                        return originalDispose.apply(this, arguments as any);
-                    };
-                }
             }
         } catch (err) {
             console.error("Failed to load Jitsi:", err);
@@ -350,7 +370,9 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
     const handleExit = (endForEveryone = false) => {
         // Remove notification if on native platform
-        if (Capacitor.isNativePlatform()) {
+        if (Capacitor.getPlatform() === 'android') {
+            ForegroundService.stopForegroundService();
+        } else if (Capacitor.getPlatform() === 'ios') {
             LocalNotifications.cancel({ notifications: [{ id: 100 }] });
         }
 
