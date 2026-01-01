@@ -179,6 +179,10 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                     mobileWebAppRequired: false,
                     // Screen Sharing
                     disableDesktopSharing: false,
+                    desktopSharingChromeDisabled: false,
+                    desktopSharingFirefoxDisabled: false,
+                    desktopSharingChromeSources: ['screen', 'window', 'tab'],
+                    enableFeaturesBasedOnChromeExtension: false,
                     desktopSharingFrameRate: {
                         min: 5,
                         max: 5,
