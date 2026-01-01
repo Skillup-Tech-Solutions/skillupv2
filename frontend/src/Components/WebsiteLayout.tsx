@@ -63,6 +63,7 @@ const WebsiteLayout = () => {
       sx={{
         position: "relative",
         overflowX: "hidden",
+        backgroundColor: "#ffffff",
         transform: `translateY(${pullDistance}px)`,
         transition: isRefreshing ? "transform 0.2s ease" : "none",
       }}
@@ -147,7 +148,18 @@ const WebsiteLayout = () => {
           }}
         >
           <WebNavbar />
-          <Box sx={{ margin: "20px 0px", zIndex: "999", position: "relative" }}>
+          <Box
+            sx={{
+              margin: "20px -30px",
+              padding: "0 30px",
+              backgroundColor: "#ffffff",
+              zIndex: "999",
+              position: "relative",
+              "@media (max-width: 991px)": { margin: "20px -20px", padding: "0 20px" },
+              "@media (max-width: 550px)": { margin: "20px -10px", padding: "0 10px" },
+              "@media (max-width: 320px)": { margin: "20px -6px", padding: "0 6px" },
+            }}
+          >
             <Outlet />
           </Box>
         </Box>

@@ -10,7 +10,7 @@ import WebCategory from "../Pages/WebCategory"
 
 const WebHome = () => {
     return (
-        <Box>
+        <Box sx={{ backgroundColor: "#ffffff" }}>
             <WebHero />
             <WebCarousel />
             <WebCount />

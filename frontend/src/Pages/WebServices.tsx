@@ -109,6 +109,7 @@ const WebServices = () => {
       className="webServices"
       sx={{
         padding: "30px 0px",
+        backgroundColor: "#ffffff",
         "@media (max-width: 768px)": { padding: "20px 0px" },
       }}
     >
