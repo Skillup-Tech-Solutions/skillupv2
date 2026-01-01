@@ -194,6 +194,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                         }
                     },
                     disableAudioLevels: false,
+                    disableSpeakerSelection: true,
                     // Disable lobby completely - first person joins as moderator
                     lobbyModeEnabled: false,
                     // Skip knock screen for everyone
@@ -219,7 +220,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                         "camera",
                         "desktop",
                         "fullscreen",
-                        "fodeviceselection",
+                        "settings",
                         "hangup",
                         "chat",
                         "raisehand",
