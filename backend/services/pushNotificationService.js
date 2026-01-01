@@ -95,9 +95,14 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
 
             const priority = data?.priority || 'alert';
             const channelId = channelMap[priority] || 'skillup_alerts';
+            const imageUrl = data?.image || data?.imageUrl || null;
 
             const message = {
-                notification: { title, body },
+                notification: {
+                    title,
+                    body,
+                    ...(imageUrl && { image: imageUrl })
+                },
                 data: {
                     ...data,
                     click_action: 'FLUTTER_NOTIFICATION_CLICK',
@@ -110,7 +115,8 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
                         channelId: channelId,
                         icon: 'ic_notification',
                         color: '#3b82f6',
-                        sound: 'default'
+                        sound: 'default',
+                        ...(imageUrl && { imageUrl: imageUrl })
                     }
                 },
                 apns: {
