@@ -9,6 +9,7 @@ const {
     emitParticipantJoined,
     emitParticipantLeft,
     emitSessionUpdated,
+    emitSessionDeleted,
     emitTransferLeaving,
     emitActiveSessionChanged
 } = require("../services/socketService");
@@ -353,6 +354,8 @@ exports.deleteSession = async (req, res) => {
 
         await LiveSession.findByIdAndDelete(req.params.id);
 
+        emitSessionDeleted(req.params.id);
+
         res.json({
             success: true,
             message: "Session deleted successfully"
@@ -425,6 +428,45 @@ exports.joinSession = async (req, res) => {
 
         const deviceId = req.body.deviceId || "unknown";
         console.log(`[LiveSession] joinSession DEBUG: email=${req.user.email}, id=${req.user.id}, userId=${userId}, deviceId=${deviceId}`);
+
+        // STRICT MODERATOR CHECK:
+        // If there are NO active participants, this is effectively "Creating" the room.
+        // We MUST ensure ONLY the Host can create the room to grab the Moderator privileges.
+        // If there are NO *OTHER* active participants, this is effectively "Creating" or "Re-creating" the room.
+        // We exclude the current active user (ghost check) to prevent them from re-joining an abandoned room and becoming admin.
+        // We MUST ensure ONLY the Host (or Admin) can create the room to grab the Moderator privileges.
+        const otherActiveParticipants = session.participants.filter(p => !p.leftAt && p.userId !== userId);
+
+        console.log(`[Join Debug] User: ${userId} (${req.user.name}), HostId: ${session.hostId}`);
+        console.log(`[Join Debug] All Active: ${session.participants.filter(p => !p.leftAt).length}`);
+        console.log(`[Join Debug] Other Active: ${otherActiveParticipants.length}`);
+        otherActiveParticipants.forEach(p => console.log(`   - Other: ${p.userId} (${p.name})`));
+
+        if (otherActiveParticipants.length === 0) {
+            // Debugging Host Mismatch
+            // console.log("---------------------------------------------------");
+            // console.log(`[Admin Join Debug] Checking Host Privileges for Session: ${session._id}`);
+            // console.log(`[Admin Join Debug] Session Host ID (DB): ${session.hostId} (Type: ${typeof session.hostId})`);
+            // console.log(`[Admin Join Debug] Request User ID (Auth): ${req.user.id} (Type: ${typeof req.user.id})`);
+            // console.log(`[Admin Join Debug] Request User _ID (Auth): ${req.user._id} (Type: ${typeof req.user._id})`);
+            // console.log("---------------------------------------------------");
+
+            // Check if current user is the host
+            // req.user.id is from auth middleware, session.hostId is from DB
+            const isHostById = String(req.user.id) === String(session.hostId);
+            const isHostByUnderscoreId = req.user._id && String(req.user._id) === String(session.hostId);
+
+            if (!isHostById && !isHostByUnderscoreId) {
+                console.log("[Admin Join Debug] REJECTED: User is not the host.");
+                return res.json({
+                    status: false,
+                    success: false,
+                    message: "Waiting for host to join the session..."
+                });
+            } else {
+                console.log("[Admin Join Debug] ACCEPTED: User IS the host.");
+            }
+        }
 
         // Check if user already joined (prevent duplicates)
         // Only return alreadyActive if their last entry HAS NOT left yet

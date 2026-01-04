@@ -4,6 +4,7 @@ import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, Dial
 import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving, ArrowsClockwise } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
 import { useLeaveSessionApi } from "../../Hooks/liveSessions";
+import { useLocation } from "react-router-dom"; // Added for safe navigation detection
 import Cookies from "js-cookie";
 import { getFromStorage } from "../../utils/pwaUtils";
 import { Capacitor } from "@capacitor/core";
@@ -40,10 +41,8 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     const unmounting = useRef(false);
     const [mounted, setMounted] = useState(false);
     const [isInitializing, setIsInitializing] = useState(true);
-    // Initialize with 1 if it's the host, or use the active count from session
-    const [participantCount, setParticipantCount] = useState(
-        isHost ? Math.max(1, session.activeParticipantsCount || 0) : (session.activeParticipantsCount || 1)
-    );
+    // Initialize with 1 (local user). We will update this from Jitsi events to avoid double-counting.
+    const [participantCount, setParticipantCount] = useState(1);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [transferMessage, setTransferMessage] = useState<string | null>(null);
     const { mutate: leaveSessionApi } = useLeaveSessionApi();
@@ -85,9 +84,39 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 jitsiApiRef.current = null;
             }
             jitsiInitialized.current = false;
-            // Removed direct leaveSessionApi call from here to prevent 'too strict' ghost leaves during remounts/screen sharing
+            // Removed direct leave call to prevent Strict Mode issues
         };
     }, [session._id, BASE_URL]);
+
+    // Handle Browser Back / Sidebar Navigation securely
+    const location = useLocation();
+
+    // We store the initial path when mounting to know if we drifted away
+    const initialPathRef = useRef(location.pathname);
+
+    useEffect(() => {
+        // If the path has changed significantly (e.g. user clicked Back or Sidebar link)
+        // AND we are not just doing a query param update or minor change
+        if (location.pathname !== initialPathRef.current) {
+            logger.log(`[VideoRoom] Navigation detected from ${initialPathRef.current} to ${location.pathname}. Leaving session...`);
+            // Explicitly leave session by calling the same logic as beforeunload
+            if (session._id) {
+                const token = Cookies.get("skToken");
+                const url = `${BASE_URL}live-sessions/${session._id}/leave`;
+
+                fetch(url, {
+                    method: 'POST',
+                    keepalive: true, // Use keepalive for reliability
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    body: JSON.stringify({})
+                });
+            }
+        }
+    }, [location.pathname, session._id, BASE_URL]); // Add dependencies for fetch call
+
 
     useEffect(() => {
         if (mounted && session.roomId) {
@@ -283,6 +312,11 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
 
             jitsiApiRef.current.addListener("videoConferenceJoined", () => {
                 setIsInitializing(false);
+                // Update count from Jitsi
+                if (jitsiApiRef.current) {
+                    setParticipantCount(jitsiApiRef.current.getParticipantsInfo().length + 1);
+                }
+
                 // Programmatically mute non-hosts after join to ensure audio session is ready
                 if (!isHost) {
                     jitsiApiRef.current.executeCommand('toggleAudio');
@@ -300,11 +334,15 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
             }, 120000);
 
             jitsiApiRef.current.addListener("participantJoined", () => {
-                setParticipantCount((prev) => prev + 1);
+                if (jitsiApiRef.current) {
+                    setParticipantCount(jitsiApiRef.current.getParticipantsInfo().length + 1);
+                }
             });
 
             jitsiApiRef.current.addListener("participantLeft", () => {
-                setParticipantCount((prev) => Math.max(1, prev - 1));
+                if (jitsiApiRef.current) {
+                    setParticipantCount(jitsiApiRef.current.getParticipantsInfo().length + 1);
+                }
             });
 
             jitsiApiRef.current.addListener("videoConferenceLeft", () => {
@@ -315,12 +353,25 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 handleExit();
             });
 
+            // Handle kick event (e.g. if host ends meeting for everyone via Jitsi)
+            jitsiApiRef.current.addListener("participantKicked", (data: any) => {
+                logger.log("VideoRoom: Participant kicked", data);
+                if (data.kicked.local) {
+                    logger.log("VideoRoom: Local user was kicked. Exiting...");
+                    handleExit();
+                }
+            });
+
             // Handle Jitsi generic errors to prevent infinite spinning
             jitsiApiRef.current.addListener("errorOccurred", (err: any) => {
                 logger.error("VideoRoom: Jitsi error occurred:", err);
-                // detailed error might happen before join, so we should unblock
-                // But some errors are non-fatal (like avatar load failed), so checking error type is hard.
-                // We rely on the 15s timeout for general failsafe.
+
+                // Check if it's a fatal error like connection dropped or meeting terminated
+                // "connection.dropped" is a common one, but "terminated" dialog usually comes from "conference.destroyed" or similar internally
+                if (err && (err.name === "conference.destroyed" || err.message?.includes("terminated"))) {
+                    logger.log("VideoRoom: Fatal error detected. Exiting...");
+                    handleExit();
+                }
             });
 
             // Show persistent foreground service notification if on native Android

@@ -3,6 +3,7 @@ const Lesson = require('../models/lessons');
 const path = require("path");
 const fs = require("fs");
 const b2Service = require("../utils/b2Service");
+const { emitCourseCreated, emitCourseUpdated, emitCourseDeleted, emitDashboardUpdate } = require('../services/socketService');
 
 // Create a new course
 exports.createCourse = async (req, res) => {
@@ -56,6 +57,10 @@ exports.createCourse = async (req, res) => {
     }
 
     const savedCourse = await course.save();
+
+    // Emit socket events for real-time updates
+    emitCourseCreated(savedCourse);
+    emitDashboardUpdate({ type: 'course', action: 'created' });
 
     res.status(201).json({
       message: "Course created successfully",
@@ -155,6 +160,9 @@ exports.updateCourse = async (req, res) => {
 
     const updatedCourse = await course.save();
 
+    // Emit socket event for real-time updates
+    emitCourseUpdated(updatedCourse);
+
     res.status(200).json({
       message: "Course updated successfully",
       course: updatedCourse
@@ -184,6 +192,9 @@ exports.toggleCourseStatus = async (req, res) => {
 
     const updatedCourse = await course.save();
 
+    // Emit socket event for real-time updates
+    emitCourseUpdated(updatedCourse);
+
     res.status(200).json({
       message: `Course status changed to ${course.status}`,
       course: updatedCourse
@@ -210,6 +221,10 @@ exports.deleteCourse = async (req, res) => {
     await Lesson.deleteMany({ "courseId._id": course._id });
 
     await Course.findByIdAndDelete(req.params.id);
+
+    // Emit socket events for real-time updates
+    emitCourseDeleted(req.params.id);
+    emitDashboardUpdate({ type: 'course', action: 'deleted' });
 
     res.status(200).json({
       message: "Course deleted successfully"

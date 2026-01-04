@@ -16,7 +16,12 @@ import StudentBottomNav from "./Student/StudentBottomNav";
 import { authService } from "../services/authService";
 import { useNotificationSocket } from "../Hooks/useNotificationSocket";
 import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
+import { useDashboardSocket } from "../Hooks/useDashboardSocket";
 import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
+import { useCourseSocket } from "../Hooks/useCourseSocket";
+import { useSubmissionSocket } from "../Hooks/useSubmissionSocket";
+import { usePaymentSocket } from "../Hooks/usePaymentSocket";
+import { useAssignmentSocket } from "../Hooks/useAssignmentSocket";
 import CustomSnackBar from "../Custom/CustomSnackBar";
 import StickyBanner from "./StickyBanner";
 import { CaretLeft, List, SignOut, Warning } from "@phosphor-icons/react";
@@ -113,6 +118,13 @@ const StudentLayout = () => {
             triggerHaptic('heavy');
         }
     });
+
+    // Real-time data sync hooks - These invalidate React Query cache when backend emits updates
+    useDashboardSocket();        // Dashboard stats auto-refresh
+    useCourseSocket();           // Course add/update/delete
+    useSubmissionSocket();        // Submission review notifications
+    usePaymentSocket({ role: 'student' });  // Payment confirmation
+    useAssignmentSocket();        // New assignment notifications
 
     // Load saved width from localStorage
     useEffect(() => {

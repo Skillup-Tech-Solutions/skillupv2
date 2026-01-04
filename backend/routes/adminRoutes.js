@@ -13,6 +13,7 @@ const submissionController = require("../controllers/submissionController");
 const sendProjectEmail = require("../utils/sendProjectMail");
 const sendCourseMail = require("../utils/sendCourseMail");
 const projectFlowController = require("../controllers/projectFlowController");
+const { emitPaymentStatusChanged, emitAssignmentUpdated } = require('../services/socketService');
 
 // All routes require authentication and admin role
 router.use(auth);
@@ -562,6 +563,9 @@ router.post("/course-assignments/:id/mark-paid", async (req, res) => {
         });
 
         res.json({ message: "Marked as paid", assignment });
+
+        // Emit socket event for real-time notification
+        emitPaymentStatusChanged(assignment, assignment.student._id.toString());
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -868,6 +872,9 @@ router.put("/assignments/:id/mark-paid", async (req, res) => {
             message: `Payment marked as paid for ${itemType}: ${itemName}`,
             assignment
         });
+
+        // Emit socket event for real-time notification
+        emitPaymentStatusChanged(assignment, assignment.student._id.toString());
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

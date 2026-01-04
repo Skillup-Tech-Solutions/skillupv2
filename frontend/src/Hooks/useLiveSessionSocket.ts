@@ -130,6 +130,36 @@ export const useLiveSessionSocket = (
         );
     }, [queryClient]);
 
+    // Handle session deletion
+    const handleSessionDeleted = useCallback((data: { sessionId: string }) => {
+        logger.log('[Socket] Session deleted:', data.sessionId);
+
+        // Remove from all relevant caches (live, upcoming, history, or just invalidate all)
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'live', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.filter(s => s._id !== data.sessionId)
+                };
+            }
+        );
+
+        queryClient.setQueryData<{ sessions: LiveSession[] } | undefined>(
+            ['liveSessions', 'upcoming', undefined],
+            (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    sessions: old.sessions.filter(s => s._id !== data.sessionId)
+                };
+            }
+        );
+
+        queryClient.invalidateQueries({ queryKey: ['liveSessions'] });
+    }, [queryClient]);
+
     // Update participant count in cache
     const handleParticipantJoined = useCallback((data: ParticipantUpdateData) => {
         logger.log('[Socket] Participant joined:', data.participantName, 'Count:', data.activeParticipantsCount);
@@ -213,6 +243,7 @@ export const useLiveSessionSocket = (
             onSessionStarted: handleSessionStarted,
             onSessionEnded: handleSessionEnded,
             onSessionCancelled: handleSessionCancelled,
+            onSessionDeleted: handleSessionDeleted,
             onParticipantJoined: handleParticipantJoined,
             onParticipantLeft: handleParticipantLeft,
             onSessionUpdated: handleSessionUpdated
@@ -225,7 +256,7 @@ export const useLiveSessionSocket = (
             // Note: We don't disconnect the socket here because it might be used elsewhere
             // The socket will be disconnected when the user logs out
         };
-    }, [enabled, handleSessionStarted, handleSessionEnded, handleSessionCancelled, handleParticipantJoined, handleParticipantLeft, handleSessionUpdated]);
+    }, [enabled, handleSessionStarted, handleSessionEnded, handleSessionCancelled, handleSessionDeleted, handleParticipantJoined, handleParticipantLeft, handleSessionUpdated]);
 
     return {
         isConnected: isConnectedRef.current,

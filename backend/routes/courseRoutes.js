@@ -29,6 +29,7 @@ router.get("/courses", getAllCourses);
 router.get("/courses/status/:status", getCoursesByStatus);
 router.get("/courses/:id", getCourseById);
 router.put("/courses/:id", auth, upload.single('fileupload'), updateCourse);
+router.delete("/courses/:id", auth, deleteCourse);
 router.patch("/courses/:id/status", auth, toggleCourseStatus);
 router.get("/courses/:id/download", downloadCourseFile);
 router.get("/files/:filename", downloadFileByName);

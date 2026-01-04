@@ -26,6 +26,8 @@ import {
     ClockCounterClockwise,
     Devices,
     ArrowsClockwise,
+    Hourglass,
+    FlagBanner,
 } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -59,6 +61,12 @@ const StudentLiveSessions = () => {
     const [pendingSession, setPendingSession] = useState<LiveSession | null>(null);
     const [showJoinDialog, setShowJoinDialog] = useState(false);
     const [isAlreadyActive, setIsAlreadyActive] = useState(false);
+
+    // Waiting Room State
+    const [waitingForHostSession, setWaitingForHostSession] = useState<LiveSession | null>(null);
+    const [isWaitingForHost, setIsWaitingForHost] = useState(false);
+    const [sessionEndedByHost, setSessionEndedByHost] = useState(false);
+
     const isMobile = useMediaQuery("(max-width:600px)");
 
     const { data: liveData, isLoading: liveLoading, refetch: refetchLive } = useGetLiveNowSessionsApi();
@@ -68,7 +76,16 @@ const StudentLiveSessions = () => {
     const { mutate: requestTransfer, isPending: isTransferring } = useRequestTransferHere();
 
     // Enable real-time updates via Socket.IO
-    useLiveSessionSocket();
+    useLiveSessionSocket({
+        onSessionEnded: (data) => {
+            // Use String() to ensure safe comparison between potential ObjectId and string
+            if (activeSession && String(activeSession._id) === String(data.sessionId)) {
+                logger.log("[LiveSession] Active session ended by host. Exiting...");
+                setActiveSession(null);
+                setSessionEndedByHost(true);
+            }
+        }
+    });
 
     // Handle auto-join from transfer navigation
     useEffect(() => {
@@ -80,6 +97,46 @@ const StudentLiveSessions = () => {
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
+
+    // Polling Effect for Waiting Room
+    useEffect(() => {
+        let intervalId: any;
+
+        if (isWaitingForHost && waitingForHostSession) {
+            const pollJoin = () => {
+                joinSession(waitingForHostSession._id, {
+                    onSuccess: (data: any) => {
+                        if (data.success !== false && !data.alreadyActive) {
+                            // Host has joined!
+                            logger.log("[LiveSession] Host joined, auto-entering...");
+                            setActiveSession(data.session || waitingForHostSession);
+                            setIsWaitingForHost(false);
+                            setWaitingForHostSession(null);
+                        } else if (data.success !== false && data.alreadyActive) {
+                            // This handles the edge case where they became active elsewhere while waiting
+                            setPendingSession(data.session || waitingForHostSession);
+                            setIsAlreadyActive(true);
+                            setShowJoinDialog(true);
+                            setIsWaitingForHost(false);
+                            setWaitingForHostSession(null);
+                        }
+                        // If data.success === false, keep waiting...
+                    },
+                    onError: () => {
+                        // Keep waiting on error
+                    }
+                });
+            };
+
+            // Poll immediately and then every 5 seconds
+            pollJoin();
+            intervalId = setInterval(pollJoin, 5000);
+        }
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [isWaitingForHost, waitingForHostSession, joinSession]);
 
     const { pullDistance, isRefreshing } = usePullToRefresh({
         onRefresh: async () => {
@@ -95,6 +152,14 @@ const StudentLiveSessions = () => {
         joinSession(session._id, {
             onSuccess: (data: any) => {
                 logger.log("[LiveSession] Join response:", data);
+
+                if (data.success === false) {
+                    // Host hasn't joined yet -> Enter Waiting Room directly
+                    setWaitingForHostSession(session);
+                    setIsWaitingForHost(true);
+                    return;
+                }
+
                 if (data.alreadyActive) {
                     setPendingSession(data.session || session);
                     setIsAlreadyActive(true);
@@ -192,6 +257,61 @@ const StudentLiveSessions = () => {
                 isRefreshing={isRefreshing}
                 threshold={80}
             />
+
+            {/* Session Ended By Host Dialog */}
+            <Dialog
+                open={sessionEndedByHost}
+                onClose={() => setSessionEndedByHost(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        backgroundImage: "none",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                        p: 2,
+                        textAlign: 'center'
+                    }
+                }}
+            >
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+                    <Box
+                        sx={{
+                            width: 60,
+                            height: 60,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(34, 197, 94, 0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mb: 2
+                        }}
+                    >
+                        <FlagBanner size={32} weight="duotone" color="#22c55e" />
+                    </Box>
+                    <Typography variant="h6" sx={{ color: "#f8fafc", fontWeight: 700, mb: 1 }}>
+                        Session Ended
+                    </Typography>
+                    <Typography sx={{ color: "#94a3b8", mb: 3 }}>
+                        The host has ended this live session.
+                    </Typography>
+                    <Button
+                        onClick={() => setSessionEndedByHost(false)}
+                        variant="contained"
+                        sx={{
+                            bgcolor: "#3b82f6",
+                            color: "#fff",
+                            fontWeight: 600,
+                            textTransform: "none",
+                            px: 4,
+                            "&:hover": { bgcolor: "#2563eb" }
+                        }}
+                    >
+                        Okay, got it
+                    </Button>
+                </DialogContent>
+            </Dialog>
             {/* Join Confirmation Dialog */}
             <Dialog
                 open={showJoinDialog}
@@ -272,6 +392,92 @@ const StudentLiveSessions = () => {
                     )}
                 </DialogActions>
             </Dialog>
+
+            {/* Waiting Room Dialog */}
+            <Dialog
+                open={isWaitingForHost}
+                onClose={() => {
+                    setIsWaitingForHost(false);
+                    setWaitingForHostSession(null);
+                }}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        backgroundImage: "none",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                        p: 2,
+                        textAlign: 'center'
+                    }
+                }}
+            >
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 4 }}>
+                    <Box
+                        sx={{
+                            position: 'relative',
+                            width: 80,
+                            height: 80,
+                            mb: 3
+                        }}
+                    >
+                        <CircularProgress
+                            size={80}
+                            thickness={2}
+                            sx={{
+                                color: "#3b82f6",
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                            }}
+                        />
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: "#60a5fa"
+                            }}
+                        >
+                            <Hourglass size={32} weight="duotone" />
+                        </Box>
+                    </Box>
+
+                    <Typography variant="h5" sx={{ color: "#f8fafc", fontWeight: 700, mb: 1 }}>
+                        Waiting for Host
+                    </Typography>
+
+                    <Typography sx={{ color: "#94a3b8", mb: 3, maxWidth: 300 }}>
+                        The session host hasn't joined yet. We'll automatically connect you as soon as they arrive.
+                    </Typography>
+
+                    <Button
+                        onClick={() => {
+                            setIsWaitingForHost(false);
+                            setWaitingForHostSession(null);
+                        }}
+                        variant="outlined"
+                        sx={{
+                            borderColor: "rgba(71, 85, 105, 0.4)",
+                            color: "#94a3b8",
+                            textTransform: "none",
+                            "&:hover": {
+                                borderColor: "#94a3b8",
+                                color: "#f8fafc"
+                            }
+                        }}
+                    >
+                        Cancel
+                    </Button>
+                </DialogContent>
+            </Dialog>
+
             {/* Header */}
             <Box>
                 <Typography

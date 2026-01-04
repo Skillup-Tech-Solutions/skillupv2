@@ -390,6 +390,7 @@ export const LIVE_SESSION_EVENTS = {
     STARTED: 'session:started',
     ENDED: 'session:ended',
     CANCELLED: 'session:cancelled',
+    DELETED: 'session:deleted',
     PARTICIPANT_JOINED: 'session:participantJoined',
     PARTICIPANT_LEFT: 'session:participantLeft',
     UPDATED: 'session:updated'
@@ -407,6 +408,7 @@ export const subscribeToLiveSessions = (callbacks: {
     onSessionStarted?: (data: SessionStartedData) => void;
     onSessionEnded?: (data: SessionEndedData) => void;
     onSessionCancelled?: (data: { sessionId: string }) => void;
+    onSessionDeleted?: (data: { sessionId: string }) => void;
     onParticipantJoined?: (data: ParticipantUpdateData) => void;
     onParticipantLeft?: (data: ParticipantUpdateData) => void;
     onSessionUpdated?: (data: SessionUpdatedData) => void;
@@ -425,6 +427,9 @@ export const subscribeToLiveSessions = (callbacks: {
     }
     if (callbacks.onSessionCancelled) {
         subscribeToEvent(LIVE_SESSION_EVENTS.CANCELLED, callbacks.onSessionCancelled);
+    }
+    if (callbacks.onSessionDeleted) {
+        subscribeToEvent(LIVE_SESSION_EVENTS.DELETED, callbacks.onSessionDeleted);
     }
     if (callbacks.onParticipantJoined) {
         subscribeToEvent(LIVE_SESSION_EVENTS.PARTICIPANT_JOINED, callbacks.onParticipantJoined);
@@ -653,6 +658,243 @@ export const subscribeToTransferEvents = (callbacks: {
  */
 export const unsubscribeFromTransferEvents = (): void => {
     Object.values(TRANSFER_EVENTS).forEach(event => {
+        unsubscribeFromEvent(event);
+    });
+};
+
+// ============================================
+// Dashboard Event Types
+// ============================================
+
+export interface DashboardUpdateData {
+    type: string;
+    action: string;
+    timestamp: string;
+}
+
+export const DASHBOARD_EVENTS = {
+    UPDATED: 'dashboard:updated'
+} as const;
+
+/**
+ * Subscribe to dashboard update events
+ */
+export const subscribeToDashboard = (
+    onUpdate: (data: DashboardUpdateData) => void
+): void => {
+    subscribeToEvent(DASHBOARD_EVENTS.UPDATED, onUpdate);
+};
+
+/**
+ * Unsubscribe from dashboard events
+ */
+export const unsubscribeFromDashboard = (): void => {
+    unsubscribeFromEvent(DASHBOARD_EVENTS.UPDATED);
+};
+
+// ============================================
+// Course Event Types
+// ============================================
+
+export interface CourseEventData {
+    course?: {
+        _id: string;
+        name: string;
+        status: string;
+        startDate?: string;
+        endDate?: string;
+    };
+    courseId?: string;
+}
+
+export const COURSE_EVENTS = {
+    CREATED: 'course:created',
+    UPDATED: 'course:updated',
+    DELETED: 'course:deleted'
+} as const;
+
+/**
+ * Subscribe to course events
+ */
+export const subscribeToCourses = (callbacks: {
+    onCreated?: (data: CourseEventData) => void;
+    onUpdated?: (data: CourseEventData) => void;
+    onDeleted?: (data: CourseEventData) => void;
+}): void => {
+    if (callbacks.onCreated) {
+        subscribeToEvent(COURSE_EVENTS.CREATED, callbacks.onCreated);
+    }
+    if (callbacks.onUpdated) {
+        subscribeToEvent(COURSE_EVENTS.UPDATED, callbacks.onUpdated);
+    }
+    if (callbacks.onDeleted) {
+        subscribeToEvent(COURSE_EVENTS.DELETED, callbacks.onDeleted);
+    }
+};
+
+/**
+ * Unsubscribe from course events
+ */
+export const unsubscribeFromCourses = (): void => {
+    Object.values(COURSE_EVENTS).forEach(event => {
+        unsubscribeFromEvent(event);
+    });
+};
+
+// ============================================
+// Submission Event Types
+// ============================================
+
+export interface SubmissionEventData {
+    submission: {
+        _id: string;
+        projectId?: string;
+        status: string;
+        feedback?: string;
+        createdAt?: string;
+    };
+}
+
+export const SUBMISSION_EVENTS = {
+    CREATED: 'submission:created',
+    REVIEWED: 'submission:reviewed'
+} as const;
+
+/**
+ * Subscribe to submission events
+ */
+export const subscribeToSubmissions = (callbacks: {
+    onCreated?: (data: SubmissionEventData) => void;
+    onReviewed?: (data: SubmissionEventData) => void;
+}): void => {
+    if (callbacks.onCreated) {
+        subscribeToEvent(SUBMISSION_EVENTS.CREATED, callbacks.onCreated);
+    }
+    if (callbacks.onReviewed) {
+        subscribeToEvent(SUBMISSION_EVENTS.REVIEWED, callbacks.onReviewed);
+    }
+};
+
+/**
+ * Unsubscribe from submission events
+ */
+export const unsubscribeFromSubmissions = (): void => {
+    Object.values(SUBMISSION_EVENTS).forEach(event => {
+        unsubscribeFromEvent(event);
+    });
+};
+
+// ============================================
+// Payment Event Types
+// ============================================
+
+export interface PaymentStatusChangedData {
+    assignmentId: string;
+    paymentStatus: string;
+    itemType: string;
+    itemId?: string;
+}
+
+export interface PaymentUpdatedData {
+    assignment: {
+        _id: string;
+        paymentStatus: string;
+        itemType: string;
+    };
+}
+
+export interface PaymentProofUploadedData {
+    assignment: {
+        _id: string;
+        paymentStatus: string;
+        itemType: string;
+        studentId: string;
+    };
+}
+
+export const PAYMENT_EVENTS = {
+    STATUS_CHANGED: 'payment:statusChanged',
+    UPDATED: 'payment:updated',
+    PROOF_UPLOADED: 'payment:proofUploaded'
+} as const;
+
+/**
+ * Subscribe to payment events
+ */
+export const subscribeToPayments = (callbacks: {
+    onStatusChanged?: (data: PaymentStatusChangedData) => void;
+    onUpdated?: (data: PaymentUpdatedData) => void;
+    onProofUploaded?: (data: PaymentProofUploadedData) => void;
+}): void => {
+    if (callbacks.onStatusChanged) {
+        subscribeToEvent(PAYMENT_EVENTS.STATUS_CHANGED, callbacks.onStatusChanged);
+    }
+    if (callbacks.onUpdated) {
+        subscribeToEvent(PAYMENT_EVENTS.UPDATED, callbacks.onUpdated);
+    }
+    if (callbacks.onProofUploaded) {
+        subscribeToEvent(PAYMENT_EVENTS.PROOF_UPLOADED, callbacks.onProofUploaded);
+    }
+};
+
+/**
+ * Unsubscribe from payment events
+ */
+export const unsubscribeFromPayments = (): void => {
+    Object.values(PAYMENT_EVENTS).forEach(event => {
+        unsubscribeFromEvent(event);
+    });
+};
+
+// ============================================
+// Assignment Event Types
+// ============================================
+
+export interface AssignmentEventData {
+    assignment: {
+        _id: string;
+        itemType: string;
+        itemId?: string;
+        status?: string;
+        paymentStatus?: string;
+        studentId?: string;
+    };
+}
+
+export interface AssignmentDeletedData {
+    assignmentId: string;
+}
+
+export const ASSIGNMENT_EVENTS = {
+    CREATED: 'assignment:created',
+    UPDATED: 'assignment:updated',
+    DELETED: 'assignment:deleted'
+} as const;
+
+/**
+ * Subscribe to assignment events
+ */
+export const subscribeToAssignments = (callbacks: {
+    onCreated?: (data: AssignmentEventData) => void;
+    onUpdated?: (data: AssignmentEventData) => void;
+    onDeleted?: (data: AssignmentDeletedData) => void;
+}): void => {
+    if (callbacks.onCreated) {
+        subscribeToEvent(ASSIGNMENT_EVENTS.CREATED, callbacks.onCreated);
+    }
+    if (callbacks.onUpdated) {
+        subscribeToEvent(ASSIGNMENT_EVENTS.UPDATED, callbacks.onUpdated);
+    }
+    if (callbacks.onDeleted) {
+        subscribeToEvent(ASSIGNMENT_EVENTS.DELETED, callbacks.onDeleted);
+    }
+};
+
+/**
+ * Unsubscribe from assignment events
+ */
+export const unsubscribeFromAssignments = (): void => {
+    Object.values(ASSIGNMENT_EVENTS).forEach(event => {
         unsubscribeFromEvent(event);
     });
 };

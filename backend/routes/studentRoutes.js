@@ -5,6 +5,7 @@ const { studentOnly } = require("../middleware/roleAuth");
 const submissionController = require("../controllers/submissionController");
 const upload = require("../config/multer");
 const StudentAssignment = require("../models/StudentAssignment");
+const { emitPaymentProofUploaded } = require('../services/socketService');
 
 // Import new controllers
 const studentAuthController = require("../controllers/studentAuthController");
@@ -380,6 +381,9 @@ router.post("/assignments/:assignmentId/upload-payment-proof", upload.single("pr
             message: "Payment proof uploaded successfully",
             assignment
         });
+
+        // Emit socket event for real-time admin notification
+        emitPaymentProofUploaded(assignment, req.user.id);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

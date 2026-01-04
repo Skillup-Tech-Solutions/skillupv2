@@ -85,6 +85,12 @@ const initSocket = (server) => {
 
                 socket.join(`user:${hashedId}`);
                 console.log(`[Socket] User ${socket.user.email} joined rooms: user:${rawId}, user:${hashedId}`);
+
+                // 3. Join 'admins' room if user is admin/employee
+                if (socket.user.role && ['admin', 'employee', 'superadmin'].includes(socket.user.role)) {
+                    socket.join('admins');
+                    console.log(`[Socket] User ${socket.user.email} joined room: admins`);
+                }
             }
         }
 
@@ -138,8 +144,21 @@ const emitToAll = (event, data) => {
         console.warn('[Socket] Cannot emit - Socket.IO not initialized');
         return;
     }
-    io.to('live-sessions').emit(event, data);
+    io.emit(event, data);
     console.log(`[Socket] Emitted ${event} to all clients`);
+};
+
+/**
+ * Emit event to admins only
+ * Use for operational data (Pending payments, new submissions)
+ */
+const emitToAdmins = (event, data) => {
+    if (!io) {
+        console.warn('[Socket] Cannot emit - Socket.IO not initialized');
+        return;
+    }
+    io.to('admins').emit(event, data);
+    console.log(`[Socket] Emitted ${event} to admins`);
 };
 
 /**
@@ -217,6 +236,12 @@ const emitSessionEnded = (sessionId, session = null) => {
 const emitSessionCancelled = (sessionId) => {
     emitToAll('session:cancelled', { sessionId });
     emitToSession(sessionId, 'session:cancelled', { sessionId });
+};
+
+const emitSessionDeleted = (sessionId) => {
+    emitToAll('session:deleted', { sessionId });
+    // Also notify session room just in case
+    emitToSession(sessionId, 'session:deleted', { sessionId });
 };
 
 /**
@@ -393,16 +418,222 @@ const emitActiveSessionChanged = (userId, data) => {
     });
 };
 
+// ============================================
+// Dashboard Event Emitters
+// ============================================
+
+/**
+ * Emit when dashboard stats should be refreshed
+ */
+const emitDashboardUpdate = (data) => {
+    emitToAll('dashboard:updated', {
+        type: data.type || 'general',
+        action: data.action || 'updated',
+        timestamp: new Date()
+    });
+};
+
+// ============================================
+// Course/Program Event Emitters
+// ============================================
+
+/**
+ * Emit when a course is created
+ */
+const emitCourseCreated = (course) => {
+    emitToAll('course:created', {
+        course: {
+            _id: course._id,
+            name: course.name,
+            status: course.status,
+            startDate: course.startDate,
+            endDate: course.endDate
+        }
+    });
+};
+
+/**
+ * Emit when a course is updated
+ */
+const emitCourseUpdated = (course) => {
+    emitToAll('course:updated', {
+        course: {
+            _id: course._id,
+            name: course.name,
+            status: course.status,
+            startDate: course.startDate,
+            endDate: course.endDate
+        }
+    });
+};
+
+/**
+ * Emit when a course is deleted
+ */
+const emitCourseDeleted = (courseId) => {
+    emitToAll('course:deleted', { courseId });
+};
+
+// ============================================
+// Submission Event Emitters
+// ============================================
+
+/**
+ * Emit when a new submission is created
+ */
+const emitSubmissionCreated = (submission, studentId) => {
+    // Broadcast to admin/staff (for pending submissions list)
+    emitToAdmins('submission:created', {
+        submission: {
+            _id: submission._id,
+            projectId: submission.project,
+            status: submission.status,
+            createdAt: submission.createdAt
+        }
+    });
+    // Also notify the specific student
+    if (studentId) {
+        emitToUser(studentId, 'submission:created', {
+            submission: {
+                _id: submission._id,
+                status: submission.status
+            }
+        });
+    }
+};
+
+/**
+ * Emit when a submission is reviewed (approved/rejected)
+ */
+const emitSubmissionReviewed = (submission, studentId) => {
+    if (studentId) {
+        emitToUser(studentId, 'submission:reviewed', {
+            submission: {
+                _id: submission._id,
+                projectId: submission.project,
+                status: submission.status,
+                feedback: submission.feedback
+            }
+        });
+    }
+    // Also broadcast to admins
+    emitToAdmins('submission:reviewed', {
+        submission: {
+            _id: submission._id,
+            status: submission.status
+        }
+    });
+};
+
+// ============================================
+// Payment Event Emitters
+// ============================================
+
+/**
+ * Emit when a payment status changes (for student notification)
+ */
+const emitPaymentStatusChanged = (assignment, studentId) => {
+    // Notify the student about their payment status
+    if (studentId) {
+        emitToUser(studentId, 'payment:statusChanged', {
+            assignmentId: assignment._id,
+            paymentStatus: assignment.paymentStatus,
+            itemType: assignment.itemType,
+            itemId: assignment.itemId
+        });
+    }
+    // Broadcast to admin dashboard
+    emitToAdmins('payment:updated', {
+        assignment: {
+            _id: assignment._id,
+            paymentStatus: assignment.paymentStatus,
+            itemType: assignment.itemType
+        }
+    });
+};
+
+/**
+ * Emit when a payment proof is uploaded (for admin notification)
+ */
+const emitPaymentProofUploaded = (assignment, studentId) => {
+    emitToAdmins('payment:proofUploaded', {
+        assignment: {
+            _id: assignment._id,
+            paymentStatus: assignment.paymentStatus,
+            itemType: assignment.itemType,
+            studentId: studentId
+        }
+    });
+};
+
+// ============================================
+// Assignment Event Emitters
+// ============================================
+
+/**
+ * Emit when a student is assigned to a course/project/internship
+ */
+const emitAssignmentCreated = (assignment, studentId) => {
+    if (studentId) {
+        emitToUser(studentId, 'assignment:created', {
+            assignment: {
+                _id: assignment._id,
+                itemType: assignment.itemType,
+                itemId: assignment.itemId,
+                status: assignment.status
+            }
+        });
+    }
+    // Broadcast to admins
+    emitToAdmins('assignment:created', {
+        assignment: {
+            _id: assignment._id,
+            itemType: assignment.itemType,
+            studentId: studentId
+        }
+    });
+};
+
+/**
+ * Emit when an assignment is updated
+ */
+const emitAssignmentUpdated = (assignment, studentId) => {
+    if (studentId) {
+        emitToUser(studentId, 'assignment:updated', {
+            assignment: {
+                _id: assignment._id,
+                itemType: assignment.itemType,
+                status: assignment.status,
+                paymentStatus: assignment.paymentStatus
+            }
+        });
+    }
+};
+
+/**
+ * Emit when an assignment is deleted
+ */
+const emitAssignmentDeleted = (assignmentId, studentId) => {
+    if (studentId) {
+        emitToUser(studentId, 'assignment:deleted', { assignmentId });
+    }
+    // Broadcast to admins
+    emitToAdmins('assignment:deleted', { assignmentId, studentId });
+};
+
 module.exports = {
     initSocket,
     getIO,
     emitToAll,
+    emitToAdmins,
     emitToSession,
     emitToUser,
     // Live Sessions
     emitSessionStarted,
     emitSessionEnded,
+    emitSessionEnded,
     emitSessionCancelled,
+    emitSessionDeleted,
     emitParticipantJoined,
     emitParticipantLeft,
     emitSessionUpdated,
@@ -418,5 +649,21 @@ module.exports = {
     emitAnnouncementDeleted,
     // Call Transfer
     emitTransferLeaving,
-    emitActiveSessionChanged
+    emitActiveSessionChanged,
+    // Dashboard
+    emitDashboardUpdate,
+    // Courses
+    emitCourseCreated,
+    emitCourseUpdated,
+    emitCourseDeleted,
+    // Submissions
+    emitSubmissionCreated,
+    emitSubmissionReviewed,
+    // Payments
+    emitPaymentStatusChanged,
+    emitPaymentProofUploaded,
+    // Assignments
+    emitAssignmentCreated,
+    emitAssignmentUpdated,
+    emitAssignmentDeleted
 };

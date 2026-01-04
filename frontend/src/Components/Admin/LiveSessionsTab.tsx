@@ -44,6 +44,7 @@ import { useLiveSessionSocket } from "../../Hooks/useLiveSessionSocket";
 import VideoRoom from "../VideoRoom/VideoRoom";
 import { useRequestTransferHere } from "../../Hooks/useActiveSession";
 import { logger } from "../../utils/logger";
+import { getFromStorage } from "../../utils/pwaUtils";
 
 interface LiveSessionsTabProps {
     sessionType: "COURSE" | "PROJECT" | "INTERNSHIP";
@@ -157,6 +158,14 @@ const LiveSessionsTab = ({
         joinSession(session._id, {
             onSuccess: (data: any) => {
                 logger.log("[LiveSession] Join response:", data);
+
+                if (data.success === false) {
+                    import("../../Custom/CustomSnackBar").then(mod => {
+                        mod.default.errorSnackbar(data.message || "Unable to join session");
+                    });
+                    return;
+                }
+
                 if (data.alreadyActive) {
                     setPendingJoinSession(data.session || session);
                     setIsAlreadyIn(true);
@@ -215,7 +224,7 @@ const LiveSessionsTab = ({
                 session={activeSession}
                 userName={userName}
                 userEmail={userEmail}
-                isHost={true}
+                isHost={getFromStorage("userId") === activeSession.hostId}
                 onExit={() => {
                     setActiveSession(null);
                     refetch();

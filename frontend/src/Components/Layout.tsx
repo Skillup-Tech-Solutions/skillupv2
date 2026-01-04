@@ -7,6 +7,9 @@ import { CaretLeft, List } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import { useLiveSessionSocket } from "../Hooks/useLiveSessionSocket";
 import { useDeviceSessionSocket } from "../Hooks/useDeviceSessionSocket";
+import { useDashboardSocket } from "../Hooks/useDashboardSocket";
+import { useCourseSocket } from "../Hooks/useCourseSocket";
+import { usePaymentSocket } from "../Hooks/usePaymentSocket";
 import StickyBanner from "./StickyBanner";
 import { hapticFeedback } from "../utils/haptics";
 import { logger } from "../utils/logger";
@@ -49,6 +52,11 @@ const Layout = () => {
       logger.log('[Socket] Admin session revoked:', message);
     }, [])
   });
+
+  // Real-time data sync hooks - These invalidate React Query cache when backend emits updates
+  useDashboardSocket();              // Dashboard stats auto-refresh
+  useCourseSocket();                 // Course add/update/delete
+  usePaymentSocket({ role: 'admin' }); // Payment proof uploads from students
 
   const userName = authService.getUserInfo().name || "Admin";
   const userEmail = authService.getUserInfo().email || "admin@skillup.edu";

@@ -212,7 +212,7 @@ const StudentProfile = () => {
     };
 
     return (
-        <Box sx={{ maxWidth: 700, mx: "auto" }}>
+        <Box sx={{ maxWidth: 700, mx: "auto", overflow: "auto", pb: { xs: 12, lg: 4 } }}>
             <PullToRefreshIndicator
                 pullDistance={pullDistance}
                 isRefreshing={isRefreshing}

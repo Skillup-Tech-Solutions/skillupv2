@@ -84,7 +84,8 @@ const Login = () => {
             email: user.email,
             role: user.role,
             name: user.name,
-            mobile: user.mobile
+            mobile: user.mobile,
+            userId: user._id || user.id
           });
 
           if (user.status !== "Active" && user.status !== "Self-Signed") {

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import Cookies from "js-cookie";
 import { Box } from "@mui/material";
+import api from "../Interceptors/Interceptor";
+import { authService } from "../services/authService";
+import { isCapacitor } from "../utils/pwaUtils";
+import logoImage from "../assets/Images/newlogo.png";
 
 interface ProtectedRouteProps {
   element: React.ReactNode;
@@ -32,13 +35,21 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      // Helper to get from dual storage
-      const getFromStorage = (key: string) => Cookies.get(key) || localStorage.getItem(key);
+      // CRITICAL: Wait for authService on native platforms
+      if (isCapacitor()) {
+        await authService.waitForReady();
+      }
 
-      const token = getFromStorage("skToken");
-      const cookieRole = getFromStorage("role");
+      // Use authService which handles both web and native storage
+      const token = isCapacitor()
+        ? await authService.getTokenAsync()
+        : authService.getToken();
+      const cookieRole = isCapacitor()
+        ? await authService.getRoleAsync()
+        : authService.getRole();
 
       if (!token) {
+        console.log('[ProtectedRoute] No token found, redirecting to login');
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
@@ -64,10 +75,8 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
       verifyingRef.current = true;
 
       try {
-        const baseUrl = import.meta.env.VITE_APP_BASE_URL;
-
         if (cookieRole === "admin") {
-          // For admin, trust the cookie since the backend validates the token
+          // For admin, trust the stored role since the backend validates the token
           const result = { isAuthenticated: true, role: "admin" };
           verificationCache = { token, result, timestamp: now };
           setIsAuthenticated(true);
@@ -77,60 +86,117 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
           return;
         }
 
-        // For students, verify via /student/me
-        const response = await fetch(`${baseUrl}student/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // For students, verify via /student/me using api instance
+        // This uses the axios interceptor which handles 401 and token refresh!
+        const response = await api.get<UserData>("student/me");
 
         let result: { isAuthenticated: boolean; role: string | null };
+        const data = response.data;
 
-        if (response.ok) {
-          const data: UserData = await response.json();
-          result = { isAuthenticated: true, role: data?.role ?? cookieRole ?? null };
-          if (data?.role) {
-            Cookies.set("role", data.role, { path: "/" });
-          }
-        } else if (response.status === 403) {
-          // 403 means authenticated but wrong role (probably admin on student endpoint)
-          result = { isAuthenticated: true, role: cookieRole || "admin" };
-        } else {
-          // Token invalid or expired
-          result = { isAuthenticated: false, role: null };
-          Cookies.remove("skToken");
-          Cookies.remove("skRefreshToken");
-          Cookies.remove("role");
+        result = { isAuthenticated: true, role: data?.role ?? cookieRole ?? null };
+        if (data?.role) {
+          authService.set("role", data.role);
         }
 
         // Update cache
         verificationCache = { token, result, timestamp: now };
         setIsAuthenticated(result.isAuthenticated);
         setVerifiedRole(result.role);
-      } catch {
-        // Network error - fall back to cookie
-        setIsAuthenticated(!!token);
-        setVerifiedRole(cookieRole || null);
+      } catch (error: any) {
+        // The interceptor handles 401 and redirects to login if refresh fails
+        // If we get here with a 403, user is authenticated but wrong role
+        if (error.response?.status === 403) {
+          const result = { isAuthenticated: true, role: cookieRole || "admin" };
+          verificationCache = { token, result, timestamp: now };
+          setIsAuthenticated(true);
+          setVerifiedRole(cookieRole || "admin");
+        } else {
+          // For other errors (network, etc.), trust stored token if it exists
+          // The interceptor will have already redirected on true auth failures
+          const currentToken = isCapacitor()
+            ? await authService.getTokenAsync()
+            : authService.getToken();
+          if (currentToken) {
+            // Token still exists - interceptor might have refreshed it
+            setIsAuthenticated(true);
+            setVerifiedRole(cookieRole || null);
+          } else {
+            // Token was cleared by interceptor - truly unauthenticated
+            setIsAuthenticated(false);
+          }
+        }
       } finally {
         setIsLoading(false);
         verifyingRef.current = false;
+
+        // Hide native splash after auth is verified (for Capacitor)
+        if (isCapacitor()) {
+          import('@capacitor/splash-screen').then(({ SplashScreen }) => {
+            SplashScreen.hide({ fadeOutDuration: 300 });
+          });
+        }
       }
     };
 
     verifyToken();
-  }, []); // Remove location.pathname dependency - only verify once on mount
+  }, []); // Only verify once on mount
 
-  // Show loading spinner while verifying (dark background to match startup)
+  // Show splash-style loading while verifying
   if (isLoading) {
     return (
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
-          bgcolor: "#020617", // Match absolute startup background
+          bgcolor: "#020617",
+          gap: 3,
         }}
       >
-        {/* Transparent gap to prevent flickering between logo and skeleton */}
+        {/* Logo */}
+        <Box
+          component="img"
+          src={logoImage}
+          alt="SkillUp"
+          sx={{
+            width: 80,
+            height: 80,
+            animation: "pulse 1.5s ease-in-out infinite",
+            "@keyframes pulse": {
+              "0%, 100%": { opacity: 0.6, transform: "scale(0.95)" },
+              "50%": { opacity: 1, transform: "scale(1.05)" },
+            },
+          }}
+        />
+
+        {/* Connecting indicator */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            color: "rgba(148, 163, 184, 0.8)",
+            fontSize: "0.875rem",
+            fontFamily: "Inter, system-ui, sans-serif",
+          }}
+        >
+          <Box
+            sx={{
+              width: 6,
+              height: 6,
+              borderRadius: "50%",
+              bgcolor: "#3b82f6",
+              animation: "blink 1.2s ease-in-out infinite",
+              "@keyframes blink": {
+                "0%, 100%": { opacity: 0.3 },
+                "50%": { opacity: 1 },
+              },
+            }}
+          />
+          Connecting...
+        </Box>
       </Box>
     );
   }
@@ -157,5 +223,3 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
 };
 
 export default ProtectedRoute;
-
-

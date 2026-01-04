@@ -2,6 +2,7 @@ const Submission = require("../models/Submission");
 const StudentAssignment = require("../models/StudentAssignment");
 const User = require("../models/User");
 const Project = require("../models/Project");
+const { emitSubmissionCreated, emitSubmissionReviewed } = require('../services/socketService');
 
 // Get all submissions (Admin only)
 exports.getAllSubmissions = async (req, res) => {
@@ -86,6 +87,12 @@ exports.reviewSubmission = async (req, res) => {
             message: "Submission reviewed successfully",
             submission: updated
         });
+
+        // Emit socket event for real-time notification to student
+        if (updated.student) {
+            const studentId = typeof updated.student === 'object' ? updated.student._id : updated.student;
+            emitSubmissionReviewed(updated, studentId.toString());
+        }
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -149,6 +156,9 @@ exports.createSubmission = async (req, res) => {
             message: "Submission created successfully",
             submission
         });
+
+        // Emit socket event for real-time updates
+        emitSubmissionCreated(submission, req.user.id);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -210,6 +220,9 @@ exports.resubmitProject = async (req, res) => {
             message: "Project resubmitted successfully",
             submission: updated
         });
+
+        // Emit socket event
+        emitSubmissionCreated(updated, req.user.id);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

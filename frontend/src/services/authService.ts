@@ -1,9 +1,14 @@
 import Cookies from 'js-cookie';
 import { Preferences } from '@capacitor/preferences';
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { logger } from '../utils/logger';
 
 const TOKEN_EXPIRY_DAYS = 7;
-const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile', 'skillup_device_id'];
+const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile', 'userId', 'skillup_device_id'];
+
+// Track if foreground listener is set up
+let foregroundListenerActive = false;
 
 // Check if running in Capacitor native app - more robust check
 const isCapacitorNative = () => {
@@ -64,21 +69,34 @@ const storageCache: Record<string, string> = {};
 let cacheInitialized = false;
 let cacheInitPromise: Promise<void> | null = null;
 
-// Initialize cache from native storage on app start
+// Initialize cache from native storage on app start - OPTIMIZED for cold start
 const initializeCache = async (retryCount = 0): Promise<void> => {
-    const isNative = isCapacitorNative();
-
-    if (!isNative) {
-        // If not native but we think we might be (e.g. on mobile but bridge not ready)
-        // Retry a few times during startup
-        if (retryCount < 5) {
-            await new Promise(r => setTimeout(r, 100));
-            return initializeCache(retryCount + 1);
+    // OPTIMIZATION: Use Capacitor's synchronous check first (faster than DOM checks)
+    // If Capacitor.isNativePlatform() is available, trust it immediately
+    if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+        // We know we're native, proceed immediately
+        logger.log('[authService] Capacitor native detected immediately');
+    } else {
+        // Short delay only on first attempt to let bridge initialize
+        if (retryCount === 0) {
+            await new Promise(r => setTimeout(r, 50)); // Reduced from 300ms
         }
-        return;
+
+        const isNative = isCapacitorNative();
+
+        if (!isNative) {
+            // Retry with shorter delays
+            if (retryCount < 5) { // Reduced from 10
+                await new Promise(r => setTimeout(r, 100)); // Reduced from 200ms
+                return initializeCache(retryCount + 1);
+            }
+            logger.log('[authService] Not running in native platform after retries');
+            cacheInitialized = true;
+            return;
+        }
     }
 
-    logger.log('[authService] Capacitor detected, initializing cache from native storage...');
+    logger.log('[authService] Initializing cache from native storage...');
 
     for (const key of AUTH_KEYS) {
         const value = await nativeStorage.get(key);
@@ -90,6 +108,38 @@ const initializeCache = async (retryCount = 0): Promise<void> => {
         }
     }
     cacheInitialized = true;
+    logger.log('[authService] Cache initialization complete');
+
+    // Set up foreground listener to re-sync auth on app resume
+    setupForegroundListener();
+};
+
+// Re-sync auth data when app comes to foreground (handles Android killing WebView)
+const setupForegroundListener = () => {
+    if (foregroundListenerActive || !Capacitor.isNativePlatform()) return;
+
+    App.addListener('appStateChange', async ({ isActive }) => {
+        if (isActive) {
+            logger.log('[authService] App resumed, re-syncing auth from native storage...');
+
+            // Re-read all auth keys from native storage
+            for (const key of AUTH_KEYS) {
+                const value = await nativeStorage.get(key);
+                if (value) {
+                    storageCache[key] = value;
+                    localStorage.setItem(key, value);
+                } else {
+                    // Value was removed from native storage
+                    delete storageCache[key];
+                    localStorage.removeItem(key);
+                }
+            }
+            logger.log('[authService] Auth re-sync complete');
+        }
+    });
+
+    foregroundListenerActive = true;
+    logger.log('[authService] Foreground listener set up');
 };
 
 // Start initialization immediately
@@ -167,6 +217,7 @@ export const authService = {
         role: string;
         name: string;
         mobile?: string;
+        userId?: string;
     }) {
         this.set('skToken', data.accessToken);
         if (data.refreshToken) {
@@ -177,6 +228,9 @@ export const authService = {
         this.set('name', data.name);
         if (data.mobile) {
             this.set('mobile', data.mobile);
+        }
+        if (data.userId) {
+            this.set('userId', data.userId);
         }
     },
 
@@ -234,6 +288,11 @@ export const authService = {
         return this.getAsync('role');
     },
 
+    // Get user id
+    getUserId(): string | null {
+        return this.get('userId');
+    },
+
     // Get user info
     getUserInfo() {
         return {
@@ -241,6 +300,7 @@ export const authService = {
             role: this.get('role'),
             name: this.get('name'),
             mobile: this.get('mobile'),
+            userId: this.get('userId'),
         };
     },
 
@@ -251,6 +311,7 @@ export const authService = {
             role: await this.getAsync('role'),
             name: await this.getAsync('name'),
             mobile: await this.getAsync('mobile'),
+            userId: await this.getAsync('userId'),
         };
     }
 };

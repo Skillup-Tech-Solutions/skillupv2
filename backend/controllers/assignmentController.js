@@ -26,6 +26,7 @@ const getModel = (itemType) => {
 
 const sendProjectEmail = require("../utils/sendProjectMail");
 const sendCourseMail = require("../utils/sendCourseMail");
+const { emitAssignmentCreated, emitAssignmentUpdated, emitAssignmentDeleted, emitDashboardUpdate } = require('../services/socketService');
 
 // Assign item to student (Admin only)
 exports.assignToStudent = async (req, res) => {
@@ -92,6 +93,9 @@ exports.assignToStudent = async (req, res) => {
             message: `${itemType} assigned successfully`,
             assignment
         });
+
+        // Emit socket event for real-time notification to student
+        emitAssignmentCreated(assignment, studentId);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -174,10 +178,20 @@ exports.bulkAssignToStudent = async (req, res) => {
             successful: results,
             failed: errors
         });
+
+        // Emit socket events for each successful assignment
+        for (const assignment of results) {
+            emitAssignmentCreated(assignment, studentId);
+        }
+        if (results.length > 0) {
+            emitDashboardUpdate({ type: 'assignment', action: 'bulk-created' });
+        }
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
+
+
 
 // Remove assignment (Admin only)
 exports.removeAssignment = async (req, res) => {
@@ -191,6 +205,10 @@ exports.removeAssignment = async (req, res) => {
         await StudentAssignment.findByIdAndDelete(req.params.id);
 
         res.status(200).json({ message: "Assignment removed successfully" });
+
+        // Emit socket event
+        emitAssignmentDeleted(req.params.id, assignment.student.toString());
+        emitDashboardUpdate({ type: 'assignment', action: 'deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
@@ -228,6 +246,9 @@ exports.updateProgress = async (req, res) => {
             message: "Progress updated successfully",
             assignment: updatedAssignment
         });
+
+        // Emit socket event for real-time updates
+        emitAssignmentUpdated(updatedAssignment, assignment.student.toString());
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

@@ -7,20 +7,26 @@ const config: CapacitorConfig = {
     server: {
         androidScheme: 'https'
     },
+    android: {
+        // Improved cold start performance
+        backgroundColor: '#020617', // Match splash to avoid flash
+        allowMixedContent: false,
+    },
     plugins: {
         CapacitorHttp: {
             enabled: true,
         },
         SplashScreen: {
-            launchShowDuration: 2500,
+            // OPTIMIZATION: Reduced duration for faster perceived startup
+            launchShowDuration: 1200, // Reduced from 2500ms
             launchAutoHide: true,
-            launchFadeOutDuration: 800,
+            launchFadeOutDuration: 300, // Reduced from 800ms for snappier feel
             backgroundColor: '#020617',
             androidSplashResourceName: 'launch_splash',
             androidScaleType: 'CENTER',
             showSpinner: false,
-            splashFullScreen: false,
-            splashImmersive: false
+            splashFullScreen: true, // Immersive for cleaner transition
+            splashImmersive: true
         },
         PushNotifications: {
             presentationOptions: ["badge", "sound", "alert"],
