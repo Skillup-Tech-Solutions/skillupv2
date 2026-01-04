@@ -8,10 +8,10 @@
 // In production, this could be loaded from database or environment variables
 const versionConfig = {
     // Latest available version
-    latestVersion: '3.0.6',
+    latestVersion: '3.0.7',
 
     // Minimum version that's still supported (force update below this)
-    minSupportedVersion: '3.0.6',
+    minSupportedVersion: '3.0.7',
 
     // Optional: Force all users to update regardless of version
     forceUpdate: false,

@@ -224,7 +224,16 @@ const LiveSessionsTab = ({
                 session={activeSession}
                 userName={userName}
                 userEmail={userEmail}
-                isHost={getFromStorage("userId") === activeSession.hostId}
+                isHost={(() => {
+                    const storedUserId = getFromStorage("userId");
+                    const storedRole = getFromStorage("role");
+                    const sessionHostId = activeSession.hostId;
+                    const isMatch = String(storedUserId) === String(sessionHostId);
+                    // Fallback: if user is admin role, they should be able to confirm host ready
+                    const isAdmin = storedRole === "admin";
+                    console.log(`[LiveSession] isHost check: stored=${storedUserId}, host=${sessionHostId}, match=${isMatch}, isAdmin=${isAdmin}`);
+                    return isMatch || isAdmin;
+                })()}
                 onExit={() => {
                     setActiveSession(null);
                     refetch();
