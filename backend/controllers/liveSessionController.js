@@ -252,6 +252,48 @@ exports.startSession = async (req, res) => {
     }
 };
 
+// Confirm host is ready (called after host actually connects to Jitsi)
+// This prevents the race condition where students join while host is granting permissions
+exports.confirmHostReady = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: "Authentication required" });
+        }
+
+        const session = await LiveSession.findById(req.params.id);
+
+        if (!session) {
+            return res.status(404).json({ error: "Session not found" });
+        }
+
+        if (session.status !== "LIVE") {
+            return res.status(400).json({ error: "Session is not live" });
+        }
+
+        // Verify the caller is the host
+        const isHostById = String(req.user.id) === String(session.hostId);
+        const isHostByUnderscoreId = req.user._id && String(req.user._id) === String(session.hostId);
+
+        if (!isHostById && !isHostByUnderscoreId) {
+            return res.status(403).json({ error: "Only the host can confirm ready status" });
+        }
+
+        // Set hostReady to true - students can now join
+        session.hostReady = true;
+        await session.save();
+
+        console.log(`[LiveSession] Host confirmed ready for session ${session._id}. Students can now join.`);
+
+        res.json({
+            success: true,
+            message: "Host ready status confirmed. Students can now join."
+        });
+    } catch (error) {
+        console.error("Error confirming host ready:", error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // End a session
 exports.endSession = async (req, res) => {
     try {
@@ -440,31 +482,38 @@ exports.joinSession = async (req, res) => {
         console.log(`[Join Debug] User: ${userId} (${req.user.name}), HostId: ${session.hostId}`);
         console.log(`[Join Debug] All Active: ${session.participants.filter(p => !p.leftAt).length}`);
         console.log(`[Join Debug] Other Active: ${otherActiveParticipants.length}`);
+        console.log(`[Join Debug] Host Ready: ${session.hostReady}`);
         otherActiveParticipants.forEach(p => console.log(`   - Other: ${p.userId} (${p.name})`));
 
+        // Check if current user is the host
+        const isHostById = String(req.user.id) === String(session.hostId);
+        const isHostByUnderscoreId = req.user._id && String(req.user._id) === String(session.hostId);
+        const isHost = isHostById || isHostByUnderscoreId;
+
         if (otherActiveParticipants.length === 0) {
-            // Debugging Host Mismatch
-            // console.log("---------------------------------------------------");
-            // console.log(`[Admin Join Debug] Checking Host Privileges for Session: ${session._id}`);
-            // console.log(`[Admin Join Debug] Session Host ID (DB): ${session.hostId} (Type: ${typeof session.hostId})`);
-            // console.log(`[Admin Join Debug] Request User ID (Auth): ${req.user.id} (Type: ${typeof req.user.id})`);
-            // console.log(`[Admin Join Debug] Request User _ID (Auth): ${req.user._id} (Type: ${typeof req.user._id})`);
-            // console.log("---------------------------------------------------");
-
-            // Check if current user is the host
-            // req.user.id is from auth middleware, session.hostId is from DB
-            const isHostById = String(req.user.id) === String(session.hostId);
-            const isHostByUnderscoreId = req.user._id && String(req.user._id) === String(session.hostId);
-
-            if (!isHostById && !isHostByUnderscoreId) {
-                console.log("[Admin Join Debug] REJECTED: User is not the host.");
+            // No one else in the room - only host can join first
+            if (!isHost) {
+                console.log("[Join Debug] REJECTED: User is not the host (empty room).");
                 return res.json({
                     status: false,
                     success: false,
                     message: "Waiting for host to join the session..."
                 });
             } else {
-                console.log("[Admin Join Debug] ACCEPTED: User IS the host.");
+                console.log("[Join Debug] ACCEPTED: User IS the host. Resetting hostReady to false.");
+                // Reset hostReady - host needs to confirm after connecting to Jitsi
+                session.hostReady = false;
+            }
+        } else {
+            // There are other participants - but we need to check if host is REALLY ready
+            // This prevents the race condition where student joins while host is granting permissions
+            if (!isHost && !session.hostReady) {
+                console.log("[Join Debug] REJECTED: Host has joined but not confirmed ready yet (permissions pending).");
+                return res.json({
+                    status: false,
+                    success: false,
+                    message: "Waiting for host to connect to the session..."
+                });
             }
         }
 

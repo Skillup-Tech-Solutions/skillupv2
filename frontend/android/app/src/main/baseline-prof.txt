@@ -1,0 +1,89 @@
+# Baseline Profile for SkillUp App
+# This file specifies classes and methods to pre-compile for faster cold start.
+# Format: HSP - H=Hot, S=Startup, P=Post-Startup
+#
+# Reference: https://developer.android.com/topic/performance/baselineprofiles
+
+# ============================================
+# APP CORE CLASSES (Startup Critical)
+# ============================================
+
+# Application class - runs first
+HSPLcom/skillup/app/SkillUpApplication;-><init>()V
+HSPLcom/skillup/app/SkillUpApplication;->onCreate()V
+HSPLcom/skillup/app/SkillUpApplication;->getTimeSinceProcessStart()J
+
+# MainActivity - primary entry point
+HSPLcom/skillup/app/MainActivity;-><init>()V
+HSPLcom/skillup/app/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/skillup/app/MainActivity;->onResume()V
+
+# ============================================
+# CAPACITOR BRIDGE (WebView Init)
+# ============================================
+
+HSPLcom/getcapacitor/BridgeActivity;-><init>()V
+HSPLcom/getcapacitor/BridgeActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/getcapacitor/BridgeActivity;->load()V
+HSPLcom/getcapacitor/Bridge;-><init>**>
+HSPLcom/getcapacitor/Bridge;->init**>
+HSPLcom/getcapacitor/WebViewLocalServer;-><init>**>
+HSPLcom/getcapacitor/Plugin;-><init>()V
+
+# ============================================
+# ANDROID FRAMEWORK (Commonly Used)
+# ============================================
+
+# WebView (most time-consuming)
+HSPLandroid/webkit/WebView;-><init>**>
+HSPLandroid/webkit/WebView;->loadUrl**>
+HSPLandroid/webkit/WebSettings;->**>
+
+# View inflation
+HSPLandroid/view/LayoutInflater;->inflate**>
+HSPLandroid/view/View;-><init>**>
+HSPLandroid/view/ViewGroup;->**>
+
+# AppCompat
+HSPLandroidx/appcompat/app/AppCompatActivity;-><init>()V
+HSPLandroidx/appcompat/app/AppCompatActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLandroidx/appcompat/app/AppCompatDelegate;->**>
+
+# Splash Screen
+HSPLandroidx/core/splashscreen/SplashScreen;->installSplashScreen**>
+
+# ============================================
+# FIREBASE (Background, but used early)
+# ============================================
+
+HSPLcom/google/firebase/FirebaseApp;->initializeApp**>
+HSPLcom/google/firebase/messaging/FirebaseMessaging;->getInstance()Lcom/google/firebase/messaging/FirebaseMessaging;
+
+# ============================================
+# NOTIFICATION CHANNELS
+# ============================================
+
+HSPLandroid/app/NotificationManager;->createNotificationChannel**>
+HSPLandroid/app/NotificationChannel;-><init>**>
+
+# ============================================
+# CAPACITOR PLUGINS (Frequently Used)
+# ============================================
+
+# Status Bar
+HSPLcom/capacitorjs/plugins/statusbar/StatusBar;->**>
+
+# Splash Screen
+HSPLcom/capacitorjs/plugins/splashscreen/SplashScreen;->**>
+
+# Keyboard
+HSPLcom/capacitorjs/plugins/keyboard/Keyboard;->**>
+
+# Haptics
+HSPLcom/capacitorjs/plugins/haptics/Haptics;->**>
+
+# Local Notifications
+HSPLcom/capacitorjs/plugins/localnotifications/LocalNotifications;->**>
+
+# Preferences (storage)
+HSPLcom/capacitorjs/plugins/preferences/Preferences;->**>

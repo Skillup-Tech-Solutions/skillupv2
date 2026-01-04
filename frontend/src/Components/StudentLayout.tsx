@@ -325,7 +325,7 @@ const StudentLayout = () => {
                     display: "flex",
                     flexDirection: "column",
                     minHeight: "100vh",
-                    overflow: "auto",
+                    overflow: "visible",
                     position: "relative",
                     zIndex: 10,
                 }}
@@ -525,10 +525,13 @@ const StudentLayout = () => {
                     sx={{
                         p: { xs: 2, sm: 3 },
                         flex: 1,
-                        pb: { xs: 10, lg: 3 },
+                        pb: { xs: 12, lg: 3 },
                         display: "flex",
                         flexDirection: "column",
-                        gap: 2
+                        gap: 2,
+                        overflowY: "auto",
+                        overscrollBehavior: "contain",
+                        WebkitOverflowScrolling: "touch",
                     }}
                 >
                     {liveSessionBanner && (

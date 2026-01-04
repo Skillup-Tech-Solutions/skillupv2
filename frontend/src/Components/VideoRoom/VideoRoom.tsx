@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Box, Typography, Chip, Button, Dialog, DialogTitle, DialogContent, DialogActions, useMediaQuery, Snackbar, Alert } from "@mui/material";
 import { ArrowLeft, Users, Clock, VideoCamera, Warning, SignOut, HandWaving, ArrowsClockwise } from "@phosphor-icons/react";
 import type { LiveSession } from "../../Hooks/liveSessions";
-import { useLeaveSessionApi } from "../../Hooks/liveSessions";
+import { useLeaveSessionApi, useConfirmHostReadyApi } from "../../Hooks/liveSessions";
 import { useLocation } from "react-router-dom"; // Added for safe navigation detection
 import Cookies from "js-cookie";
 import { getFromStorage } from "../../utils/pwaUtils";
@@ -46,6 +46,7 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [transferMessage, setTransferMessage] = useState<string | null>(null);
     const { mutate: leaveSessionApi } = useLeaveSessionApi();
+    const { mutate: confirmHostReady } = useConfirmHostReadyApi();
     const currentDeviceId = getDeviceId();
 
     // Securely get base URL from config for beacon
@@ -315,6 +316,13 @@ const VideoRoom = ({ session, userName, userEmail, isHost = false, onExit, onEnd
                 // Update count from Jitsi
                 if (jitsiApiRef.current) {
                     setParticipantCount(jitsiApiRef.current.getParticipantsInfo().length + 1);
+                }
+
+                // Host: Confirm ready status so students can join
+                // This prevents the race condition where students join while host is granting permissions
+                if (isHost) {
+                    logger.log("VideoRoom: Host connected to Jitsi. Confirming host ready...");
+                    confirmHostReady(session._id);
                 }
 
                 // Programmatically mute non-hosts after join to ensure audio session is ready

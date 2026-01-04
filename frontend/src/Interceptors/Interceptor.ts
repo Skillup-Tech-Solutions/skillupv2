@@ -13,6 +13,46 @@ import { logger } from "../utils/logger";
 axios.defaults.timeout = 25000;
 axios.defaults.baseURL = config.BASE_URL;
 
+// Retry configuration for Render free plan cold starts
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  baseDelay: 2000, // 2 seconds
+  maxDelay: 10000, // 10 seconds max
+  retryableErrors: ['ECONNABORTED', 'ERR_NETWORK', 'ETIMEDOUT'],
+};
+
+// Helper to check if error is retryable
+const isRetryableError = (error: any): boolean => {
+  if (!error) return false;
+
+  // Timeout errors
+  if (error.code && RETRY_CONFIG.retryableErrors.includes(error.code)) {
+    return true;
+  }
+
+  // Network errors
+  if (error.message === 'Network Error') {
+    return true;
+  }
+
+  // Server errors (5xx) - backend might be waking up
+  if (error.response?.status >= 500 && error.response?.status < 600) {
+    return true;
+  }
+
+  return false;
+};
+
+// Exponential backoff delay
+const getRetryDelay = (retryCount: number): number => {
+  const delay = RETRY_CONFIG.baseDelay * Math.pow(2, retryCount);
+  return Math.min(delay, RETRY_CONFIG.maxDelay);
+};
+
+// Sleep helper
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
+
 let setIsLoading: (isLoading: boolean) => void = () => { };
 let setTimeOutModal: (isTimeOut: boolean) => void = () => { };
 let isRefreshing = false;
@@ -135,10 +175,39 @@ const handleTokenRefresh = async (error: any, axiosInstance: typeof axios | type
     }
   }
 
+  // Handle retryable errors (timeout, network, 5xx) with exponential backoff
+  if (isRetryableError(error) && originalRequest) {
+    const retryCount = originalRequest._retryCount || 0;
+
+    if (retryCount < RETRY_CONFIG.maxRetries) {
+      originalRequest._retryCount = retryCount + 1;
+      const delay = getRetryDelay(retryCount);
+
+      logger.log(`[Interceptor] Retryable error detected. Retry ${retryCount + 1}/${RETRY_CONFIG.maxRetries} after ${delay}ms`, {
+        errorCode: error.code,
+        errorMessage: error.message,
+        status: error.response?.status,
+      });
+
+      await sleep(delay);
+
+      // Re-run the request
+      return axiosInstance(originalRequest);
+    }
+
+    // All retries exhausted - now show appropriate UI
+    logger.warn(`[Interceptor] All ${RETRY_CONFIG.maxRetries} retries exhausted`, {
+      errorCode: error.code,
+      url: originalRequest?.url,
+    });
+  }
+
+  // Show timeout modal after retries exhausted
   if (error.code === "ECONNABORTED") {
     setTimeOutModal(true);
   }
 
+  // Handle network errors after retries exhausted
   if (error.code === "ERR_NETWORK" || error.message === "Network Error") {
     if (!navigator.onLine) {
       if (!window.location.hash.includes("/offline")) {

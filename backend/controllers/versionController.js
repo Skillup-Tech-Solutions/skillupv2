@@ -8,10 +8,10 @@
 // In production, this could be loaded from database or environment variables
 const versionConfig = {
     // Latest available version
-    latestVersion: '1.0.0',
+    latestVersion: '3.0.6',
 
     // Minimum version that's still supported (force update below this)
-    minSupportedVersion: '1.0.0',
+    minSupportedVersion: '3.0.6',
 
     // Optional: Force all users to update regardless of version
     forceUpdate: false,
@@ -20,7 +20,7 @@ const versionConfig = {
     releaseNotes: 'Initial release of SkillUp mobile app.',
 
     // Release date
-    releaseDate: '2026-01-01',
+    releaseDate: '2026-01-04',
 
     // Platform-specific download URLs
     downloadUrls: {

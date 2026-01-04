@@ -238,6 +238,20 @@ export const useStartSessionApi = () => {
     });
 };
 
+// Confirm host is ready (called after host actually connects to Jitsi)
+// This prevents the race condition where students join while host is granting permissions
+export const useConfirmHostReadyApi = () => {
+    return useMutation({
+        mutationFn: async (sessionId: string) => {
+            const response = await callApi(`${apiUrls.liveSessions}/${sessionId}/host-ready`, "PATCH" as any);
+            return response as ApiResponse;
+        },
+        onError: (error: any) => {
+            console.error("Failed to confirm host ready:", error);
+        },
+    });
+};
+
 // End session
 export const useEndSessionApi = () => {
     const queryClient = useQueryClient();

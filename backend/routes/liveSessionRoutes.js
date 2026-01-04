@@ -20,6 +20,7 @@ router.get("/", auth, roleAuth.adminOnly, liveSessionController.getSessions);
 router.post("/", auth, roleAuth.adminOnly, liveSessionController.createSession);
 router.put("/:id", auth, roleAuth.adminOnly, liveSessionController.updateSession);
 router.patch("/:id/start", auth, roleAuth.adminOnly, liveSessionController.startSession);
+router.patch("/:id/host-ready", auth, roleAuth.adminOnly, liveSessionController.confirmHostReady);
 router.patch("/:id/end", auth, roleAuth.adminOnly, liveSessionController.endSession);
 router.patch("/:id/cancel", auth, roleAuth.adminOnly, liveSessionController.cancelSession);
 router.delete("/:id", auth, roleAuth.adminOnly, liveSessionController.deleteSession);

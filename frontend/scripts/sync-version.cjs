@@ -20,6 +20,7 @@ const path = require('path');
 const packageJsonPath = path.join(__dirname, '../package.json');
 const buildGradlePath = path.join(__dirname, '../android/app/build.gradle');
 const versionTsPath = path.join(__dirname, '../src/utils/version.ts');
+const versionControllerPath = path.join(__dirname, '../../backend/controllers/versionController.js');
 
 /**
  * Calculate Android versionCode from semantic version
@@ -138,6 +139,40 @@ function updateVersionTs(version, versionCode, buildDate, gitHash, env) {
 }
 
 /**
+ * Update backend versionController.js with new version
+ */
+function updateVersionController(version, buildDate) {
+    if (!fs.existsSync(versionControllerPath)) {
+        console.log('⚠️  versionController.js not found, skipping backend sync');
+        return false;
+    }
+
+    let content = fs.readFileSync(versionControllerPath, 'utf8');
+
+    // Update latestVersion
+    content = content.replace(
+        /latestVersion:\s*'[^']+'/,
+        `latestVersion: '${version}'`
+    );
+
+    // Update minSupportedVersion (keep it in sync or you can adjust logic)
+    content = content.replace(
+        /minSupportedVersion:\s*'[^']+'/,
+        `minSupportedVersion: '${version}'`
+    );
+
+    // Update releaseDate
+    content = content.replace(
+        /releaseDate:\s*'[^']+'/,
+        `releaseDate: '${buildDate}'`
+    );
+
+    fs.writeFileSync(versionControllerPath, content, 'utf8');
+    console.log(`✅ Updated versionController.js: latestVersion='${version}', releaseDate='${buildDate}'`);
+    return true;
+}
+
+/**
  * Main sync function
  */
 function syncVersions() {
@@ -170,6 +205,14 @@ function syncVersions() {
         updateVersionTs(version, versionCode, buildDate, gitHash, env);
     } catch (error) {
         console.error('❌ Failed to update version.ts:', error.message);
+        success = false;
+    }
+
+    // Update backend versionController
+    try {
+        updateVersionController(version, buildDate);
+    } catch (error) {
+        console.error('❌ Failed to update versionController.js:', error.message);
         success = false;
     }
 

@@ -32,7 +32,7 @@ export interface UpdateInfo {
 export const APP_VERSION = '3.0.6';
 export const BUILD_NUMBER = 30006;
 export const BUILD_DATE = '2026-01-04';
-export const GIT_COMMIT = '8e53753';
+export const GIT_COMMIT = 'ead3c1c';
 export const ENV = 'production';
 
 /**

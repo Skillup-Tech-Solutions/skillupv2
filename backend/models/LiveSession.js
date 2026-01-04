@@ -78,6 +78,13 @@ const LiveSessionSchema = new mongoose.Schema({
         default: 0
     },
 
+    // Host Ready Flag - True only after host actually connects to Jitsi
+    // This prevents race condition where students join while host is granting permissions
+    hostReady: {
+        type: Boolean,
+        default: false
+    },
+
     // Session Lifecycle Timestamps
     startedAt: Date,
     endedAt: Date,
