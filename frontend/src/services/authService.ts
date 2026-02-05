@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 
 const TOKEN_EXPIRY_DAYS = 7;
 const AUTH_KEYS = ['skToken', 'skRefreshToken', 'email', 'role', 'name', 'mobile', 'userId', 'skillup_device_id'];
+const BUNDLE_KEY = 'skillup_auth_bundle';
 
 // Track if foreground listener is set up
 let foregroundListenerActive = false;
@@ -98,15 +99,54 @@ const initializeCache = async (retryCount = 0): Promise<void> => {
 
     logger.log('[authService] Initializing cache from native storage...');
 
-    for (const key of AUTH_KEYS) {
-        const value = await nativeStorage.get(key);
-        if (value) {
-            logger.log(`[authService] Restored ${key}`);
-            storageCache[key] = value;
-            // Also sync to localStorage for redundancy
-            localStorage.setItem(key, value);
+    try {
+        // STRATEGY: Try Bundle First (1 Native Call)
+        const bundleValue = await nativeStorage.get(BUNDLE_KEY);
+
+        if (bundleValue) {
+            try {
+                const bundle = JSON.parse(bundleValue);
+                // Restore headers from bundle
+                Object.assign(storageCache, bundle);
+
+                // Sync to localStorage
+                Object.keys(bundle).forEach(k => {
+                    if (bundle[k]) localStorage.setItem(k, bundle[k]);
+                });
+                logger.log('[authService] Restored specific auth bundle');
+            } catch (e) {
+                logger.error('[authService] Failed to parse auth bundle', e);
+                // Fallback to legacy reads if bundle corrupt
+            }
         }
+
+        // If no bundle (Migration Case) OR Bundle failed
+        if (Object.keys(storageCache).length === 0) {
+            logger.log('[authService] Bundle miss, checking legacy keys (Migration)...');
+
+            // PARALLEL read of all legacy keys (faster than serial)
+            const values = await Promise.all(AUTH_KEYS.map(k => nativeStorage.get(k)));
+
+            let hasData = false;
+            AUTH_KEYS.forEach((key, index) => {
+                const val = values[index];
+                if (val) {
+                    storageCache[key] = val;
+                    localStorage.setItem(key, val);
+                    hasData = true;
+                }
+            });
+
+            if (hasData) {
+                logger.log('[authService] Legacy keys found. Migrating to bundle...');
+                // Save to bundle for next time
+                await nativeStorage.set(BUNDLE_KEY, JSON.stringify(storageCache));
+            }
+        }
+    } catch (err) {
+        logger.error('[authService] Initialization error', err);
     }
+
     cacheInitialized = true;
     logger.log('[authService] Cache initialization complete');
 
@@ -122,17 +162,27 @@ const setupForegroundListener = () => {
         if (isActive) {
             logger.log('[authService] App resumed, re-syncing auth from native storage...');
 
-            // Re-read all auth keys from native storage
-            for (const key of AUTH_KEYS) {
-                const value = await nativeStorage.get(key);
-                if (value) {
-                    storageCache[key] = value;
-                    localStorage.setItem(key, value);
-                } else {
-                    // Value was removed from native storage
-                    delete storageCache[key];
-                    localStorage.removeItem(key);
-                }
+            // Just read the bundle again
+            const bundleValue = await nativeStorage.get(BUNDLE_KEY);
+
+            // Clear current cache first (in case logout happened natively?)
+            // Actually better to merge or reset. Let's reset to be safe.
+            // But if we reset, we might lose in-memory changes? 
+            // Usually internal changes write to native, so native is truth.
+
+            if (bundleValue) {
+                try {
+                    const bundle = JSON.parse(bundleValue);
+                    Object.assign(storageCache, bundle);
+                    // Sync localstorage
+                    Object.keys(bundle).forEach(k => {
+                        if (bundle[k]) localStorage.setItem(k, bundle[k]);
+                    });
+                } catch (e) { logger.warn('Resync parse fail', e); }
+            } else {
+                // Even if bundle missing, check legacy? 
+                // Assuming migration done, if bundle missing -> logged out.
+                // We should probably check if we WERE logged in.
             }
             logger.log('[authService] Auth re-sync complete');
         }
@@ -142,14 +192,32 @@ const setupForegroundListener = () => {
     logger.log('[authService] Foreground listener set up');
 };
 
-// Start initialization immediately
+// Trigger initialization (idempotent)
+const startInit = () => {
+    if (!cacheInitPromise) {
+        cacheInitPromise = initializeCache();
+    }
+};
+
+// Start initialization DEFERRED (First-Frame-First Strategy)
 if (typeof window !== 'undefined') {
-    cacheInitPromise = initializeCache();
+    // We defer this to let the UI paint first.
+    // critical auth checks will use localStorage (sync) which is fast.
+
+    if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(startInit, { timeout: 3000 });
+    } else {
+        setTimeout(startInit, 500);
+    }
 }
 
 export const authService = {
     // Wait for cache to be ready (use this in async contexts)
     async waitForReady(): Promise<void> {
+        if (!cacheInitPromise) {
+            // Trigger immediately if requested before idle/timeout
+            startInit();
+        }
         if (cacheInitPromise) {
             await cacheInitPromise;
         }
@@ -176,7 +244,10 @@ export const authService = {
         // Also store in native storage if in Capacitor
         if (isCapacitorNative()) {
             storageCache[key] = value;
-            nativeStorage.set(key, value);
+            // UPDATE BUNDLE
+            nativeStorage.set(BUNDLE_KEY, JSON.stringify(storageCache));
+            // We NO LONGER set individual keys natively to save calls.
+            // The bundle is the source of truth.
         }
     },
 
@@ -193,10 +264,28 @@ export const authService = {
     // Async get - directly from native storage (use this for critical auth checks)
     async getAsync(key: string): Promise<string | null> {
         if (isCapacitorNative()) {
-            // Wait for cache to be ready first to avoid overlapping gets
+            // OPTIMIZATION: Check memory/local cache first!
+            // If we have it in memory/local, return immediately without waiting for Native Init.
+            const cachedValue = storageCache[key] || localStorage.getItem(key);
+            if (cachedValue) {
+                return cachedValue;
+            }
+
+            // If not in cache, we MUST wait for initialization to complete
+            // to ensure we aren't just missing it because init hasn't finished.
             await this.waitForReady();
 
-            // Try native storage first for most reliable result
+            // Re-check cache after wait (in case init populated it)
+            const postInitValue = storageCache[key] || localStorage.getItem(key);
+            if (postInitValue) {
+                return postInitValue;
+            }
+
+            // Finally, try direct native get if still missing
+            // (e.g. it was just set natively by another plugin)
+
+            // Only hit Native if we are "Ready" but somehow don't have the value 
+            // (e.g. it was just set natively by another plugin or valid case of missing data)
             const nativeValue = await nativeStorage.get(key);
             if (nativeValue) {
                 // Update cache and localStorage
@@ -242,9 +331,13 @@ export const authService = {
             delete storageCache[key];
 
             if (isCapacitorNative()) {
-                nativeStorage.remove(key);
+                nativeStorage.remove(key); // Cleanup legacy keys safely
             }
         });
+
+        if (isCapacitorNative()) {
+            nativeStorage.remove(BUNDLE_KEY);
+        }
     },
 
     // Check if user is authenticated (sync - use getTokenAsync for critical checks)

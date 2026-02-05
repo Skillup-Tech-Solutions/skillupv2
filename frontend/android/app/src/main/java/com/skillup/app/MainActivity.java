@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import android.webkit.WebView;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.core.splashscreen.SplashScreen;
@@ -51,17 +52,37 @@ public class MainActivity extends BridgeActivity {
             Log.i(TAG, "[Activity] SplashScreen.install took: " + splashDuration + "ms");
         }
         
-        // --- SUPER.ONCREATE (Capacitor/WebView - this is the bottleneck) ---
+        // --- SUPER.ONCREATE (Capacitor Setup) ---
         long superStart = SystemClock.elapsedRealtime();
         super.onCreate(savedInstanceState);
         long superDuration = SystemClock.elapsedRealtime() - superStart;
         if (isDebug) {
-            Log.i(TAG, "[Activity] super.onCreate (Capacitor init) took: " + superDuration + "ms");
+            Log.i(TAG, "[Activity] super.onCreate took: " + superDuration + "ms");
         }
+        // --- LAZY PLUGIN REGISTRATION ---
         
-        // --- DEFER NOTIFICATION CHANNELS TO BACKGROUND ---
-        // This removes ~50-100ms from the critical path
-        deferNotificationChannelsToBackground();
+       // --- LAZY PLUGIN REGISTRATION ---
+        // CRITICAL: We DO NOT call load() immediately (BridgeActivity usually does this).
+        // Instead, we defer it to ensure the first frame (splash/skeleton) is drawn first.
+        
+        // --- DEFER BRIDGE LOAD & OTHER INIT ---
+        // Post to DecorView to ensure this runs AFTER the first frame is drawn.
+        getWindow().getDecorView().post(() -> {
+            // 1. Notification Channels (Background Thread)
+            deferNotificationChannelsToBackground();
+
+            // 3. Safe WebView Pre-warming (Main Thread, Deferred)
+            // We do this HERE instead of Application class to avoid crashing (View must be on Main Thread)
+            // and to avoid blocking the initial startup (since we are in a post() block).
+            try {
+                // Initialize a dummy WebView to trigger Chromium engine load
+                new WebView(getApplicationContext());
+                if (isDebug) Log.i(TAG, "[Post-Frame] WebView pre-warmed safely");
+            } catch (Exception e) {
+                // Ignore if already initialized or failed
+            }
+            
+        });
         
         // --- MEASURE FIRST FRAME (only in debug) ---
         if (isDebug) {

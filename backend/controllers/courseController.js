@@ -1,5 +1,6 @@
 const Course = require("../models/Course");
 const Lesson = require('../models/lessons');
+const EmployeeProfile = require("../models/EmployeeProfile");
 const path = require("path");
 const fs = require("fs");
 const b2Service = require("../utils/b2Service");
@@ -8,7 +9,7 @@ const { emitCourseCreated, emitCourseUpdated, emitCourseDeleted, emitDashboardUp
 // Create a new course
 exports.createCourse = async (req, res) => {
   try {
-    const { name, description, discount, price, duration, level, mode, startDate, endDate, timing, trainer, status, showOnLandingPage } = req.body;
+    const { name, description, discount, price, duration, level, mode, startDate, endDate, timing, trainer, trainerId, status, showOnLandingPage } = req.body;
 
     // Helper to safely get string value
     const safeString = (val) => Array.isArray(val) ? val[0] : val;
@@ -50,6 +51,16 @@ exports.createCourse = async (req, res) => {
       })()
     });
 
+    // If trainerId is provided, lookup employee and set trainer name
+    const trainerIdValue = safeString(trainerId);
+    if (trainerIdValue) {
+      course.trainerId = trainerIdValue;
+      const employee = await EmployeeProfile.findById(trainerIdValue).populate("user", "name");
+      if (employee?.user?.name) {
+        course.trainer = employee.user.name;
+      }
+    }
+
     // Handle file upload to B2
     if (req.file) {
       const b2File = await b2Service.uploadFile(req.file.buffer, req.file.originalname, "courses");
@@ -78,7 +89,10 @@ exports.createCourse = async (req, res) => {
 // Get all courses
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find({}).sort({ _id: -1 });
+    const courses = await Course.find({}).populate({
+      path: 'trainerId',
+      populate: { path: 'user', select: 'name email' }
+    }).sort({ _id: -1 });
 
     res.status(200).json({
       message: "Courses retrieved successfully",
@@ -121,7 +135,7 @@ exports.getCourseById = async (req, res) => {
 // Update course
 exports.updateCourse = async (req, res) => {
   try {
-    const { name, description, discount, price, duration, showOnLandingPage, timing, startDate, endDate } = req.body;
+    const { name, description, discount, price, duration, showOnLandingPage, timing, startDate, endDate, trainerId } = req.body;
     console.log("UPDATE DEBUG:", JSON.stringify(req.body, null, 2));
 
     // Helper to safely get string value
@@ -150,6 +164,20 @@ exports.updateCourse = async (req, res) => {
       if (val !== "undefined" && val !== "null") {
         course.showOnLandingPage = (val === "true" || val === true);
       }
+    }
+
+    // Update trainer if trainerId provided
+    const safeTrainerId = Array.isArray(trainerId) ? trainerId[0] : trainerId;
+    if (safeTrainerId) {
+      course.trainerId = safeTrainerId;
+      const employee = await EmployeeProfile.findById(safeTrainerId).populate("user", "name");
+      if (employee?.user?.name) {
+        course.trainer = employee.user.name;
+      }
+    } else if (trainerId === "" || trainerId === null) {
+      // Clear trainer if explicitly removed
+      course.trainerId = undefined;
+      course.trainer = "";
     }
 
     // Update file if new file is uploaded

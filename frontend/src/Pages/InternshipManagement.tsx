@@ -18,6 +18,7 @@ import CustomSnackBar from "../Custom/CustomSnackBar";
 import InternshipSubmissionsList from "../Components/Admin/InternshipSubmissionsList";
 import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
 import { getFromStorage } from "../utils/pwaUtils";
+import { useGetEmployees } from "../Hooks/employee";
 
 const dialogStyle = {
     "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" },
@@ -58,8 +59,11 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
         skills: "",
         stipend: 0,
         status: "Active",
+        mentorId: "",
     });
     const [selectedInternship, setSelectedInternship] = useState<any>(null);
+
+    const { data: employees } = useGetEmployees();
 
     const { data, isLoading } = useQuery({
         queryKey: ["internships"],
@@ -74,6 +78,7 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
             await axios.post(`${import.meta.env.VITE_APP_BASE_URL}admin/internships`, {
                 ...payload,
                 skills: payload.skills.split(",").map((s: string) => s.trim()).filter(Boolean),
+                mentorId: payload.mentorId || undefined,
             }, { headers: { Authorization: `Bearer ${token}` } });
         },
         onSuccess: () => {
@@ -89,6 +94,7 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
             await axios.put(`${import.meta.env.VITE_APP_BASE_URL}admin/internships/${id}`, {
                 ...payload,
                 skills: payload.skills.split(",").map((s: string) => s.trim()).filter(Boolean),
+                mentorId: payload.mentorId || undefined,
             }, { headers: { Authorization: `Bearer ${token}` } });
         },
         onSuccess: () => {
@@ -135,13 +141,14 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
                 skills: (item.skills || []).join(", "),
                 stipend: item.stipend || 0,
                 status: item.status || "Active",
+                mentorId: item.mentorId || "",
             });
         } else {
             setEditingItem(null);
             setFormData({
                 title: "", description: "", company: "", department: "", duration: "",
                 mode: "on-site", startDate: "", endDate: "", mentor: "", mentorEmail: "",
-                dailyTasks: "", skills: "", stipend: 0, status: "Active",
+                dailyTasks: "", skills: "", stipend: 0, status: "Active", mentorId: "",
             });
         }
         setModalOpen(true);
@@ -251,8 +258,34 @@ const InternshipManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) =
                         <Grid size={{ xs: 12, sm: 6 }}><TextField select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} fullWidth sx={textFieldDarkStyles}><MenuItem value="Active">Active</MenuItem><MenuItem value="Ongoing">Ongoing</MenuItem><MenuItem value="Completed">Completed</MenuItem><MenuItem value="Upcoming">Upcoming</MenuItem></TextField></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Start Date" type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="End Date" type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} /></Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Name" value={formData.mentor} onChange={(e) => setFormData({ ...formData, mentor: e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Email" value={formData.mentorEmail} onChange={(e) => setFormData({ ...formData, mentorEmail: e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
+                        <Grid size={{ xs: 12 }}>
+                            <TextField
+                                select
+                                label="Mentor (Select Employee)"
+                                value={formData.mentorId}
+                                onChange={(e) => {
+                                    const empId = e.target.value;
+                                    const emp = (employees || []).find((emp: any) => emp._id === empId);
+                                    setFormData({
+                                        ...formData,
+                                        mentorId: empId,
+                                        mentor: emp?.user?.name || "",
+                                        mentorEmail: emp?.user?.email || "",
+                                    });
+                                }}
+                                fullWidth
+                                sx={textFieldDarkStyles}
+                            >
+                                <MenuItem value=""><em>Select a mentor</em></MenuItem>
+                                {(employees || []).map((emp: any) => (
+                                    <MenuItem key={emp._id} value={emp._id}>
+                                        {emp.user?.name || emp.employeeId} - {emp.designation}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Name" value={formData.mentor} onChange={(e) => setFormData({ ...formData, mentor: e.target.value })} fullWidth sx={textFieldDarkStyles} disabled={!!formData.mentorId} /></Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Email" value={formData.mentorEmail} onChange={(e) => setFormData({ ...formData, mentorEmail: e.target.value })} fullWidth sx={textFieldDarkStyles} disabled={!!formData.mentorId} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Monthy Stipend (₹)" type="number" value={formData.stipend} onChange={(e) => setFormData({ ...formData, stipend: +e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Required Skills" value={formData.skills} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} fullWidth placeholder="e.g., React, Node.js" sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12 }}><TextField label="Daily Tasks / Roles" value={formData.dailyTasks} onChange={(e) => setFormData({ ...formData, dailyTasks: e.target.value })} fullWidth multiline rows={2} sx={textFieldDarkStyles} /></Grid>

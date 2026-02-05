@@ -25,10 +25,7 @@ import {
     User,
     CalendarBlank,
     CheckCircle,
-    FileCode,
     FileDoc,
-    FilePdf,
-    VideoCamera,
     Sparkle,
     Trophy,
     Star,
@@ -78,15 +75,7 @@ const getActiveStep = (status: string) => {
     }
 };
 
-const getFileIcon = (fileType: string) => {
-    switch (fileType) {
-        case "ppt": return <FileDoc size={20} weight="duotone" style={{ color: "#f59e0b" }} />;
-        case "source-code": return <FileCode size={20} weight="duotone" style={{ color: "#22c55e" }} />;
-        case "report": case "documentation": return <FilePdf size={20} weight="duotone" style={{ color: "#ef4444" }} />;
-        case "video": return <VideoCamera size={20} weight="duotone" style={{ color: "#a855f7" }} />;
-        default: return <FileDoc size={20} weight="duotone" style={{ color: "#22d3ee" }} />;
-    }
-};
+
 
 // Using exact frontend-ref colors
 const getStatusBadge = (assignment: any) => {
@@ -509,6 +498,71 @@ const MyProjects = () => {
                                     </Box>
                                 </Box>
 
+                                {/* Consolidated Project Resources */}
+                                {(project?.attachments?.length > 0 || assignment.deliveryFiles?.length > 0) && (
+                                    <Box sx={{ px: 3, pt: 3, position: "relative", zIndex: 1 }}>
+                                        <Box sx={{
+                                            display: "flex", alignItems: "center", gap: 1,
+                                            color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.1em", mb: 2
+                                        }}>
+                                            <FolderSimple size={16} weight="duotone" style={{ color: "#22d3ee" }} />
+                                            Project Resources
+                                        </Box>
+                                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                            {/* Global Resources (Employee) */}
+                                            {project?.attachments?.map((file: any, idx: number) => (
+                                                <Box
+                                                    key={`global-${idx}`}
+                                                    onClick={() => handleDownload(file.filePath, file.fileName)}
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 0.5,
+                                                        px: 1.5,
+                                                        py: 0.75,
+                                                        bgcolor: "rgba(34, 211, 238, 0.1)",
+                                                        border: "1px solid rgba(34, 211, 238, 0.3)",
+                                                        borderRadius: "6px",
+                                                        fontSize: "11px",
+                                                        color: "#22d3ee",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.2s",
+                                                        "&:hover": { bgcolor: "rgba(34, 211, 238, 0.2)", color: "#67e8f9" },
+                                                    }}
+                                                >
+                                                    <DownloadSimple size={14} />
+                                                    {file.fileName}
+                                                </Box>
+                                            ))}
+                                            {/* Delivery Files (Admin) */}
+                                            {assignment.deliveryFiles?.map((file: any, idx: number) => (
+                                                <Box
+                                                    key={`delivery-${idx}`}
+                                                    onClick={() => handleDownload(file.filePath, file.fileName)}
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 0.5,
+                                                        px: 1.5,
+                                                        py: 0.75,
+                                                        bgcolor: "rgba(34, 197, 94, 0.1)", // Green tint for delivery
+                                                        border: "1px solid rgba(34, 197, 94, 0.3)",
+                                                        borderRadius: "6px",
+                                                        fontSize: "11px",
+                                                        color: "#22c55e",
+                                                        cursor: "pointer",
+                                                        transition: "all 0.2s",
+                                                        "&:hover": { bgcolor: "rgba(34, 197, 94, 0.2)", color: "#4ade80" },
+                                                    }}
+                                                >
+                                                    <DownloadSimple size={14} />
+                                                    {file.fileName}
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
+
                                 {/* Action Section */}
                                 <Box sx={{ p: 3, borderTop: "1px solid rgba(71, 85, 105, 0.4)", position: "relative", zIndex: 1 }}>
                                     {/* NEEDS REQUIREMENT */}
@@ -662,42 +716,7 @@ const MyProjects = () => {
                                                 <Box sx={{ fontSize: "16px", fontWeight: 600, color: "#22c55e" }}>Your Project Files are Ready!</Box>
                                             </Box>
 
-                                            {assignment.deliveryFiles?.length > 0 && (
-                                                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 2 }}>
-                                                    {assignment.deliveryFiles.map((file: any, idx: number) => (
-                                                        <Box
-                                                            key={idx}
-                                                            sx={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: 2,
-                                                                p: 2,
-                                                                bgcolor: "rgba(15, 23, 42, 0.5)",
-                                                                borderRadius: "6px",
-                                                                justifyContent: "space-between"
-                                                            }}
-                                                        >
-                                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                                {getFileIcon(file.fileType)}
-                                                                <Box>
-                                                                    <Box sx={{ fontSize: "13px", fontWeight: 500, color: "#f8fafc" }}>{file.fileName}</Box>
-                                                                    <Box sx={{ fontSize: "11px", color: "#64748b", textTransform: "capitalize" }}>
-                                                                        {file.fileType?.replace("-", " ")}
-                                                                    </Box>
-                                                                </Box>
-                                                            </Box>
-                                                            <Button
-                                                                size="small"
-                                                                startIcon={<DownloadSimple size={14} />}
-                                                                onClick={() => handleDownload(file.filePath, file.fileName)}
-                                                                sx={{ color: "#22c55e", fontSize: "11px", fontWeight: 500 }}
-                                                            >
-                                                                Download
-                                                            </Button>
-                                                        </Box>
-                                                    ))}
-                                                </Box>
-                                            )}
+
 
                                             <Button
                                                 fullWidth
@@ -736,33 +755,7 @@ const MyProjects = () => {
                                                 <Box sx={{ fontSize: "16px", fontWeight: 600, color: "#22c55e" }}>Project Delivered Successfully!</Box>
                                             </Box>
 
-                                            {assignment.deliveryFiles?.length > 0 && (
-                                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 2 }}>
-                                                    {assignment.deliveryFiles.map((file: any, idx: number) => (
-                                                        <Box
-                                                            key={idx}
-                                                            onClick={() => handleDownload(file.filePath, file.fileName)}
-                                                            sx={{
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                gap: 0.5,
-                                                                px: 1.5,
-                                                                py: 0.75,
-                                                                bgcolor: "rgba(51, 65, 85, 0.5)",
-                                                                border: "1px solid rgba(71, 85, 105, 0.4)",
-                                                                borderRadius: "6px",
-                                                                fontSize: "11px",
-                                                                color: "#94a3b8",
-                                                                cursor: "pointer",
-                                                                "&:hover": { bgcolor: "rgba(51, 65, 85, 0.8)", color: "#f8fafc" },
-                                                            }}
-                                                        >
-                                                            <DownloadSimple size={14} />
-                                                            {file.fileName}
-                                                        </Box>
-                                                    ))}
-                                                </Box>
-                                            )}
+
 
                                             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                                                 {!assignment.feedback?.submitted && (

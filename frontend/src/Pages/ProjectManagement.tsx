@@ -19,6 +19,7 @@ import CustomSnackBar from "../Custom/CustomSnackBar";
 import ProjectSubmissions from "./ProjectSubmissions";
 import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
 import { getFromStorage } from "../utils/pwaUtils";
+import { useGetEmployees } from "../Hooks/employee";
 
 const dialogStyle = {
     "& .MuiDialog-paper": { bgcolor: "#1e293b", border: "1px solid rgba(71, 85, 105, 0.5)", borderRadius: "6px" },
@@ -61,10 +62,12 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
         maxScore: 100,
         passingScore: 40,
         deliverables: [] as string[],
+        mentorId: "",
     });
 
     const commonDeliverables = ["Project Report", "PPT", "Source Code", "Research Paper", "Video Demo"];
     const [selectedProject, setSelectedProject] = useState<any>(null);
+    const { data: employees } = useGetEmployees();
 
     const { data, isLoading } = useQuery({
         queryKey: ["projects"],
@@ -80,6 +83,7 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 ...payload,
                 skills: payload.skills.split(",").map((s: string) => s.trim()).filter(Boolean),
                 tasks: payload.tasks.split("\n").map((s: string) => s.trim()).filter(Boolean),
+                mentorId: payload.mentorId || undefined,
             }, { headers: { Authorization: `Bearer ${token}` } });
         },
         onSuccess: () => {
@@ -96,6 +100,7 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 ...payload,
                 skills: payload.skills.split(",").map((s: string) => s.trim()).filter(Boolean),
                 tasks: payload.tasks.split("\n").map((s: string) => s.trim()).filter(Boolean),
+                mentorId: payload.mentorId || undefined,
             }, { headers: { Authorization: `Bearer ${token}` } });
         },
         onSuccess: () => {
@@ -144,6 +149,7 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 maxScore: item.maxScore || 100,
                 passingScore: item.passingScore || 40,
                 deliverables: item.deliverables || [],
+                mentorId: item.mentorId || "",
             });
         } else {
             setEditingItem(null);
@@ -151,7 +157,7 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 title: "", description: "", requirements: "", tasks: "", deadline: "",
                 startDate: "", endDate: "",
                 mentor: "", mentorEmail: "", projectType: "individual", maxGroupSize: 1,
-                skills: "", status: "Active", maxScore: 100, passingScore: 40, deliverables: [],
+                skills: "", status: "Active", maxScore: 100, passingScore: 40, deliverables: [], mentorId: "",
             });
         }
         setModalOpen(true);
@@ -245,7 +251,32 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
                     <Grid container spacing={2.5}>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Project Title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Name" value={formData.mentor} onChange={(e) => setFormData({ ...formData, mentor: e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                select
+                                label="Mentor (Select Employee)"
+                                value={formData.mentorId}
+                                onChange={(e) => {
+                                    const empId = e.target.value;
+                                    const emp = (employees || []).find((emp: any) => emp._id === empId);
+                                    setFormData({
+                                        ...formData,
+                                        mentorId: empId,
+                                        mentor: emp?.user?.name || "",
+                                        mentorEmail: emp?.user?.email || "",
+                                    });
+                                }}
+                                fullWidth
+                                sx={textFieldDarkStyles}
+                            >
+                                <MenuItem value=""><em>Select a mentor</em></MenuItem>
+                                {(employees || []).map((emp: any) => (
+                                    <MenuItem key={emp._id} value={emp._id}>
+                                        {emp.user?.name || emp.employeeId} - {emp.designation}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
                         <Grid size={{ xs: 12 }}><TextField label="Description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} fullWidth multiline rows={2} sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12 }}><TextField label="Requirements" value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} fullWidth multiline rows={2} sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12 }}><TextField label="Tasks (One per line)" value={formData.tasks} onChange={(e) => setFormData({ ...formData, tasks: e.target.value })} fullWidth multiline rows={3} sx={textFieldDarkStyles} /></Grid>
@@ -261,7 +292,8 @@ const ProjectManagement = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Start Date" type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="End Date" type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Deadline" type="date" value={formData.deadline} onChange={(e) => setFormData({ ...formData, deadline: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} sx={textFieldDarkStyles} /></Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Email" value={formData.mentorEmail} onChange={(e) => setFormData({ ...formData, mentorEmail: e.target.value })} fullWidth sx={textFieldDarkStyles} /></Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Name" value={formData.mentor} onChange={(e) => setFormData({ ...formData, mentor: e.target.value })} fullWidth sx={textFieldDarkStyles} disabled={!!formData.mentorId} /></Grid>
+                        <Grid size={{ xs: 12, sm: 6 }}><TextField label="Mentor Email" value={formData.mentorEmail} onChange={(e) => setFormData({ ...formData, mentorEmail: e.target.value })} fullWidth sx={textFieldDarkStyles} disabled={!!formData.mentorId} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField select label="Project Type" value={formData.projectType} onChange={(e) => setFormData({ ...formData, projectType: e.target.value })} fullWidth sx={textFieldDarkStyles}><MenuItem value="individual">Individual</MenuItem><MenuItem value="group">Group</MenuItem></TextField></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField label="Max Group Size" type="number" value={formData.maxGroupSize} onChange={(e) => setFormData({ ...formData, maxGroupSize: +e.target.value })} fullWidth sx={textFieldDarkStyles} disabled={formData.projectType === "individual"} /></Grid>
                         <Grid size={{ xs: 12, sm: 6 }}><TextField select label="Status" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} fullWidth sx={textFieldDarkStyles}><MenuItem value="Active">Active</MenuItem><MenuItem value="Completed">Completed</MenuItem></TextField></Grid>

@@ -50,6 +50,24 @@ export const normalizeFileUrl = (url: string | null | undefined): string => {
         return url;
     }
 
+    // Handle legacy domains or incorrect base URLs stored in DB
+    const legacyDomains = [
+        'be-demo.skilluptechbuzz.in',
+        'demo.skilluptechbuzz.in',
+        'localhost:5000' // Handle localhost if we are in prod
+    ];
+
+    if (legacyDomains.some(domain => url.includes(domain))) {
+        try {
+            const urlObj = new URL(url);
+            const pathWithQuery = urlObj.pathname + urlObj.search;
+            const cleanPath = pathWithQuery.startsWith('/') ? pathWithQuery : '/' + pathWithQuery;
+            return `${config.BASE_URL_MAIN}${cleanPath}`;
+        } catch (e) {
+            console.warn('[normalizeFileUrl] Failed to parse legacy URL:', url);
+        }
+    }
+
     // Extract the path from the URL
     // Handle patterns like: http://localhost:5000/api/files/download?file=...
     // or: http://localhost:5000/uploads/...

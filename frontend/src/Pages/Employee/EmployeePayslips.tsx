@@ -13,7 +13,7 @@ import { useGetMyPayslips } from "../../Hooks/employee"; // Correct path
 import CustomSnackBar from "../../Custom/CustomSnackBar"; // Verify path
 import { normalizeDownloadUrl } from "../../utils/normalizeUrl";
 
-const EmployeePortal = () => {
+const EmployeePayslips = () => {
     const { data: payslips, isLoading, error } = useGetMyPayslips();
 
     const handleDownload = (url: string) => {
@@ -101,4 +101,4 @@ const EmployeePortal = () => {
     );
 };
 
-export default EmployeePortal;
+export default EmployeePayslips;

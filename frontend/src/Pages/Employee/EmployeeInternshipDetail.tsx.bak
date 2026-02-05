@@ -1,0 +1,610 @@
+import { useState } from "react";
+import { Box, Typography, Card, CardContent, CircularProgress, Grid, Chip, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tabs, Tab, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Avatar, Divider } from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import { Books, User, Calendar, Clock, VideoCamera, Plus, ArrowLeft, Play, Eye, Certificate, ChatCircle, FileText, X, Download } from "@phosphor-icons/react";
+import { useGetCourseDetail } from "../../Hooks/employee";
+
+// Status config for styling
+const statusConfig: Record<string, { bg: string; color: string; label: string }> = {
+    'assigned': { bg: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', label: 'ASSIGNED' },
+    'in-progress': { bg: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', label: 'IN PROGRESS' },
+    'requirement-submitted': { bg: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6', label: 'REQ SUBMITTED' },
+    'ready-for-demo': { bg: 'rgba(20, 184, 166, 0.2)', color: '#14b8a6', label: 'DEMO READY' },
+    'completed': { bg: 'rgba(16, 185, 129, 0.2)', color: '#10b981', label: 'COMPLETED' },
+    'delivered': { bg: 'rgba(16, 185, 129, 0.2)', color: '#10b981', label: 'DELIVERED' },
+};
+
+const EmployeeCourseDetail = () => {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const [tabValue, setTabValue] = useState(0);
+    const [selectedStudent, setSelectedStudent] = useState<any>(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [submissionsModalOpen, setSubmissionsModalOpen] = useState(false);
+    const [certificateModalOpen, setCertificateModalOpen] = useState(false);
+
+    const { data, isLoading, error } = useGetCourseDetail(id || "");
+
+    if (isLoading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 5 }}>
+                <CircularProgress sx={{ color: "#10b981" }} />
+            </Box>
+        );
+    }
+
+    if (error || !data) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Typography sx={{ color: "#ef4444" }}>Failed to load course details</Typography>
+            </Box>
+        );
+    }
+
+    const { course, enrolledStudents, sessions } = data;
+    const liveSessions = sessions?.filter((s: any) => s.status === "LIVE" || s.status === "SCHEDULED") || [];
+
+    // Separate active and completed students
+    const activeStudents = enrolledStudents?.filter((e: any) =>
+        !['completed', 'delivered'].includes(e.status)
+    ) || [];
+    const completedStudents = enrolledStudents?.filter((e: any) =>
+        ['completed', 'delivered'].includes(e.status)
+    ) || [];
+
+    const getStatusStyle = (status: string) => {
+        return statusConfig[status] || statusConfig['assigned'];
+    };
+
+    const handleViewDetails = (enrollment: any) => {
+        setSelectedStudent(enrollment);
+        setDetailModalOpen(true);
+    };
+
+    const handleViewSubmissions = (enrollment: any) => {
+        setSelectedStudent(enrollment);
+        setSubmissionsModalOpen(true);
+    };
+
+    const handleViewCertificate = (enrollment: any) => {
+        setSelectedStudent(enrollment);
+        setCertificateModalOpen(true);
+    };
+
+    const renderStudentTable = (students: any[]) => (
+        <TableContainer>
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        <TableCell sx={{ color: "#64748b", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", borderColor: "rgba(71, 85, 105, 0.4)", letterSpacing: "0.5px" }}>Student</TableCell>
+                        <TableCell sx={{ color: "#64748b", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", borderColor: "rgba(71, 85, 105, 0.4)", letterSpacing: "0.5px" }}>Course</TableCell>
+                        <TableCell sx={{ color: "#64748b", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", borderColor: "rgba(71, 85, 105, 0.4)", letterSpacing: "0.5px" }}>Status</TableCell>
+                        <TableCell sx={{ color: "#64748b", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", borderColor: "rgba(71, 85, 105, 0.4)", letterSpacing: "0.5px" }}>Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {students.map((enrollment: any) => {
+                        const statusStyle = getStatusStyle(enrollment.status);
+                        return (
+                            <TableRow key={enrollment._id} sx={{ "&:hover": { bgcolor: "rgba(30, 41, 59, 0.4)" } }}>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)", py: 2 }}>
+                                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                                        <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "14px" }}>
+                                            {enrollment.student?.name || "Unknown"}
+                                        </Typography>
+                                        <Typography sx={{ color: "#64748b", fontSize: "12px" }}>
+                                            {enrollment.student?.email || "N/A"}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)", py: 2 }}>
+                                    <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                                        {course.name}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)", py: 2 }}>
+                                    <Chip
+                                        label={statusStyle.label}
+                                        size="small"
+                                        sx={{
+                                            bgcolor: statusStyle.bg,
+                                            color: statusStyle.color,
+                                            fontWeight: 600,
+                                            fontSize: "10px",
+                                            height: "24px",
+                                            letterSpacing: "0.3px",
+                                        }}
+                                    />
+                                </TableCell>
+                                <TableCell sx={{ borderColor: "rgba(71, 85, 105, 0.4)", py: 2 }}>
+                                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                                        <Tooltip title="View Details">
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: "#3b82f6" }}
+                                                onClick={() => handleViewDetails(enrollment)}
+                                            >
+                                                <Eye size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="View Submissions">
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: enrollment.courseSubmissions?.length > 0 ? "#8b5cf6" : "#475569" }}
+                                                onClick={() => handleViewSubmissions(enrollment)}
+                                            >
+                                                <FileText size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="View Certificate">
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: enrollment.certificate?.url ? "#10b981" : "#475569" }}
+                                                onClick={() => handleViewCertificate(enrollment)}
+                                            >
+                                                <Certificate size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Message Student">
+                                            <IconButton size="small" sx={{ color: "#64748b" }}>
+                                                <ChatCircle size={18} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+
+    return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {/* Back Button */}
+            <Box
+                onClick={() => navigate("/employee/courses")}
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    "&:hover": { color: "#f8fafc" },
+                    width: "fit-content",
+                }}
+            >
+                <ArrowLeft size={20} />
+                <Typography sx={{ fontSize: "14px" }}>Back to Courses</Typography>
+            </Box>
+
+            {/* Course Header */}
+            <Card
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.6)",
+                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                    borderRadius: "12px",
+                }}
+            >
+                <CardContent sx={{ p: 4 }}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                            <Box
+                                sx={{
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: "16px",
+                                    bgcolor: "rgba(59, 130, 246, 0.2)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Books size={32} weight="duotone" style={{ color: "#3b82f6" }} />
+                            </Box>
+                            <Box>
+                                <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "24px" }}>
+                                    {course.name}
+                                </Typography>
+                                <Typography sx={{ color: "#64748b", fontSize: "14px", mt: 0.5 }}>
+                                    {course.category || "General"} • {course.level || "Beginner"}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <Chip
+                            label={course.status || "Active"}
+                            sx={{
+                                bgcolor: course.status === "Active" ? "rgba(16, 185, 129, 0.2)" : "rgba(100, 116, 139, 0.2)",
+                                color: course.status === "Active" ? "#10b981" : "#64748b",
+                                fontWeight: 600,
+                            }}
+                        />
+                    </Box>
+                    <Typography sx={{ color: "#94a3b8", fontSize: "14px", mt: 3, lineHeight: 1.6 }}>
+                        {course.description || "No description available"}
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 4, mt: 3, flexWrap: "wrap" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Clock size={18} style={{ color: "#64748b" }} />
+                            <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                                Duration: {course.duration || "N/A"}
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <User size={18} style={{ color: "#64748b" }} />
+                            <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                                {enrolledStudents?.length || 0} Enrolled Students
+                            </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Calendar size={18} style={{ color: "#64748b" }} />
+                            <Typography sx={{ color: "#94a3b8", fontSize: "13px" }}>
+                                Created: {new Date(course.createdAt).toLocaleDateString()}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* Live Sessions Section */}
+            <Card
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.6)",
+                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                    borderRadius: "12px",
+                }}
+            >
+                <CardContent sx={{ p: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+                        <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "18px", display: "flex", alignItems: "center", gap: 1 }}>
+                            <VideoCamera size={22} weight="duotone" style={{ color: "#ef4444" }} />
+                            Live Sessions
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Plus size={16} />}
+                            onClick={() => navigate("/employee/live-sessions")}
+                            sx={{
+                                bgcolor: "#3b82f6",
+                                "&:hover": { bgcolor: "#2563eb" },
+                                fontWeight: 600,
+                                fontSize: "12px",
+                            }}
+                        >
+                            Schedule Session
+                        </Button>
+                    </Box>
+                    {liveSessions.length === 0 ? (
+                        <Box sx={{ textAlign: "center", py: 3 }}>
+                            <VideoCamera size={40} weight="duotone" style={{ color: "#64748b", marginBottom: 8 }} />
+                            <Typography sx={{ color: "#64748b", fontSize: "14px" }}>
+                                No scheduled sessions. Click "Schedule Session" to create one.
+                            </Typography>
+                        </Box>
+                    ) : (
+                        <Grid container spacing={2}>
+                            {liveSessions.map((session: any) => (
+                                <Grid size={{ xs: 12, md: 6 }} key={session._id}>
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: "8px",
+                                            bgcolor: session.status === "LIVE" ? "rgba(239, 68, 68, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                                            border: `1px solid ${session.status === "LIVE" ? "rgba(239, 68, 68, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
+                                        }}
+                                    >
+                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                            <Box>
+                                                <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "14px" }}>
+                                                    {session.title}
+                                                </Typography>
+                                                <Typography sx={{ color: "#64748b", fontSize: "12px", mt: 0.5 }}>
+                                                    {new Date(session.scheduledAt).toLocaleString()}
+                                                </Typography>
+                                            </Box>
+                                            {session.status === "LIVE" && (
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    startIcon={<Play size={14} />}
+                                                    sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" }, fontSize: "11px" }}
+                                                >
+                                                    Join
+                                                </Button>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Enrolled Students with Tabs */}
+            <Card
+                sx={{
+                    bgcolor: "rgba(30, 41, 59, 0.6)",
+                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                    borderRadius: "12px",
+                }}
+            >
+                <CardContent sx={{ p: 3 }}>
+                    <Tabs
+                        value={tabValue}
+                        onChange={(_, newValue) => setTabValue(newValue)}
+                        sx={{
+                            mb: 3,
+                            "& .MuiTab-root": {
+                                color: "#64748b",
+                                fontWeight: 600,
+                                fontSize: "12px",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.5px",
+                                minHeight: "40px",
+                            },
+                            "& .Mui-selected": { color: "#10b981" },
+                            "& .MuiTabs-indicator": { bgcolor: "#10b981" },
+                        }}
+                    >
+                        <Tab label={`Active Students (${activeStudents.length})`} />
+                        <Tab label={`Certified (${completedStudents.length})`} />
+                    </Tabs>
+
+                    {tabValue === 0 && (
+                        activeStudents.length === 0 ? (
+                            <Box sx={{ textAlign: "center", py: 3 }}>
+                                <User size={40} weight="duotone" style={{ color: "#64748b", marginBottom: 8 }} />
+                                <Typography sx={{ color: "#64748b", fontSize: "14px" }}>
+                                    No active students enrolled
+                                </Typography>
+                            </Box>
+                        ) : (
+                            renderStudentTable(activeStudents)
+                        )
+                    )}
+
+                    {tabValue === 1 && (
+                        completedStudents.length === 0 ? (
+                            <Box sx={{ textAlign: "center", py: 3 }}>
+                                <Certificate size={40} weight="duotone" style={{ color: "#64748b", marginBottom: 8 }} />
+                                <Typography sx={{ color: "#64748b", fontSize: "14px" }}>
+                                    No certified students yet
+                                </Typography>
+                            </Box>
+                        ) : (
+                            renderStudentTable(completedStudents)
+                        )
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Student Details Modal */}
+            <Dialog
+                open={detailModalOpen}
+                onClose={() => setDetailModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                    }
+                }}
+            >
+                <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "18px" }}>Student Details</Typography>
+                    <IconButton onClick={() => setDetailModalOpen(false)} sx={{ color: "#64748b" }}>
+                        <X size={20} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    {selectedStudent && (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                <Avatar sx={{ width: 64, height: 64, bgcolor: "#3b82f6", fontSize: "24px" }}>
+                                    {selectedStudent.student?.name?.charAt(0).toUpperCase() || "S"}
+                                </Avatar>
+                                <Box>
+                                    <Typography sx={{ color: "#f8fafc", fontWeight: 700, fontSize: "20px" }}>
+                                        {selectedStudent.student?.name || "Unknown"}
+                                    </Typography>
+                                    <Typography sx={{ color: "#64748b", fontSize: "14px" }}>
+                                        {selectedStudent.student?.email || "N/A"}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Divider sx={{ borderColor: "rgba(71, 85, 105, 0.4)" }} />
+                            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                                <Box>
+                                    <Typography sx={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Status</Typography>
+                                    <Chip
+                                        label={getStatusStyle(selectedStudent.status).label}
+                                        size="small"
+                                        sx={{
+                                            mt: 0.5,
+                                            bgcolor: getStatusStyle(selectedStudent.status).bg,
+                                            color: getStatusStyle(selectedStudent.status).color,
+                                            fontWeight: 600,
+                                        }}
+                                    />
+                                </Box>
+                                <Box>
+                                    <Typography sx={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Assigned Date</Typography>
+                                    <Typography sx={{ color: "#f8fafc", fontSize: "14px", mt: 0.5 }}>
+                                        {selectedStudent.createdAt ? new Date(selectedStudent.createdAt).toLocaleDateString() : "N/A"}
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography sx={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Course</Typography>
+                                    <Typography sx={{ color: "#f8fafc", fontSize: "14px", mt: 0.5 }}>{course.name}</Typography>
+                                </Box>
+                                <Box>
+                                    <Typography sx={{ color: "#64748b", fontSize: "12px", textTransform: "uppercase" }}>Phone</Typography>
+                                    <Typography sx={{ color: "#f8fafc", fontSize: "14px", mt: 0.5 }}>
+                                        {selectedStudent.student?.phone || "N/A"}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Button onClick={() => setDetailModalOpen(false)} sx={{ color: "#64748b" }}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Submissions Modal */}
+            <Dialog
+                open={submissionsModalOpen}
+                onClose={() => setSubmissionsModalOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                    }
+                }}
+            >
+                <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "18px" }}>
+                        Submissions - {selectedStudent?.student?.name}
+                    </Typography>
+                    <IconButton onClick={() => setSubmissionsModalOpen(false)} sx={{ color: "#64748b" }}>
+                        <X size={20} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    {selectedStudent?.courseSubmissions?.length > 0 ? (
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                            {selectedStudent.courseSubmissions.map((sub: any, idx: number) => (
+                                <Box
+                                    key={idx}
+                                    sx={{
+                                        p: 2,
+                                        bgcolor: "rgba(30, 41, 59, 0.6)",
+                                        borderRadius: "8px",
+                                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                                    }}
+                                >
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <Box>
+                                            <Typography sx={{ color: "#f8fafc", fontWeight: 600 }}>
+                                                {sub.title || `Submission ${idx + 1}`}
+                                            </Typography>
+                                            <Typography sx={{ color: "#64748b", fontSize: "12px" }}>
+                                                Submitted: {sub.submittedAt ? new Date(sub.submittedAt).toLocaleString() : "N/A"}
+                                            </Typography>
+                                        </Box>
+                                        {sub.fileUrl && (
+                                            <Button
+                                                size="small"
+                                                startIcon={<Download size={14} />}
+                                                onClick={() => window.open(sub.fileUrl, "_blank")}
+                                                sx={{ color: "#3b82f6" }}
+                                            >
+                                                Download
+                                            </Button>
+                                        )}
+                                    </Box>
+                                </Box>
+                            ))}
+                        </Box>
+                    ) : (
+                        <Box sx={{ textAlign: "center", py: 4 }}>
+                            <FileText size={48} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                            <Typography sx={{ color: "#64748b", fontSize: "16px" }}>
+                                No submissions yet
+                            </Typography>
+                            <Typography sx={{ color: "#475569", fontSize: "13px", mt: 1 }}>
+                                Student has not submitted any work for this course
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Button onClick={() => setSubmissionsModalOpen(false)} sx={{ color: "#64748b" }}>Close</Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Certificate Modal */}
+            <Dialog
+                open={certificateModalOpen}
+                onClose={() => setCertificateModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: "#1e293b",
+                        border: "1px solid rgba(71, 85, 105, 0.4)",
+                        borderRadius: "12px",
+                    }
+                }}
+            >
+                <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "18px" }}>
+                        Certificate - {selectedStudent?.student?.name}
+                    </Typography>
+                    <IconButton onClick={() => setCertificateModalOpen(false)} sx={{ color: "#64748b" }}>
+                        <X size={20} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 3 }}>
+                    {selectedStudent?.certificate?.url ? (
+                        <Box sx={{ textAlign: "center" }}>
+                            <Box
+                                sx={{
+                                    p: 3,
+                                    bgcolor: "rgba(16, 185, 129, 0.1)",
+                                    borderRadius: "12px",
+                                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                                    mb: 2,
+                                }}
+                            >
+                                <Certificate size={64} weight="duotone" style={{ color: "#10b981", marginBottom: 16 }} />
+                                <Typography sx={{ color: "#f8fafc", fontWeight: 600, fontSize: "18px" }}>
+                                    Certificate Available
+                                </Typography>
+                                <Typography sx={{ color: "#64748b", fontSize: "13px", mt: 1 }}>
+                                    Issued: {selectedStudent.certificate.issuedAt ? new Date(selectedStudent.certificate.issuedAt).toLocaleDateString() : "N/A"}
+                                </Typography>
+                            </Box>
+                            <Button
+                                variant="contained"
+                                startIcon={<Download size={18} />}
+                                onClick={() => window.open(selectedStudent.certificate.url, "_blank")}
+                                sx={{
+                                    bgcolor: "#10b981",
+                                    "&:hover": { bgcolor: "#059669" },
+                                    fontWeight: 600,
+                                }}
+                            >
+                                Download Certificate
+                            </Button>
+                        </Box>
+                    ) : (
+                        <Box sx={{ textAlign: "center", py: 4 }}>
+                            <Certificate size={64} weight="duotone" style={{ color: "#64748b", marginBottom: 16 }} />
+                            <Typography sx={{ color: "#64748b", fontSize: "16px" }}>
+                                Certificate Not Generated
+                            </Typography>
+                            <Typography sx={{ color: "#475569", fontSize: "13px", mt: 1 }}>
+                                Student has not completed the course yet
+                            </Typography>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(71, 85, 105, 0.4)" }}>
+                    <Button onClick={() => setCertificateModalOpen(false)} sx={{ color: "#64748b" }}>Close</Button>
+                </DialogActions>
+            </Dialog>
+        </Box>
+    );
+};
+
+export default EmployeeCourseDetail;

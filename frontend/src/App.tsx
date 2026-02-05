@@ -61,9 +61,9 @@ function App() {
         };
 
         if ('requestIdleCallback' in window) {
-          (window as any).requestIdleCallback(deferredInit, { timeout: 2000 });
+          (window as any).requestIdleCallback(deferredInit, { timeout: 5000 });
         } else {
-          setTimeout(deferredInit, 100);
+          setTimeout(deferredInit, 2000);
         }
 
       } catch (err) {

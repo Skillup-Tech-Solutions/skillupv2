@@ -26,6 +26,16 @@ const notificationSchema = new mongoose.Schema({
         successCount: { type: Number, default: 0 },
         failureCount: { type: Number, default: 0 }
     },
+    // Per-user delivery tracking
+    deliveryResults: [{
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        status: { type: String, enum: ['delivered', 'failed', 'pending'], default: 'pending' },
+        deviceId: { type: String },
+        platform: { type: String },
+        errorCode: { type: String },
+        errorMessage: { type: String },
+        timestamp: { type: Date, default: Date.now }
+    }],
     data: { type: Object, default: {} },
     createdAt: { type: Date, default: Date.now }
 });

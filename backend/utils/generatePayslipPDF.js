@@ -97,7 +97,7 @@ const generatePayslipPDF = async (employee, salaryDetails, settings) => {
                 doc.fontSize(18).font("Helvetica-Bold").text("iSpark", 40, currentY);
             }
 
-            doc.font("Helvetica-Bold").fontSize(12).text(settings?.organizationName || "SkillUp Pvt. Ltd.,", 200, currentY, { align: "center" });
+            doc.font("Helvetica-Bold").fontSize(12).text(settings?.organizationName || "Skill Up Tech Solution,", 200, currentY, { align: "center" });
             currentY += 15;
             doc.font("Helvetica").fontSize(10);
             const addressLines = (settings?.organizationAddress || "53/10, virudhachalam main road,\nUlundurpet - 606107").split("\n");
@@ -112,7 +112,7 @@ const generatePayslipPDF = async (employee, salaryDetails, settings) => {
             currentY += 12;
 
             // Website with underline
-            const website = "skillup.in";
+            const website = "skilluptechbuzz.in";
             const webWidth = doc.widthOfString(website);
             // Center calculation manually or use align center
             doc.text(website, 200, currentY, { align: "center", underline: true });

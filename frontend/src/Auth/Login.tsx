@@ -111,6 +111,8 @@ const Login = () => {
                 navigate("/student/dashboard");
               }
             }, 1000);
+          } else if (user.role === "employee") {
+            setTimeout(() => navigate("/employee/dashboard"), 1000);
           } else {
             CustomSnackBar.errorSnackbar("Invalid user role!");
           }

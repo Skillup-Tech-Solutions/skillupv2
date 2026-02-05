@@ -35,8 +35,12 @@ const ProtectedRoute = ({ element, allowedRoles }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      // CRITICAL: Wait for authService on native platforms
-      if (isCapacitor()) {
+      // OPTIMIZATION: Check localStorage first for instant render
+      // We only wait for native sync if we have absolutely nothing locally.
+      const localToken = localStorage.getItem('skToken');
+
+      if (isCapacitor() && !localToken) {
+        // Only block if we truly have no data and must check native
         await authService.waitForReady();
       }
 

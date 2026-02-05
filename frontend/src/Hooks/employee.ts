@@ -131,8 +131,188 @@ export const useGetMyPayslips = () => {
     return useQuery({
         queryKey: ["myPayslips"],
         queryFn: async () => {
-            const response = await api.get("employee/payslips");
+            const response = await api.get("employee/my-payslips");
             return response.data;
+        },
+    });
+};
+
+export const useGetEmployeeDashboardStats = () => {
+    return useQuery({
+        queryKey: ["employeeDashboardStats"],
+        queryFn: async () => {
+            const response = await api.get("employee/dashboard-stats");
+            return response.data;
+        },
+    });
+};
+
+export const useGetMyAssignedCourses = () => {
+    return useQuery({
+        queryKey: ["myAssignedCourses"],
+        queryFn: async () => {
+            const response = await api.get("employee/my-courses");
+            return response.data;
+        },
+    });
+};
+
+export const useGetMyAssignedInternships = () => {
+    return useQuery({
+        queryKey: ["myAssignedInternships"],
+        queryFn: async () => {
+            const response = await api.get("employee/my-internships");
+            return response.data;
+        },
+    });
+};
+
+export const useGetMyAssignedProjects = () => {
+    return useQuery({
+        queryKey: ["myAssignedProjects"],
+        queryFn: async () => {
+            const response = await api.get("employee/my-projects");
+            return response.data;
+        },
+    });
+};
+
+export const useGetEmployeeProfile = () => {
+    return useQuery({
+        queryKey: ["employeeProfile"],
+        queryFn: async () => {
+            const response = await api.get("employee/my-profile");
+            return response.data;
+        },
+    });
+};
+
+export const useGetEmployeeLiveSessions = () => {
+    return useQuery({
+        queryKey: ["employeeLiveSessions"],
+        queryFn: async () => {
+            const response = await api.get("employee/my-live-sessions");
+            return response.data;
+        },
+    });
+};
+
+export const useGetEmployeeAnnouncements = () => {
+    return useQuery({
+        queryKey: ["employeeAnnouncements"],
+        queryFn: async () => {
+            const response = await api.get("employee/announcements");
+            return response.data;
+        },
+    });
+};
+
+export const useGetCourseDetail = (id: string) => {
+    return useQuery({
+        queryKey: ["employeeCourseDetail", id],
+        queryFn: async () => {
+            const response = await api.get(`employee/course/${id}`);
+            return response.data;
+        },
+        enabled: !!id,
+    });
+};
+
+export const useGetInternshipDetail = (id: string) => {
+    return useQuery({
+        queryKey: ["employeeInternshipDetail", id],
+        queryFn: async () => {
+            const response = await api.get(`employee/internship/${id}`);
+            return response.data;
+        },
+        enabled: !!id,
+    });
+};
+
+export const useGetProjectDetail = (id: string) => {
+    return useQuery({
+        queryKey: ["employeeProjectDetail", id],
+        queryFn: async () => {
+            const response = await api.get(`employee/project/${id}`);
+            return response.data;
+        },
+        enabled: !!id,
+    });
+};
+
+// --- Student Management Hooks (Employee Portal) ---
+
+export const useEmployeeUploadFiles = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+            const response = await api.post(`employee/assignments/${id}/upload-files`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employeeCourseDetail"] });
+            queryClient.invalidateQueries({ queryKey: ["employeeInternshipDetail"] });
+            queryClient.invalidateQueries({ queryKey: ["employeeProjectDetail"] });
+        },
+    });
+};
+
+export const useEmployeeCompleteAssignment = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+            const response = await api.post(`employee/assignments/${id}/complete`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employeeCourseDetail"] });
+            queryClient.invalidateQueries({ queryKey: ["employeeInternshipDetail"] });
+        },
+    });
+};
+
+export const useEmployeeUpdateCertDetails = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, data }: { id: string; data: any }) => {
+            const response = await api.put(`employee/assignments/${id}/certificate-details`, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employeeCourseDetail"] });
+            queryClient.invalidateQueries({ queryKey: ["employeeInternshipDetail"] });
+        },
+    });
+};
+
+export const useEmployeeProjectAction = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, action, data }: { id: string; action: string; data?: any }) => {
+            const response = await api.post(`employee/project-assignments/${id}/${action}`, data);
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["employeeProjectDetail"] });
+        },
+    });
+};
+
+export const useEmployeeGlobalUpload = (type: "course" | "internship" | "project") => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+            const response = await api.post(`employee/${type}/${id}/materials`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [type === "course" ? "employeeCourseDetail" : type === "internship" ? "employeeInternshipDetail" : "employeeProjectDetail"] });
         },
     });
 };

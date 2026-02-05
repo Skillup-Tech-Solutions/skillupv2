@@ -17,6 +17,9 @@
   <!-- Preconnect to API for faster first request -->
   <link rel="preconnect" href="%VITE_APP_BASE_URL_MAIN%" crossorigin />
   <link rel="dns-prefetch" href="%VITE_APP_BASE_URL_MAIN%" />
+  <!-- Preconnect to Jitsi for faster video room load -->
+  <link rel="preconnect" href="https://jitsi.riot.im" crossorigin />
+  <link rel="dns-prefetch" href="https://jitsi.riot.im" />
   <!-- Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Alata&family=Licorice&family=Style+Script&family=Trykker&display=swap"
@@ -47,7 +50,8 @@
     #instant-loader {
       position: fixed;
       inset: 0;
-      display: none;
+      display: flex;
+      /* Visible by default for First-Frame strategy */
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -139,12 +143,10 @@
           (typeof window.AndroidBridge !== 'undefined') ||
           (typeof webkit !== 'undefined' && webkit.messageHandlers);
 
-        // Skip web loader in Capacitor - native splash handles this
-        if (isCapacitor) {
-          const loader = document.getElementById('instant-loader');
-          if (loader) loader.remove();
-          return;
-        }
+        // First-Frame Strategy:
+        // We KEEP the HTML loader even in Capacitor. 
+        // This overrides the 'White Screen' if the Native Splash fades before React is ready.
+        // The loader will be removed by the 'window.addEventListener' logic below.
 
         const hash = window.location.hash;
         const isPortal = hash.includes('/student') || hash.includes('/dashboard');

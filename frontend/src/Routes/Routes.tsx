@@ -1,4 +1,4 @@
-import { createHashRouter } from "react-router-dom";
+import { createHashRouter, Navigate } from "react-router-dom";
 import { lazy, Suspense, Component, type ReactNode, type ComponentType } from "react";
 import { Box, Typography, Button } from "@mui/material";
 
@@ -121,11 +121,13 @@ import ForgetPassword from "../Auth/ForgetPassword";
 import StudentSignup from "../Auth/StudentSignup";
 import ActivateAccount from "../Auth/ActivateAccount";
 import ResetPassword from "../Auth/ResetPassword";
+import SetPassword from "../Auth/SetPassword";
 import Review from "../Auth/Review";
 
 // Layout components - Load immediately
 import Layout from "../Components/Layout";
 import StudentLayout from "../Components/StudentLayout";
+import EmployeeLayout from "../Components/EmployeeLayout";
 import WebsiteLayout from "../Components/WebsiteLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import CapacitorHomeRedirect from "./CapacitorHomeRedirect";
@@ -180,12 +182,23 @@ const StudentLiveSessions = lazyRetry(() => import("../Components/Student/Studen
 const DeviceManagement = lazyRetry(() => import("../Pages/DeviceManagement"));
 
 // Employee pages - Lazy
-const EmployeePortal = lazyRetry(() => import("../Pages/Employee/EmployeePortal"));
+const EmployeeDashboard = lazyRetry(() => import("../Pages/Employee/EmployeeDashboard"));
+const EmployeeCourses = lazyRetry(() => import("../Pages/Employee/EmployeeCourses"));
+const EmployeeCourseDetail = lazyRetry(() => import("../Pages/Employee/EmployeeCourseDetail"));
+const EmployeeInternships = lazyRetry(() => import("../Pages/Employee/EmployeeInternships"));
+const EmployeeInternshipDetail = lazyRetry(() => import("../Pages/Employee/EmployeeInternshipDetail"));
+const EmployeeProjects = lazyRetry(() => import("../Pages/Employee/EmployeeProjects"));
+const EmployeeProjectDetail = lazyRetry(() => import("../Pages/Employee/EmployeeProjectDetail"));
+const EmployeeLiveSessions = lazyRetry(() => import("../Pages/Employee/EmployeeLiveSessions"));
+const EmployeePayslips = lazyRetry(() => import("../Pages/Employee/EmployeePayslips"));
+const EmployeeAnnouncements = lazyRetry(() => import("../Pages/Employee/EmployeeAnnouncements"));
+const EmployeeProfile = lazyRetry(() => import("../Pages/Employee/EmployeeProfile"));
 
 const routes = createHashRouter([
   // Auth Routes (not lazy - small and needed immediately)
   { path: "/login", element: <Login /> },
   { path: "/reset-password", element: <ResetPassword /> },
+  { path: "/set-password/:token", element: <SetPassword /> },
   { path: "/signup", element: <SignUp /> },
   { path: "/student-signup", element: <StudentSignup /> },
   { path: "/activate-account", element: <ActivateAccount /> },
@@ -273,9 +286,21 @@ const routes = createHashRouter([
   // Employee Routes (lazy loaded)
   {
     path: "/employee",
-    element: <ProtectedRoute element={<Layout />} allowedRoles={["employee"]} />,
+    element: <ProtectedRoute element={<EmployeeLayout />} allowedRoles={["employee"]} />,
     children: [
-      { path: "portal", element: <LazyLoad><EmployeePortal /></LazyLoad> }
+      { path: "dashboard", element: <LazyLoad><EmployeeDashboard /></LazyLoad> },
+      { path: "courses", element: <LazyLoad><EmployeeCourses /></LazyLoad> },
+      { path: "courses/:id", element: <LazyLoad><EmployeeCourseDetail /></LazyLoad> },
+      { path: "internships", element: <LazyLoad><EmployeeInternships /></LazyLoad> },
+      { path: "internships/:id", element: <LazyLoad><EmployeeInternshipDetail /></LazyLoad> },
+      { path: "projects", element: <LazyLoad><EmployeeProjects /></LazyLoad> },
+      { path: "projects/:id", element: <LazyLoad><EmployeeProjectDetail /></LazyLoad> },
+      { path: "live-sessions", element: <LazyLoad><EmployeeLiveSessions /></LazyLoad> },
+      { path: "payslips", element: <LazyLoad><EmployeePayslips /></LazyLoad> },
+      { path: "announcements", element: <LazyLoad><EmployeeAnnouncements /></LazyLoad> },
+      { path: "profile", element: <LazyLoad><EmployeeProfile /></LazyLoad> },
+      // Redirect old portal route to dashboard
+      { path: "portal", element: <Navigate to="/employee/dashboard" replace /> },
     ]
   },
 ]);

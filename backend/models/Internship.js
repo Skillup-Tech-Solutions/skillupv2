@@ -43,6 +43,10 @@ const InternshipSchema = new mongoose.Schema({
     },
 
     // Mentor Info
+    mentorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "EmployeeProfile"
+    },
     mentor: {
         type: String,
         required: true

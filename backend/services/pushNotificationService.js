@@ -101,7 +101,13 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
             const androidTokens = [...new Set(deviceSessions.filter(s => s.platform === 'android').map(s => s.fcmToken))];
             const otherTokens = [...new Set(deviceSessions.filter(s => s.platform !== 'android').map(s => s.fcmToken))];
 
-            const results = { successCount: 0, failureCount: 0, tokensToRemove: [] };
+            const results = { successCount: 0, failureCount: 0, tokensToRemove: [], deliveryResults: [] };
+
+            // Create a map of token -> device session for tracking
+            const tokenToSession = {};
+            deviceSessions.forEach(s => {
+                tokenToSession[s.fcmToken] = s;
+            });
 
             const sendBatch = async (tokens, isAndroid) => {
                 if (tokens.length === 0) return;
@@ -145,13 +151,36 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
                 results.failureCount += response.failureCount;
 
                 response.responses.forEach((resp, idx) => {
-                    if (!resp.success) {
+                    const token = tokens[idx];
+                    const session = tokenToSession[token];
+
+                    if (resp.success) {
+                        // Track successful delivery
+                        results.deliveryResults.push({
+                            userId: session?.userId,
+                            deviceId: session?.deviceId,
+                            platform: session?.platform || (isAndroid ? 'android' : 'other'),
+                            status: 'delivered',
+                            timestamp: new Date()
+                        });
+                    } else {
                         const errorCode = resp.error?.code;
                         const errorMessage = resp.error?.message;
-                        console.error(`[Push Service] Delivery failure for ${isAndroid ? 'Android' : 'Other'} token ${tokens[idx]}: ${errorCode} - ${errorMessage}`);
+                        console.error(`[Push Service] Delivery failure for ${isAndroid ? 'Android' : 'Other'} token ${token}: ${errorCode} - ${errorMessage}`);
+
+                        // Track failed delivery
+                        results.deliveryResults.push({
+                            userId: session?.userId,
+                            deviceId: session?.deviceId,
+                            platform: session?.platform || (isAndroid ? 'android' : 'other'),
+                            status: 'failed',
+                            errorCode: errorCode,
+                            errorMessage: errorMessage,
+                            timestamp: new Date()
+                        });
 
                         if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/unregistered'].includes(errorCode)) {
-                            results.tokensToRemove.push(tokens[idx]);
+                            results.tokensToRemove.push(token);
                         }
                     }
                 });
@@ -162,13 +191,14 @@ exports.sendNotification = async ({ title, body, target, targetUserIds, data = {
                 sendBatch(otherTokens, false)
             ]);
 
-            // Update stats in database
+            // Update stats and delivery results in database
             await Notification.updateOne(
                 { _id: notification._id },
                 {
                     $set: {
                         'deliveryStats.successCount': results.successCount,
                         'deliveryStats.failureCount': results.failureCount,
+                        'deliveryResults': results.deliveryResults,
                         status: results.successCount > 0 ? 'sent' : 'failed'
                     }
                 }

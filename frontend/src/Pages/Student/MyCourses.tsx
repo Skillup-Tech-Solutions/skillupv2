@@ -19,6 +19,7 @@ import { useGetPaymentSettings, useUploadPaymentProof } from "../../Hooks/paymen
 import PaymentVerifying from "../../Components/PaymentVerifying";
 import {
     Books,
+    FolderSimple,
     DownloadSimple,
     UploadSimple,
     CreditCard,
@@ -441,6 +442,8 @@ const MyCourses = () => {
                                     </Box>
                                 </Box>
 
+
+
                                 {/* Action Section */}
                                 <Box sx={{ p: { xs: 2, md: 3 }, position: "relative", zIndex: 1 }}>
                                     {/* PAYMENT REQUIRED */}
@@ -699,20 +702,21 @@ const MyCourses = () => {
                                         </Box>
                                     )}
 
-                                    {/* Course Materials */}
-                                    {assignment.deliveryFiles?.length > 0 && (
+                                    {/* Consolidated Course Materials */}
+                                    {(assignment.deliveryFiles?.length > 0 || course?.attachments?.length > 0) && (
                                         <Box sx={{ mt: 2 }}>
                                             <Box sx={{
                                                 display: "flex", alignItems: "center", gap: 1,
                                                 color: "#94a3b8", fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.1em", mb: 2
                                             }}>
-                                                <DownloadSimple size={16} weight="duotone" />
+                                                <FolderSimple size={16} weight="duotone" style={{ color: "#60a5fa" }} />
                                                 Course Materials
                                             </Box>
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                                {assignment.deliveryFiles.map((file: any, idx: number) => (
+                                                {/* Global Resources (Employee Uploads) */}
+                                                {course?.attachments?.map((file: any, idx: number) => (
                                                     <Box
-                                                        key={idx}
+                                                        key={`global-${idx}`}
                                                         onClick={() => handleDownload(file.filePath, file.fileName)}
                                                         sx={{
                                                             display: "flex",
@@ -720,7 +724,33 @@ const MyCourses = () => {
                                                             gap: 0.5,
                                                             px: 1.5,
                                                             py: 0.75,
-                                                            bgcolor: "rgba(51, 65, 85, 0.5)",
+                                                            bgcolor: "rgba(96, 165, 250, 0.1)", // Light blue tint for global
+                                                            border: "1px solid rgba(96, 165, 250, 0.3)",
+                                                            borderRadius: "6px",
+                                                            fontSize: "11px",
+                                                            color: "#60a5fa",
+                                                            cursor: "pointer",
+                                                            transition: "all 0.2s",
+                                                            "&:hover": { bgcolor: "rgba(96, 165, 250, 0.2)", color: "#93c5fd" },
+                                                        }}
+                                                    >
+                                                        <DownloadSimple size={14} />
+                                                        {file.fileName}
+                                                    </Box>
+                                                ))}
+
+                                                {/* Assigned Materials (Admin Uploads) */}
+                                                {assignment.deliveryFiles?.map((file: any, idx: number) => (
+                                                    <Box
+                                                        key={`assigned-${idx}`}
+                                                        onClick={() => handleDownload(file.filePath, file.fileName)}
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: 0.5,
+                                                            px: 1.5,
+                                                            py: 0.75,
+                                                            bgcolor: "rgba(51, 65, 85, 0.5)", // Darker slate for assigned
                                                             border: "1px solid rgba(71, 85, 105, 0.4)",
                                                             borderRadius: "6px",
                                                             fontSize: "11px",

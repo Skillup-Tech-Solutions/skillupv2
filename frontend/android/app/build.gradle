@@ -4,6 +4,11 @@ android {
     namespace "com.skillup.app"
     compileSdk rootProject.ext.compileSdkVersion
 
+    // Enable Baseline Profiles for AOT compilation
+    buildFeatures {
+        buildConfig true
+    }
+
     // Load keystore properties for signing
     def keystorePropertiesFile = rootProject.file('keystore.properties')
     def keystoreProperties = new Properties()

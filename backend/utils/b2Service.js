@@ -112,10 +112,10 @@ exports.uploadFile = async (fileBuffer, fileName, folder = "") => {
             fileId: response.data.fileId,
             fileName: response.data.fileName,  // Full path like "deliveries/filename-123.pdf"
             filePath: finalName,               // Same as fileName but explicitly named
-            // Only include full URL if APP_API_URL is configured (for backward compatibility)
-            url: process.env.APP_API_URL
-                ? `${process.env.APP_API_URL}/api/files/download?file=${finalName}`
-                : null,
+            // INDUSTRY STANDARD UPDATE: force relative path storage.
+            // We explicitely return null for 'url' so that controllers use 'filePath'.
+            // This prevents hardcoded domains (like localhost or demo sites) from being saved in the DB.
+            url: null,
             b2Url: downloadUrlCache ? `${downloadUrlCache}/file/${bucketName}/${finalName}` : null
         };
 

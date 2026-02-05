@@ -17,6 +17,7 @@ import PullToRefreshIndicator from "../../Components/Student/PullToRefreshIndica
 import { ProgramCardSkeleton } from "../../Components/Student/PortalSkeletons";
 import { Skeleton } from "@mui/material";
 import {
+    FolderSimple,
     Briefcase,
     DownloadSimple,
     UploadSimple,
@@ -383,6 +384,8 @@ const MyInternships = () => {
                                     </Box>
                                 </Box>
 
+
+
                                 {/* Action Section */}
                                 <Box sx={{ p: { xs: 2, md: 3 } }}>
                                     {/* PAYMENT REQUIRED */}
@@ -638,17 +641,44 @@ const MyInternships = () => {
                                         </Box>
                                     )}
 
-                                    {/* Delivery Files */}
-                                    {assignment.deliveryFiles?.length > 0 && (
+                                    {/* Consolidated Internship Materials */}
+                                    {(assignment.deliveryFiles?.length > 0 || internship?.attachments?.length > 0) && (
                                         <Box sx={{ mt: 2 }}>
                                             <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#f8fafc", fontSize: "13px", fontWeight: 600, mb: 1 }}>
-                                                <DownloadSimple size={16} weight="duotone" />
+                                                <FolderSimple size={16} weight="duotone" />
                                                 Internship Materials
                                             </Box>
                                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                                                {assignment.deliveryFiles.map((file: any, idx: number) => (
+                                                {/* Global Resources (Employee) */}
+                                                {internship?.attachments?.map((file: any, idx: number) => (
                                                     <Box
-                                                        key={idx}
+                                                        key={`global-${idx}`}
+                                                        onClick={() => handleDownload(file.filePath, file.fileName)}
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: 0.5,
+                                                            px: 1.5,
+                                                            py: 0.75,
+                                                            bgcolor: "rgba(168, 85, 247, 0.1)", // Purple tint for global
+                                                            border: "1px solid rgba(168, 85, 247, 0.3)",
+                                                            borderRadius: "8px",
+                                                            fontSize: "11px",
+                                                            color: "#a855f7",
+                                                            cursor: "pointer",
+                                                            transition: "all 0.2s",
+                                                            "&:hover": { bgcolor: "rgba(168, 85, 247, 0.2)", color: "#c084fc" },
+                                                        }}
+                                                    >
+                                                        <DownloadSimple size={14} />
+                                                        {file.fileName}
+                                                    </Box>
+                                                ))}
+
+                                                {/* Delivery Files (Admin) */}
+                                                {assignment.deliveryFiles?.map((file: any, idx: number) => (
+                                                    <Box
+                                                        key={`delivery-${idx}`}
                                                         onClick={() => handleDownload(file.filePath, file.fileName)}
                                                         sx={{
                                                             display: "flex",

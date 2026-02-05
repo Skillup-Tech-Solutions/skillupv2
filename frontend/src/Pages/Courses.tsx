@@ -6,6 +6,10 @@ import {
   Grid,
   TextField,
   Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { X, Plus, MagnifyingGlass, WarningCircle, Trash } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
@@ -27,6 +31,7 @@ import config from "../Config/Config";
 import CourseSubmissionsList from "../Components/Admin/CourseSubmissionsList";
 import LiveSessionsTab from "../Components/Admin/LiveSessionsTab";
 import { getFromStorage } from "../utils/pwaUtils";
+import { useGetEmployees } from "../Hooks/employee";
 
 const style = {
   position: "absolute",
@@ -71,6 +76,8 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
   const { mutate: courseUpdate } = coursesUpdateApi();
   const { mutate: courseDelete } = coursesDeleteApi();
   const { mutate: courseToggleStatus } = useCourseStatusToggleApi();
+  const { data: employees } = useGetEmployees();
+  const [selectedTrainer, setSelectedTrainer] = useState<string>("");
 
   useEffect(() => {
     if (courseGet) {
@@ -97,6 +104,7 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
       endDate: "",
       timing: "",
     });
+    setSelectedTrainer("");
   };
 
   const handleEdit = (id: any) => {
@@ -115,6 +123,7 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
         endDate: course.endDate?.split?.("T")[0] || course.endDate || "",
         timing: course.timing || "",
       });
+      setSelectedTrainer(course.trainerId || "");
       setOpen(true);
     }
   };
@@ -131,6 +140,9 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
     formData.append("startDate", data.startDate);
     formData.append("endDate", data.endDate);
     formData.append("timing", data.timing);
+    if (selectedTrainer) {
+      formData.append("trainerId", selectedTrainer);
+    }
 
     if (data.thumbnail instanceof File) {
       formData.append("image", data.thumbnail);
@@ -297,6 +309,33 @@ const Courses = ({ activeSubTab = 0 }: { activeSubTab?: number }) => {
                 <CustomInput name="endDate" label="End Date" type="date" placeholder="YYYY-MM-DD" bgmode="dark" register={register} errors={errors} />
               </Box>
             </Box>
+
+            <FormControl fullWidth sx={{
+              "& .MuiOutlinedInput-root": {
+                bgcolor: "rgba(15, 23, 42, 0.5)",
+                color: "#f8fafc",
+                borderRadius: "6px",
+                "& fieldset": { borderColor: "rgba(71, 85, 105, 0.4)" },
+                "&:hover fieldset": { borderColor: "rgba(71, 85, 105, 0.6)" },
+                "&.Mui-focused fieldset": { borderColor: "#3b82f6", borderWidth: "1px" },
+              },
+              "& .MuiInputLabel-root": { color: "#94a3b8", "&.Mui-focused": { color: "#3b82f6" } },
+              "& .MuiSelect-icon": { color: "#64748b" },
+            }}>
+              <InputLabel>Trainer (Optional)</InputLabel>
+              <Select
+                value={selectedTrainer}
+                onChange={(e) => setSelectedTrainer(e.target.value)}
+                label="Trainer (Optional)"
+              >
+                <MenuItem value=""><em>No trainer assigned</em></MenuItem>
+                {(employees || []).map((emp: any) => (
+                  <MenuItem key={emp._id} value={emp._id}>
+                    {emp.user?.name || emp.employeeId} - {emp.designation}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Controller
               name="thumbnail"

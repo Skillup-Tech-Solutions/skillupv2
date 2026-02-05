@@ -3,6 +3,14 @@
 # Format: HSP - H=Hot, S=Startup, P=Post-Startup
 #
 # Reference: https://developer.android.com/topic/performance/baselineprofiles
+#
+# ============================================
+# KOTLIN COROUTINES (Reduce Verification Cost)
+# ============================================
+HSPLkotlinx/coroutines/**;-><init>(**)V
+HSPLkotlinx/coroutines/**;->invoke(**)Ljava/lang/Object;
+HSPLkotlinx/coroutines/**;->*
+HSPLkotlin/coroutines/**;->*
 
 # ============================================
 # APP CORE CLASSES (Startup Critical)
@@ -25,9 +33,9 @@ HSPLcom/skillup/app/MainActivity;->onResume()V
 HSPLcom/getcapacitor/BridgeActivity;-><init>()V
 HSPLcom/getcapacitor/BridgeActivity;->onCreate(Landroid/os/Bundle;)V
 HSPLcom/getcapacitor/BridgeActivity;->load()V
-HSPLcom/getcapacitor/Bridge;-><init>**>
-HSPLcom/getcapacitor/Bridge;->init**>
-HSPLcom/getcapacitor/WebViewLocalServer;-><init>**>
+HSPLcom/getcapacitor/Bridge;-><init>(**)V
+HSPLcom/getcapacitor/Bridge;->init(**)V
+HSPLcom/getcapacitor/WebViewLocalServer;-><init>(**)V
 HSPLcom/getcapacitor/Plugin;-><init>()V
 
 # ============================================
@@ -35,55 +43,67 @@ HSPLcom/getcapacitor/Plugin;-><init>()V
 # ============================================
 
 # WebView (most time-consuming)
-HSPLandroid/webkit/WebView;-><init>**>
-HSPLandroid/webkit/WebView;->loadUrl**>
-HSPLandroid/webkit/WebSettings;->**>
+HSPLandroid/webkit/WebView;-><init>(**)V
+HSPLandroid/webkit/WebView;->loadUrl(**)V
+HSPLandroid/webkit/WebSettings;->*(**)**
 
 # View inflation
-HSPLandroid/view/LayoutInflater;->inflate**>
-HSPLandroid/view/View;-><init>**>
-HSPLandroid/view/ViewGroup;->**>
+HSPLandroid/view/LayoutInflater;->inflate(**)Landroid/view/View;
+HSPLandroid/view/View;-><init>(**)V
+HSPLandroid/view/ViewGroup;->*(**)**
 
 # AppCompat
 HSPLandroidx/appcompat/app/AppCompatActivity;-><init>()V
 HSPLandroidx/appcompat/app/AppCompatActivity;->onCreate(Landroid/os/Bundle;)V
-HSPLandroidx/appcompat/app/AppCompatDelegate;->**>
+HSPLandroidx/appcompat/app/AppCompatDelegate;->*(**)**
 
 # Splash Screen
-HSPLandroidx/core/splashscreen/SplashScreen;->installSplashScreen**>
+HSPLandroidx/core/splashscreen/SplashScreen;->installSplashScreen(**)Landroidx/core/splashscreen/SplashScreen;
 
 # ============================================
 # FIREBASE (Background, but used early)
 # ============================================
 
-HSPLcom/google/firebase/FirebaseApp;->initializeApp**>
+HSPLcom/google/firebase/FirebaseApp;->initializeApp(**)Lcom/google/firebase/FirebaseApp;
 HSPLcom/google/firebase/messaging/FirebaseMessaging;->getInstance()Lcom/google/firebase/messaging/FirebaseMessaging;
 
 # ============================================
 # NOTIFICATION CHANNELS
 # ============================================
 
-HSPLandroid/app/NotificationManager;->createNotificationChannel**>
-HSPLandroid/app/NotificationChannel;-><init>**>
+HSPLandroid/app/NotificationManager;->createNotificationChannel(**)V
+HSPLandroid/app/NotificationChannel;-><init>(**)V
 
 # ============================================
 # CAPACITOR PLUGINS (Frequently Used)
 # ============================================
 
 # Status Bar
-HSPLcom/capacitorjs/plugins/statusbar/StatusBar;->**>
+HSPLcom/capacitorjs/plugins/statusbar/StatusBar;->*(**)**
 
 # Splash Screen
-HSPLcom/capacitorjs/plugins/splashscreen/SplashScreen;->**>
+HSPLcom/capacitorjs/plugins/splashscreen/SplashScreen;->*(**)**
 
 # Keyboard
-HSPLcom/capacitorjs/plugins/keyboard/Keyboard;->**>
+HSPLcom/capacitorjs/plugins/keyboard/Keyboard;->*(**)**
 
 # Haptics
-HSPLcom/capacitorjs/plugins/haptics/Haptics;->**>
+HSPLcom/capacitorjs/plugins/haptics/Haptics;->*(**)**
 
 # Local Notifications
-HSPLcom/capacitorjs/plugins/localnotifications/LocalNotifications;->**>
+HSPLcom/capacitorjs/plugins/localnotifications/LocalNotifications;->*(**)**
 
 # Preferences (storage)
-HSPLcom/capacitorjs/plugins/preferences/Preferences;->**>
+HSPLcom/capacitorjs/plugins/preferences/Preferences;->*(**)**
+
+# ============================================
+# VERIFICATION AVOIDANCE (Critical Fixes)
+# ============================================
+HSPLandroidx/datastore/preferences/core/PreferencesFileSerializer;-><init>(**)V
+HSPLandroidx/datastore/preferences/core/PreferencesFileSerializer;->*
+HSPLandroidx/datastore/core/DataStore;->*
+HSPLkotlinx/coroutines/channels/BufferedChannel;->*
+HSPLkotlinx/coroutines/flow/Flow;->*
+HSPLkotlinx/coroutines/flow/StateFlow;->*
+HSPLcom/capacitorjs/plugins/preferences/PreferencesPlugin;->load()V
+HSPLandroid/content/SharedPreferences;->getSharedPreferences(**)Landroid/content/SharedPreferences;

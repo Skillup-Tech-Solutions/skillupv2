@@ -42,37 +42,40 @@ export const pushNotificationService = {
         if (Capacitor.getPlatform() !== 'android') return;
 
         try {
-            // High Priority / Alert Channel
-            await PushNotifications.createChannel({
-                id: 'skillup_alerts',
-                name: 'Alerts & Critical Updates',
-                description: 'Critical notifications about your courses and account',
-                importance: 5, // High importance
-                visibility: 1, // Public
-                sound: 'default',
-                vibration: true
-            });
+            // Parallel channel creation to reduce bridge wait time
+            await Promise.all([
+                // High Priority / Alert Channel
+                PushNotifications.createChannel({
+                    id: 'skillup_alerts',
+                    name: 'Alerts & Critical Updates',
+                    description: 'Critical notifications about your courses and account',
+                    importance: 5, // High importance
+                    visibility: 1, // Public
+                    sound: 'default',
+                    vibration: true
+                }),
 
-            // Normal Priority / Update Channel
-            await PushNotifications.createChannel({
-                id: 'skillup_updates',
-                name: 'App Updates',
-                description: 'General updates about new features and activities',
-                importance: 3, // Default importance
-                visibility: 1,
-                sound: 'default',
-                vibration: true
-            });
+                // Normal Priority / Update Channel
+                PushNotifications.createChannel({
+                    id: 'skillup_updates',
+                    name: 'App Updates',
+                    description: 'General updates about new features and activities',
+                    importance: 3, // Default importance
+                    visibility: 1,
+                    sound: 'default',
+                    vibration: true
+                }),
 
-            // Promotions Channel
-            await PushNotifications.createChannel({
-                id: 'skillup_promotions',
-                name: 'Offers & Promotions',
-                description: 'Notifications about new offers and program discounts',
-                importance: 2, // Low importance
-                visibility: 1,
-                sound: 'default'
-            });
+                // Promotions Channel
+                PushNotifications.createChannel({
+                    id: 'skillup_promotions',
+                    name: 'Offers & Promotions',
+                    description: 'Notifications about new offers and program discounts',
+                    importance: 2, // Low importance
+                    visibility: 1,
+                    sound: 'default'
+                })
+            ]);
 
             logger.log('[Push] Notification channels created');
         } catch (error) {

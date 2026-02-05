@@ -49,6 +49,10 @@ const CourseSchema = new mongoose.Schema({
     },
 
     // Instructor
+    trainerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "EmployeeProfile"
+    },
     trainer: {
         type: String
     },

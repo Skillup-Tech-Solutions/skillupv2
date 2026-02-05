@@ -2,8 +2,13 @@ package com.skillup.app;
 
 import android.app.Application;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.StrictMode;
 import android.os.SystemClock;
 import android.util.Log;
+import android.content.pm.ApplicationInfo;
+import android.webkit.WebView;
 
 /**
  * Custom Application class for startup performance tracing.
@@ -37,6 +42,22 @@ public class SkillUpApplication extends Application {
         long classLoadDuration = applicationCreateTime - processStartTime;
         Log.i(TAG, "[Application] onCreate started - Class load took: " + classLoadDuration + "ms");
         
+        // --- STRICT MODE (Debug Only) ---
+        // Detects main thread violations as per industry standard budgeting
+        boolean isDebug = (0 != (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE));
+        if (isDebug) {
+             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                    .detectAll()
+                    .penaltyLog()
+                    .build());
+             StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                    .detectLeakedSqlLiteObjects()
+                    .detectLeakedClosableObjects()
+                    .penaltyLog()
+                    .build());
+             Log.i(TAG, "[Performance] StrictMode enabled");
+        }
+
         super.onCreate();
         
         applicationOnCreateEndTime = SystemClock.elapsedRealtime();
@@ -46,6 +67,17 @@ public class SkillUpApplication extends Application {
         // Log device info for context
         Log.i(TAG, "[Device] SDK: " + Build.VERSION.SDK_INT + 
               ", Device: " + Build.MANUFACTURER + " " + Build.MODEL);
+
+        // --- PRELOAD SHARED PREFERENCES (Background) ---
+        // Avoids strict mode violations when plugins read prefs on main thread later
+        new Thread(() -> {
+            try {
+                getSharedPreferences("CapacitorStorage", MODE_PRIVATE);
+                Log.i(TAG, "[Background] SharedPreferences preloaded");
+            } catch (Exception e) {
+                 Log.w(TAG, "[Background] SharedPreferences preload failed");
+            }
+        }).start();
     }
     
     /**
